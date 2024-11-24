@@ -18,23 +18,9 @@ from kivymd.uix.textfield import MDTextField
 from kivymd.uix.toolbar import MDTopAppBar
 
 import parse_metro
-from read_doc import scanner
 import command
 import telegram
-
 cart = []
-
-
-async def start_telegrambot(a):
-    loop = asyncio.get_event_loop()
-    from concurrent.futures import ThreadPoolExecutor
-    executor = ThreadPoolExecutor()
-    def start_clicker():
-        print('Телеграм бот запущен!')
-        telegram.start()
-        print('Телеграм бот закончил свою работу!')
-
-    await loop.run_in_executor(executor, start_clicker)
 
 
 class MC(MDApp):
@@ -46,21 +32,21 @@ class MC(MDApp):
 
         self.find_butt = RFB(text='Поиск', halign="right", on_release=self.find, icon_color=color_button, line_color=color_button, text_color=color_button)
         self.cart = RFIB(text='Корзина', icon='cart', id='1', icon_color=color_button, line_color=color_button, text_color=color_button, on_release=self.open_cart)
-        self.send_files = RFIB(text='Загрузить файлы', icon='download', icon_color=color_button, line_color=color_button, text_color=color_button, on_release=self.start_send_files)
-        self.checkbox_parser_metro = MDCheckbox()
-        self.base_price = scanner('') # Кэширование прайсов
-        self.TopAppBar = MDTopAppBar(type="top", md_bg_color='#c9e5ff')  # Верхнее меню
+        self.send_files = RFIB(text='Запустить бота', icon='download', icon_color=color_button, line_color=color_button, text_color=color_button, on_release=self.start_send_files)
+        self.checkbox_parser_metro = MDCheckbox(size_hint_x=.1)
+        self.base_price = [] # Кэширование прайсов
+        self.TopAppBar = MDTopAppBar(type="top", spacing=0, padding=0, md_bg_color='#c9e5ff')  # Верхнее меню
 
 
         # Переменные диалоговых окон:
         self.dialog = False
         self.send_text = {}
-        parse_metro.auth_check()
+        asyncio.ensure_future(command.background_load(self, parse_metro))
 
     def build(self):
         screen = Screen()
         layout_main = BoxLayout(orientation='vertical', md_bg_color='white')
-        layout_top = BoxLayout(orientation='vertical', size_hint_y=None, height=self.find_butt.height)
+        layout_top = BoxLayout(orientation='vertical', size_hint_y=None,  height=self.find_butt.height)
         layout_middle = BoxLayout(orientation='vertical')
         layout_find = BoxLayout(orientation='horizontal', spacing=10)
 
@@ -303,13 +289,13 @@ class MC(MDApp):
         for shop in self.send_text:
             if len(self.send_text[shop]) > 1:
                 text_cart = ((('Екатерина' if shop.lower() == 'матушка' else 'Ульяна' if shop.lower() == 'алма' else '') + ', добрый день!\nЗаявка на завтра:') if shop.lower() not in ('metro', 'купер') else 'METRO:') + '\n' + self.send_text[shop]
+
                 telegram.send(text_cart)
         send_text = []
 
     def start_send_files(self, instance):
         self.activate_enter_finder(self)
-        asyncio.ensure_future(start_telegrambot('a'))
-
+        asyncio.ensure_future(command.start_telegram(self, telegram))
 
 
     def func_dialog_save_enter(self, window, key, i, r, x):

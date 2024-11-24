@@ -27,7 +27,13 @@ def send_file(message):
 @bot.message_handler(commands=['stop', 'exit'])
 def exit(message):
     bot.stop_polling()
-    bot.send_message(message.chat.id, 'Бот выключен!')
+    from command import active_bot
+    active_bot[0] = False
+
+    try:
+        bot.send_message(message.chat.id, 'Бот выключен!')
+    except:
+        bot.send_message('828853360', 'Бот выключен!')
 
 
 @bot.message_handler(content_types='text')

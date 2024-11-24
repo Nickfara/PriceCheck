@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 import requests
 import json
 import time
-import sbermarket_api
+
 cookies = {}
 try:
     with open('cookies_kuper.json', 'r') as f:
@@ -35,7 +35,7 @@ def auth():
     cookies = browser.get_cookies()
 
     with open('cookies_kuper.json', 'w') as f:
-        json.dump(cookies, f)
+        json.dump(cookies, str(f))
         return True
 
 def auth_check():
@@ -126,3 +126,6 @@ def test():
         'latitude': '45.0001',
         'longitude': '36.0001'
     }
+
+
+def

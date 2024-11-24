@@ -1,3 +1,6 @@
+import asyncio
+
+
 def str_to_dict1(str_):
     str_ = str(str_)
     new = ''.join((''.join(''.join(str_.split('{')).split('}')).split("'")))
@@ -37,3 +40,42 @@ def finder(text, items):
 
 
     return finded_items
+
+
+active_bot = [False]
+
+async def start_telegram(self, telegram):
+    loop = asyncio.get_event_loop()
+    from concurrent.futures import ThreadPoolExecutor
+    executor = ThreadPoolExecutor()
+    def start_clicker():
+        if active_bot[0] == False:
+            self.send_files.text = 'Остановить бота'
+            active_bot[0] = True
+            print('Телеграм бот запущен!')
+            telegram.start()
+            print('Телеграм бот закончил свою работу!')
+            self.send_files.text = 'Запустить бота'
+            active_bot[0] = False
+        else:
+            telegram.exit('Выход')
+            self.send_files.text = 'Запустить бота'
+            active_bot[0] = False
+
+    await loop.run_in_executor(executor, start_clicker)
+
+async def background_load(self, parse_metro):
+    loop = asyncio.get_event_loop()
+    from concurrent.futures import ThreadPoolExecutor
+    executor = ThreadPoolExecutor()
+
+    def start_clicker():
+        print('Авторизация MSHOP началась!')
+        parse_metro.auth_check()
+        print('Авторизация MSHOP закончилась!')
+        print('Кэширование базы началось!')
+        from read_doc import scanner
+        self.base_price = scanner('')
+        print('Кэширование базы закончилось!')
+
+    await loop.run_in_executor(executor, start_clicker)

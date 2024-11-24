@@ -39,7 +39,7 @@ async def async_autoclick(a, b, c, d, e, f):
             result = autoclick.start(a, b, c, e, f, check_data=d)
             items_warning.append(result) # Запуск автокликера и добавление предупреждений если есть
 
-        await loop.run_in_executor(executor, start_clicker)
+        await loop.run_in_executor(executor, start_clicker, [])
 
     else:
         print('Остановка автокликера!')
