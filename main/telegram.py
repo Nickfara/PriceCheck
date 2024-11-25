@@ -27,7 +27,7 @@ def send_file(message):
 @bot.message_handler(commands=['stop', 'exit'])
 def exit(message):
     bot.stop_polling()
-    from command import active_bot
+    from commands import active_bot
     active_bot[0] = False
 
     try:
