@@ -14,8 +14,9 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.screen import Screen
 from kivymd.uix.scrollview import ScrollView
 from kivymd.uix.selectioncontrol import MDSwitch, MDCheckbox
-from kivymd.uix.textfield import MDTextField
-from kivymd.uix.appbar import MDTopAppBar as AppBar, MDBottomAppBar, MDActionTopAppBarButton, MDFabBottomAppBarButton, MDTopAppBarTitle, MDActionBottomAppBarButton, MDTopAppBarTrailingButtonContainer as ButtonContainer, MDTopAppBarLeadingButtonContainer as ButtonContainer2
+from kivymd.uix.textfield import MDTextField, MDTextFieldLeadingIcon
+from kivymd.uix.list import MDListItem, MDListItemHeadlineText
+
 
 import parse_metro
 import command
@@ -28,14 +29,13 @@ class MC(MDApp):
         super().__init__()
         color_bg = ''
         color_button = '#003fbd'
-        self.text_find_names = MDTextField(text_color_focus='black', pos_hint={'center_x': .5, 'center_y': .5})
+        self.text_find_names = MDTextField(MDTextFieldLeadingIcon(icon="magnify",), text_color_focus='black', pos_hint={'center_x': .5, 'center_y': .5}, hint_text='Найти товары')
 
-        self.find_butt = IconButton(icon='find', halign="right", on_release=self.find, icon_color=color_button, line_color=color_button, text_color=color_button)
+        self.find_butt = IconButton(icon='store-search', halign="right", on_release=self.find, icon_color=color_button, line_color=color_button, text_color=color_button)
         self.cart = IconButton(text='Корзина', icon='cart', id='1', icon_color=color_button, line_color=color_button, text_color=color_button, on_release=self.open_cart)
         self.send_files = IconButton(text='Запустить бота', icon='download', icon_color=color_button, line_color=color_button, text_color=color_button, on_release=self.start_send_files)
         self.checkbox_parser_metro = MDCheckbox(size_hint_x=.1)
         self.base_price = [] # Кэширование прайсов
-        self.TopAppBar = AppBar(type="small", spacing=0, padding=0, md_bg_color='#c9e5ff')  # Верхнее меню
 
 
         # Переменные диалоговых окон:
@@ -45,10 +45,10 @@ class MC(MDApp):
 
     def build(self):
         screen = Screen()
-        layout_main = BoxLayout(orientation='vertical', md_bg_color='white')
-        layout_top = BoxLayout(orientation='vertical', size_hint_y=None,  height=self.find_butt.height)
+        layout_main = BoxLayout(orientation='vertical', md_bg_color='gray')
+        layout_top = BoxLayout(orientation='horizontal', size_hint_y=None,  height=self.text_find_names.height, md_bg_color='c9e5ff')
         layout_middle = BoxLayout(orientation='vertical')
-        layout_find = ButtonContainer2()
+
 
 
         self.scroll_layout = BoxLayout(orientation='vertical', spacing=0, padding=(0, 10, 0, 0), adaptive_height=True)
@@ -56,20 +56,17 @@ class MC(MDApp):
         self.scroll_layout.bind(minimum_height=self.scroll_layout.setter('height'))
         scroll = ScrollView(do_scroll_x=False)
 
-        layout_find.add_widget(self.send_files)
-        layout_find.add_widget(self.checkbox_parser_metro)
-        layout_find.add_widget(self.text_find_names)
-        layout_find.add_widget(self.find_butt)
-        layout_find.add_widget(self.cart)
+        layout_top.add_widget(self.send_files)
+        layout_top.add_widget(self.checkbox_parser_metro)
+        layout_top.add_widget(self.text_find_names)
+        layout_top.add_widget(self.find_butt)
+        layout_top.add_widget(self.cart)
 
-
-        layout_top.add_widget(layout_find)
-        self.TopAppBar.add_widget(layout_top)
 
         scroll.add_widget(self.scroll_layout)
         layout_middle.add_widget(scroll)
 
-        layout_main.add_widget(self.TopAppBar)
+        layout_main.add_widget(layout_top)
         layout_main.add_widget(layout_middle)
         screen.add_widget(layout_main)
         return screen
@@ -89,9 +86,8 @@ class MC(MDApp):
                 finder_items.append({'seller': 'METRO', 'name': item['name'], 'cost': str(item['price']), 'bundleId': item['bundleId'], 'minOrderQuantity': item['minOrderQuantity']})
 
         for item in finder_items: # Добавление товаров в список на главный экран
-            item_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height='40dp')
-
-            seller = MDLabel(text='['+ item['seller'] + '] ', size_hint_x=None, width='110dp')
+            seller = '[' + item['seller'] + '] '
+            item_layout = MDListItem(MDListItemHeadlineText(text=str(seller)), orientation='horizontal', size_hint_y=None, height='40dp', md_bg_color='yellow',)
             text = item['name'] + '.'
             text = MDLabel(text=text)
 
@@ -107,7 +103,6 @@ class MC(MDApp):
                 else:
                     cart_plus = IconButton(text=' ', icon='cart-plus', id=str(item), on_release=self.add_to_cart, icon_color ='blue', line_color='white')
 
-            item_layout.add_widget(seller)
             item_layout.add_widget(text)
             item_layout.add_widget(cost)
             item_layout.add_widget(cart_plus)

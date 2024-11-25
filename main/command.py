@@ -51,15 +51,19 @@ async def start_telegram(self, telegram):
     def start_clicker():
         if active_bot[0] == False:
             self.send_files.text = 'Остановить бота'
+            self.send_files.icon = 'stop_circle_outline'
             active_bot[0] = True
             print('Телеграм бот запущен!')
             telegram.start()
             print('Телеграм бот закончил свою работу!')
             self.send_files.text = 'Запустить бота'
+            self.send_files.icon = 'download'
             active_bot[0] = False
         else:
             telegram.exit('Выход')
             self.send_files.text = 'Запустить бота'
+            self.send_files.icon = 'download'
+
             active_bot[0] = False
 
     await loop.run_in_executor(executor, start_clicker)
