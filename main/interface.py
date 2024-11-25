@@ -6,7 +6,7 @@ from os.path import isfile, join
 
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout as BoxLayout
-from kivymd.uix.button import MDRectangleFlatButton as RFB, MDFlatButton as FB, MDRectangleFlatIconButton as RFIB
+from kivymd.uix.button import MDButton as Button, MDIconButton as IconButton
 from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
@@ -15,7 +15,7 @@ from kivymd.uix.screen import Screen
 from kivymd.uix.scrollview import ScrollView
 from kivymd.uix.selectioncontrol import MDSwitch, MDCheckbox
 from kivymd.uix.textfield import MDTextField
-from kivymd.uix.toolbar import MDTopAppBar
+from kivymd.uix.appbar import MDTopAppBar as AppBar, MDBottomAppBar, MDActionTopAppBarButton, MDFabBottomAppBarButton, MDTopAppBarTitle, MDActionBottomAppBarButton, MDTopAppBarTrailingButtonContainer as ButtonContainer, MDTopAppBarLeadingButtonContainer as ButtonContainer2
 
 import parse_metro
 import command
@@ -30,12 +30,12 @@ class MC(MDApp):
         color_button = '#003fbd'
         self.text_find_names = MDTextField(text_color_focus='black', pos_hint={'center_x': .5, 'center_y': .5})
 
-        self.find_butt = RFB(text='Поиск', halign="right", on_release=self.find, icon_color=color_button, line_color=color_button, text_color=color_button)
-        self.cart = RFIB(text='Корзина', icon='cart', id='1', icon_color=color_button, line_color=color_button, text_color=color_button, on_release=self.open_cart)
-        self.send_files = RFIB(text='Запустить бота', icon='download', icon_color=color_button, line_color=color_button, text_color=color_button, on_release=self.start_send_files)
+        self.find_butt = IconButton(icon='find', halign="right", on_release=self.find, icon_color=color_button, line_color=color_button, text_color=color_button)
+        self.cart = IconButton(text='Корзина', icon='cart', id='1', icon_color=color_button, line_color=color_button, text_color=color_button, on_release=self.open_cart)
+        self.send_files = IconButton(text='Запустить бота', icon='download', icon_color=color_button, line_color=color_button, text_color=color_button, on_release=self.start_send_files)
         self.checkbox_parser_metro = MDCheckbox(size_hint_x=.1)
         self.base_price = [] # Кэширование прайсов
-        self.TopAppBar = MDTopAppBar(type="top", spacing=0, padding=0, md_bg_color='#c9e5ff')  # Верхнее меню
+        self.TopAppBar = AppBar(type="small", spacing=0, padding=0, md_bg_color='#c9e5ff')  # Верхнее меню
 
 
         # Переменные диалоговых окон:
@@ -48,7 +48,7 @@ class MC(MDApp):
         layout_main = BoxLayout(orientation='vertical', md_bg_color='white')
         layout_top = BoxLayout(orientation='vertical', size_hint_y=None,  height=self.find_butt.height)
         layout_middle = BoxLayout(orientation='vertical')
-        layout_find = BoxLayout(orientation='horizontal', spacing=10)
+        layout_find = ButtonContainer2()
 
 
         self.scroll_layout = BoxLayout(orientation='vertical', spacing=0, padding=(0, 10, 0, 0), adaptive_height=True)
@@ -98,14 +98,14 @@ class MC(MDApp):
             cost = MDLabel(text='Цена: ' + item['cost'], size_hint_x=None, width='110dp')
             if item in cart:
                 if item['seller'] == 'METRO':
-                    cart_plus = RFIB(text=' ', icon='cart-remove', id=str(item), on_release=self.remove_to_cart_metro, icon_color='red', line_color='white')
+                    cart_plus = IconButton(text=' ', icon='cart-remove', id=str(item), on_release=self.remove_to_cart_metro, icon_color='red', line_color='white')
                 else:
-                    cart_plus = RFIB(text=' ', icon='cart-remove', id=str(item), on_release=self.remove_to_cart, icon_color = 'red', line_color='white')
+                    cart_plus = IconButton(text=' ', icon='cart-remove', id=str(item), on_release=self.remove_to_cart, icon_color ='red', line_color='white')
             else:
                 if item['seller'] == 'METRO':
-                    cart_plus = RFIB(text=' ', icon='cart-plus', id=str(item), on_release=self.add_to_cart_metro, icon_color = 'blue', line_color='white')
+                    cart_plus = IconButton(text=' ', icon='cart-plus', id=str(item), on_release=self.add_to_cart_metro, icon_color ='blue', line_color='white')
                 else:
-                    cart_plus = RFIB(text=' ', icon='cart-plus', id=str(item), on_release=self.add_to_cart, icon_color = 'blue', line_color='white')
+                    cart_plus = IconButton(text=' ', icon='cart-plus', id=str(item), on_release=self.add_to_cart, icon_color ='blue', line_color='white')
 
             item_layout.add_widget(seller)
             item_layout.add_widget(text)
@@ -179,8 +179,8 @@ class MC(MDApp):
             scroll_layout_dialog.size_hint_y = None
             scroll_layout_dialog.bind(minimum_height=self.scroll_layout.setter('height'))
             scroll = ScrollView(do_scroll_x=False, size_hint=(1,1))
-            copy_cart = RFIB(text='Далее', icon='content-copy', on_release=self.copy_cart, icon_color='green',
-                             line_color='green', text_color='green')
+            copy_cart = IconButton(text='Далее', icon='content-copy', on_release=self.copy_cart, icon_color='green',
+                                   line_color='green', text_color='green')
             dialog_main_layout.add_widget(copy_cart)
 
             for shop in ['Матушка', 'Алма', 'METRO']:
@@ -190,20 +190,20 @@ class MC(MDApp):
                     if shop.lower() == item['seller'].lower():
                         if item in cart:
                             if item['seller'] == 'METRO':
-                                cart_plus = RFIB(text=' ', icon='cart-remove', id=str(item) + 'cart',
-                                                 on_release=self.remove_to_cart_metro,
-                                                 icon_color='red', line_color='white')
+                                cart_plus = IconButton(text=' ', icon='cart-remove', id=str(item) + 'cart',
+                                                       on_release=self.remove_to_cart_metro,
+                                                       icon_color='red', line_color='white')
                             else:
-                                cart_plus = RFIB(text=' ', icon='cart-remove', id=str(item) + 'cart', on_release=self.remove_to_cart,
-                                             icon_color='red', line_color='white')
+                                cart_plus = IconButton(text=' ', icon='cart-remove', id=str(item) + 'cart', on_release=self.remove_to_cart,
+                                                       icon_color='red', line_color='white')
                         else:
                             if item['seller'] == 'METRO':
-                                cart_plus = RFIB(text=' ', icon='cart-plus', id=str(item) + 'cart',
-                                                 on_release=self.add_to_cart_metro,
-                                                 icon_color='blue', line_color='white')
+                                cart_plus = IconButton(text=' ', icon='cart-plus', id=str(item) + 'cart',
+                                                       on_release=self.add_to_cart_metro,
+                                                       icon_color='blue', line_color='white')
                             else:
-                                cart_plus = RFIB(text=' ', icon='cart-plus', id=str(item) + 'cart', on_release=self.add_to_cart,
-                                             icon_color='blue', line_color='white')
+                                cart_plus = IconButton(text=' ', icon='cart-plus', id=str(item) + 'cart', on_release=self.add_to_cart,
+                                                       icon_color='blue', line_color='white')
                         item_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height='40dp')
                         text = MDLabel(text=str(item['name']))
                         item_layout.add_widget(text)
@@ -238,10 +238,10 @@ class MC(MDApp):
             scroll_layout_dialog.size_hint_y = None
             scroll_layout_dialog.bind(minimum_height=self.scroll_layout.setter('height'))
             scroll = ScrollView(do_scroll_x=False, size_hint=(1,1))
-            copy_cart_dismiss = RFIB(text='Вернуться', icon='keyboard-backspace', on_release=self.open_cart, icon_color='red',
-                                     line_color='red', text_color='red')
-            send_cart = RFIB(text='Отправить', icon='content-copy', on_release=self.send_cart, icon_color='green',
-                             line_color='green', text_color='green')
+            copy_cart_dismiss = IconButton(text='Вернуться', icon='keyboard-backspace', on_release=self.open_cart, icon_color='red',
+                                           line_color='red', text_color='red')
+            send_cart = IconButton(text='Отправить', icon='content-copy', on_release=self.send_cart, icon_color='green',
+                                   line_color='green', text_color='green')
 
             cart_layout = BoxLayout(orientation='horizontal', spacing=5)
             button_layout = BoxLayout(orientation='horizontal', spacing=5, size_hint_y=None, height=copy_cart_dismiss.height)

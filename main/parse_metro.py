@@ -231,7 +231,7 @@ def auth():
 def auth_check():
     for i in range(1, 2):
         s = requests.Session()  # Создание сессии
-        url = f'https://mshop.metro-cc.ru/explore.border.v1/orderlist/country/RU/customerid/{profile['customerId']}?rows=10&locale=ru-RU&selectedCustomerStore={profile['storeId']}'
+        url = f'https://mshop.metro-cc.ru/explore.border.v1/orderlist/country/RU/customerid/{profile["customerId"]}?rows=10&locale=ru-RU&selectedCustomerStore={profile["storeId"]}'
         data = {}
 
         try:
@@ -319,7 +319,7 @@ def search(text):
         ids = s.get(url=url_findID).json()['resultIds'] # Получение айди найденных товаров
         ids_text = '&ids='.join(ids)
         print(ids_text)
-        items = s.get(url=f'https://mshop.metro-cc.ru/evaluate.article.v1/betty-variants?storeIds={profile['storeId']}&ids={ids_text}&country=RU&locale=ru-RU&customerId={profile['customerId']}&__t={profile['t_time']}')  # Получение товаров
+        items = s.get(url=f'https://mshop.metro-cc.ru/evaluate.article.v1/betty-variants?storeIds={profile["storeId"]}&ids={ids_text}&country=RU&locale=ru-RU&customerId={profile["customerId"]}&__t={profile["t_time"]}')  # Получение товаров
 
         try:
             objects = items.json()['result']
@@ -381,7 +381,7 @@ def add_cart(object, count=0):
         result = s.post(url=url, json=data)
         result2 = s.get(
             url=f'https://mshop.metro-cc.ru/ordercapture/article/articles?country=RU&locale=ru-RU&'
-                f'customerId={profile['customerId']}&storeId={profile["storeId"]}&addressId={profile["fsdAddressId"]}&bundleIds={object["bundleId"]}&__t={profile['t_time']}')
+                f'customerId={profile["customerId"]}&storeId={profile["storeId"]}&addressId={profile["fsdAddressId"]}&bundleIds={object["bundleId"]}&__t={profile["t_time"]}')
 
         print(result.json())
         print(result2.json())
@@ -397,8 +397,8 @@ def remove_cart(item):
     s = auth_check()
     if s:
 
-        url = (f'https://mshop.metro-cc.ru/ordercapture/customercart/carts/{profile['cartId']}/items/'
-               f'{item["bundleId"]}?customerId={profile['customerId']}&cardholderNumber=1&storeId={profile["storeId"]}&country=RU&locale=ru-RU&'
+        url = (f'https://mshop.metro-cc.ru/ordercapture/customercart/carts/{profile["cartId"]}/items/'
+               f'{item["bundleId"]}?customerId={profile["customerId"]}&cardholderNumber=1&storeId={profile["storeId"]}&country=RU&locale=ru-RU&'
                f'fsdAddressId={profile["fsdAddressId"]}&requestId={profile["requestId"]}')
 
         data = {
