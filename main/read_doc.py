@@ -2,14 +2,19 @@ from openpyxl import load_workbook as open_xlsx
 
 from xlrd import open_workbook as open_xls
 
+shops = {'Матушка.xlsx': {'sid': (0, 12), 'seller': 'Матушка', 'findname': (0, 0), 'findtext': 'Прайс-лист на '},
+         'Алма.xls': {'sid': (0, 2, 1), 'seller': 'Алма', 'findname': (3, 0), 'findtext': 'Алма'}
+         }
+temp = {'Интерфиш.xls':{'sid': (0, 2, 1), 'seller': 'Интерфиш', 'findname': (0, 0)}}
 h = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
      "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE",
      "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP", "AQ", "AR",
      "AS", "AT", "AU", "AV", "AW", "AX", "AY", "AZ"]
 
 def read(filename):  # Чтение таблицы
+    print(filename)
     format = filename.split('.')[1]
-    try:
+    if True:
         if format == 'xls':  # Чтение xls
             workbook = open_xls('doc/' + str(filename))
             worksheet = workbook.sheet_by_index(0)
@@ -19,12 +24,12 @@ def read(filename):  # Чтение таблицы
             response = xlsx(worksheet)
         else:
             response = False  # Формат файла неверный
-
             error_text = 'Формат файла неверный'
             print(error_text)
+    try:
+        pass
     except Exception as e:
         response = False
-
         error_text = 'Сработало исключение:\n' + str(e)
         print(error_text)
     return response
@@ -32,19 +37,15 @@ def read(filename):  # Чтение таблицы
 
 def xls(worksheet):
     items = []
-    if 'матушка' in worksheet.cell_value(0, 0).lower():
-        sid = [0, 12]
-        seller = 'Матушка'
-    elif 'алма' in worksheet.cell_value(3, 0).lower():
-        sid = [0, 2, 1]
-        seller = 'Алма'
-    elif 'рафт' in worksheet.cell_value(0, 3).lower():
-        sid = [3, 8]
-        seller = 'Рафт'
-    else:
-        sid = False
-        seller = False
+    sid = False
+    seller = False
+    for i in shops:
+        if shops[i]['findtext'].lower() in str(worksheet.cell_value(shops[i]['findname'][0], shops[i]['findname'][1])).lower():
+            sid = shops[i]['sid']
+            seller = shops[i]['seller']
+            break
 
+    print(sid)
     if sid:
         for i in range(0, 200):  # Чтение строк
             item = {}
@@ -70,19 +71,13 @@ def xls(worksheet):
 
 def xlsx(worksheet):
     items = []
-    if 'прайс-лист на' in str(worksheet.active['A'][0].value).lower():
-        sid = [h[0], h[12]]
-        seller = 'Матушка'
-    elif 'алма' in str(worksheet.active['A'][2].value).lower():
-        sid = [h[0], h[1]]
-        seller = 'Алма'
-    elif 'рафт' in str(worksheet.active['A'][2].value).lower():
-        sid = [h[0], h[1]]
-        seller = 'Рафт'
-    else:
-        sid = False
-        seller = False
-
+    sid = False
+    seller = False
+    for i in shops:
+        if shops[i]['findtext'].lower() in str(worksheet.active[h[shops[i]['findname'][0]]][shops[i]['findname'][1]].value).lower():
+            sid = (h[shops[i]['sid'][0]], h[shops[i]['sid'][1]])
+            seller = shops[i]['seller']
+            break
     if sid:
         for i in range(0, 1000):  # Чтение строк
             item = {}
@@ -101,7 +96,6 @@ def xlsx(worksheet):
                 error_text = 'Пустая строка!'
                 print(error_text)
                 print(e)
-
     else:
         items = False
         error_text = 'Не найдено имя поставщика в таблице!'
@@ -113,7 +107,7 @@ def scanner(name):
     name = str(name)
     items = []
     result = []
-    for filename in ('Матушка.xlsx', 'Алма.xls'):
+    for filename in shops:
         table = read(filename)
         if table:
             for i in table:
@@ -135,3 +129,4 @@ def scanner(name):
     return result
 
 
+scanner('')

@@ -1,14 +1,9 @@
 import asyncio
+import json
 
 from kivymd.uix.snackbar import MDSnackbar
 
 
-def str_to_dict1(str_):
-    str_ = str(str_)
-    new = ''.join((''.join(''.join(str_.split('{')).split('}')).split("'")))
-    new = [new.split(', ')[0].split(': '), new.split(', ')[1].split(': '), new.split(', ')[2].split(': ')]
-    new = {new[0][0]: new[0][1], new[1][0]: new[1][1], new[2][0]: new[2][1]}
-    return new
 
 def str_to_dict(text):
     text = str(text)
@@ -20,7 +15,17 @@ def str_to_dict(text):
         if len(data) == 2:
             end[data[0]] = data[1]
     return end
-
+def str_to_list(text):
+    text = str(text)
+    list_ = []
+    new = ''.join((''.join(''.join(text.split('[')).split(']')).split("'")))
+    new = new.split(', ')
+    end = {}
+    for i in new:
+        data = i.split(', ')
+        if len(data) == 2:
+            end[data[0]] = data[1]
+    return end
 
 def finder(text, items):
     text = text.split(' ')
@@ -80,10 +85,14 @@ async def background_load(self, parse_metro):
         parse_metro.auth_check()
         print('Авторизация MSHOP закончилась!')
 
+        self.activate_enter_finder(self)
+        print('Активация энтером включена!')
+
         print('Кэширование базы началось!')
         from read_doc import scanner
         self.base_price = scanner('')
         print('Кэширование базы закончилось!')
+
 
     await loop.run_in_executor(executor, start)
 
@@ -108,3 +117,24 @@ async def remove_from_cart(item, parse_metro):
         parse_metro.remove_cart(item)
 
     await loop.run_in_executor(executor, start)
+
+
+def get_cart():
+    with open('cookies_mshop.json', 'r') as f:
+        cart = json.load(f)
+        return cart['cart']
+
+def add_cart(item):
+    cart = get_cart()
+    cart.append(item)
+    with open('cookies_mshop.json', 'w') as f:
+        json.dump(cart, f)
+        return True
+
+def remove_cart(item):
+    cart = get_cart()
+    cart.remove(item)
+
+    with open('cookies_mshop.json', 'w') as f:
+        json.dump(cart, f)
+        return True
