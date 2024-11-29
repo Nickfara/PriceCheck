@@ -4,6 +4,12 @@ import json
 from kivymd.uix.snackbar import MDSnackbar
 
 
+def str_to_dict1(str_):
+    str_ = str(str_)
+    new = ''.join((''.join(''.join(str_.split('{')).split('}')).split("'")))
+    new = [new.split(', ')[0].split(': '), new.split(', ')[1].split(': '), new.split(', ')[2].split(': ')]
+    new = {new[0][0]: new[0][1], new[1][0]: new[1][1], new[2][0]: new[2][1]}
+    return new
 
 def str_to_dict(text):
     text = str(text)
@@ -82,10 +88,16 @@ async def background_load(self, parse_metro):
 
     def start():
         print('Авторизация MSHOP началась!')
-        parse_metro.auth_check()
+        #parse_metro.auth_check()
         print('Авторизация MSHOP закончилась!')
 
-        self.activate_enter_finder(self)
+        try:
+            with open('cache.json', 'w') as f:
+                json.dump({'cart': []}, f)
+        except:
+            with open('cache.json', 'w') as f:
+                json.dump({'cart': []}, f)
+        #self.activate_enter_finder(self)
         print('Активация энтером включена!')
 
         print('Кэширование базы началось!')
@@ -120,21 +132,23 @@ async def remove_from_cart(item, parse_metro):
 
 
 def get_cart():
-    with open('cookies_mshop.json', 'r') as f:
+    with open('cache.json') as f:
         cart = json.load(f)
         return cart['cart']
 
 def add_cart(item):
     cart = get_cart()
     cart.append(item)
-    with open('cookies_mshop.json', 'w') as f:
+    cart = {'cart': cart}
+    print(cart)
+    with open('cache.json', 'w') as f:
         json.dump(cart, f)
         return True
 
 def remove_cart(item):
     cart = get_cart()
     cart.remove(item)
-
-    with open('cookies_mshop.json', 'w') as f:
+    cart = {'cart': cart}
+    with open('cache.json', 'w') as f:
         json.dump(cart, f)
         return True

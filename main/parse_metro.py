@@ -29,7 +29,7 @@ profile = {
 }
 
 try:
-    with open('cookies_mshop.json', 'r') as f:
+    with open('cookies_mshop.json') as f:
         cookies = json.load(f)
 except:
     cookies = {}
@@ -198,12 +198,12 @@ def auth():
     browser.get(url)
     #browser.execute_script("document.body.style.zoom='15%'")
 
-    browser.find_element(By.ID, 'user_id').send_keys("bokova_shura@mail.ru")  # Ввод логина
-    browser.find_element(By.ID, 'password').send_keys("Dlink1980!!!")  # Ввод пароля
+    browser.find_element('user_id').send_keys("bokova_shura@mail.ru")  # Ввод логина
+    browser.find_element('password').send_keys("Dlink1980!!!")  # Ввод пароля
 
     while True:
         try:
-            browser.find_element(By.ID, 'submit').click()  # Нажатие кнопки "Войти
+            browser.find_element('submit').click()  # Нажатие кнопки "Войти
             break
         except:
             time.sleep(1)
@@ -235,7 +235,7 @@ def auth_check():
         data = {}
 
         try:
-            with open('cookies_mshop.json', 'r') as f:
+            with open('cookies_mshop.json') as f:
                 cookies = json.load(f)
         except:
             cookies = {}

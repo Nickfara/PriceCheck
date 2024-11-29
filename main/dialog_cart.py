@@ -12,29 +12,31 @@ import commands
 import parse_metro
 
 
-cart = []
 
-def dialog_cart_open(self, cart_temp):  # Открытие корзины
-    cart = cart_temp
+def dialog_cart_open(self):  # Открытие корзины
     if self.dialog:  # Закрыть диалоговое окно, если оно открыто
         self.dialog.dismiss()
 
-    dialog_main_layout = BoxLayout(spacing="12dp", size_hint_y=None, height="400dp", orientation='vertical',
-                                   md_bg_color=self.color_bg)
+
 
     def content():
-        scroll_layout_dialog = BoxLayout(orientation='vertical', spacing=0, padding=(0, 10, 0, 0),
+        dialog_main_layout = BoxLayout(spacing="12dp", size_hint_y=None, height="400dp", orientation='vertical',
+                                       md_bg_color=self.color_bg)
+        scroll_global = ScrollView(do_scroll_x=False, size_hint=(1, 1))
+        scroll_global_layout = BoxLayout(orientation='vertical', spacing=0, padding=(0, 10, 0, 0),
                                          adaptive_height=True)
-        scroll_layout_dialog.size_hint_y = None
-        scroll_layout_dialog.bind(minimum_height=self.layout_scroll.setter('height'))
-        scroll = ScrollView(do_scroll_x=False, size_hint=(1, 1))
-
         for shop in ['Матушка', 'Алма', 'METRO']:
+            scroll_layout_dialog = BoxLayout(orientation='vertical', spacing=0, padding=(0, 10, 0, 0),
+                                             adaptive_height=True)
+            scroll_layout_dialog.size_hint_y = None
+            scroll_layout_dialog.bind(minimum_height=self.layout_scroll.setter('height'))
+            scroll = ScrollView(do_scroll_x=False, size_hint=(1, 1))
             items_list = []
 
-            for item in cart:  # Наполнение корзины товарами из массива
+            cart_get = commands.get_cart()
+            for item in cart_get:  # Наполнение корзины товарами из массива
                 if shop.lower() == item['seller'].lower():
-                    if item in cart:
+                    if item in cart_get:
                         if item['seller'] == 'METRO':
                             cart_plus = IconButton(text=' ', icon='cart-remove', id=str(item) + 'cart',
                                                    on_release=self.remove_to_cart_metro,
@@ -64,12 +66,14 @@ def dialog_cart_open(self, cart_temp):  # Открытие корзины
                 print(len(items_list))
                 shop_layout = BoxLayout(orientation='vertical', size_hint_y=None, height='40dp')
                 shop_layout.add_widget(MDLabel(text=str(shop) + ':'))
-                dialog_main_layout.add_widget(shop_layout)
+                scroll_global_layout.add_widget(shop_layout)
                 for i in items_list:
                     scroll_layout_dialog.add_widget(i)
-        scroll.add_widget(scroll_layout_dialog)
 
-        dialog_main_layout.add_widget(scroll)
+                scroll.add_widget(л)
+                scroll_global_layout.add_widget(scroll)
+        scroll_global.add_widget(scroll_global_layout)
+        dialog_main_layout.add_widget(scroll_global)
         return dialog_main_layout
 
     copy_cart = IconButton(icon='page-next', on_release=self.dialog_editCart_open, icon_color='green',
@@ -112,7 +116,7 @@ def dialog_editCart_open(self):  # Открытие корзины
         for shop in ['Матушка', 'Алма', 'METRO']:
             text_cart = ''
             number = 1
-            for item in cart:  # Наполнение корзины товарами из массива
+            for item in commands.get_cart():  # Наполнение корзины товарами из массива
                 if shop.lower() == item['seller'].lower():
                     text_cart += str(number) + '. ' + str(item['name'] + ' - \n')
                     number += 1
@@ -126,9 +130,9 @@ def dialog_editCart_open(self):  # Открытие корзины
                 items_cart.text = text_cart
                 scroll_layout_dialog.add_widget(items_cart)
 
-        scroll.add_widget(scroll_layout_dialog)
+                scroll.add_widget(scroll_layout_dialog)
 
-        dialog_main_layout.add_widget(scroll)
+                dialog_main_layout.add_widget(scroll)
         return dialog_main_layout
 
     copy_cart_dismiss = IconButton(icon='backburger', on_release=dialog_cart_open,
@@ -144,10 +148,6 @@ def dialog_editCart_open(self):  # Открытие корзины
 
     self.dialog.open()
 
-def on_focus_change(self, instance, text):
-    shop = str(instance.id)
-    self.send_text[shop] = str(text)
-    print(self.send_text)
 
 
 
@@ -165,7 +165,7 @@ def cart_list(self, instance):  # Нажатие на кнопку корзин�
             break
 
     if btn != None:
-        if item in cart:
+        if item in commands.get_cart():
             if item['seller'] == 'METRO':
                 self.remove_to_cart_metro(btn)
             else:

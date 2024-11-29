@@ -10,7 +10,7 @@ import time
 
 cookies = {}
 try:
-    with open('cookies_kuper.json', 'r') as f:
+    with open('cookies_kuper.json') as f:
         cookies = json.load(f)
 except:
     cookies = {}
@@ -43,7 +43,7 @@ def auth_check():
         s = requests.Session()  # Создание сессии
 
         try:
-            with open('cookies_mshop.json', 'r') as f:
+            with open('cookies_mshop.json') as f:
                 cookies = json.load(f)
         except:
             cookies = {}

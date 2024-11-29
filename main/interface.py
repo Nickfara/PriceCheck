@@ -27,6 +27,7 @@ cart = []
 class MC(MDApp):
     def __init__(self, **kwargs):
         super().__init__()
+        self.layout_scroll = None
         self.color_bg = '#f0faff'
         self.color_button = '#002538'
         self.color_top = '#c9e5ff'
@@ -133,8 +134,9 @@ class MC(MDApp):
         item = instance.id
         item = commands.str_to_dict(item)  # Конвертация строки в словарь
 
-        if item not in cart:  # Если обьекта нет в корзине
-            cart.append(dict(item))  # То обьект добавляется в корзину
+        if item not in commands.get_cart():  # Если обьекта нет в корзине
+            commands.add_cart(dict(item))  # Отправка в корзину на сервер
+
 
     def remove_to_cart(self, instance):
         instance.icon = 'cart-plus'
@@ -142,10 +144,11 @@ class MC(MDApp):
         instance.unbind(on_release=self.remove_to_cart)
         instance.bind(on_release=self.add_to_cart)
         item = instance.id
-        item = commands.str_to_dict1(''.join(item.strip('cart')))  # Конвертация строки в словарь
+        item = commands.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
-        if item in cart:  # Если обьект есть в корзине
-            cart.remove(dict(item))  # То обьект удаляется из корзины
+        if item in commands.get_cart():  # Если обьект есть в корзине
+            commands.remove_cart(dict(item))  # То обьект удаляется из корзины
+
         if self.dialog:  # Закрыть диалоговое окно, если оно открыто
             self.dialog.dismiss()
             self.dialog_cart_open(self)
@@ -156,11 +159,13 @@ class MC(MDApp):
         instance.unbind(on_release=self.add_to_cart_metro)
         instance.bind(on_release=self.remove_to_cart_metro)
         item = instance.id
-        item = commands.str_to_dict(item)  # Конвертация строки в словарь
+        print(item)
+        item = commands.str_to_dict1(item)  # Конвертация строки в словарь
+        print(item)
 
-        if item not in cart:  # Если обьекта нет в корзине
+        if item not in commands.get_cart():  # Если обьекта нет в корзине
             asyncio.ensure_future(commands.send_to_cart(item, parse_metro))  # Отправка в корзину на сервер
-            cart.append(dict(item))  # То обьект добавляется в корзину
+            commands.add_cart(dict(item))  # То обьект добавляется в корзину
 
     def remove_to_cart_metro(self, instance):
         instance.icon = 'cart-plus'
@@ -170,9 +175,9 @@ class MC(MDApp):
         item = instance.id
         item = commands.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
-        if item in cart:  # Если обьект есть в корзине
+        if item in commands.get_cart():  # Если обьект есть в корзине
             asyncio.ensure_future(commands.remove_from_cart(item, parse_metro))  # Удаление из корзины на сервере
-            cart.remove(dict(item))  # То обьект удаляется из корзины
+            commands.remove_cart(dict(item))  # То обьект удаляется из корзины
 
         if self.dialog:  # Закрыть диалоговое окно, если оно открыто
             self.dialog.dismiss()
@@ -181,10 +186,10 @@ class MC(MDApp):
     def cart_list(self,instance):
         dialog_cart.cart_list(self,instance)
     def dialog_cart_open(self, instance):  # Открытие корзины
-        dialog_cart.dialog_cart_open(self, cart)
+        dialog_cart.dialog_cart_open(self)
 
     def dialog_editCart_open(self, instance):
-        dialog_cart.dialog_editCart_open(self, cart)
+        dialog_cart.dialog_editCart_open(self)
     def dialog_settings(self, instance):
         dialog_settings.dialog_settings_open(self)
 
@@ -198,6 +203,11 @@ class MC(MDApp):
 
     def activate_enter_finder(self, instance):
         self.root_window.bind(on_key_down=self.func_dialog_save_enter)
+
+    def on_focus_change(self, instance, text):
+        shop = str(instance.id)
+        self.send_text[shop] = str(text)
+        print(self.send_text)
 
     def notify(self, text):
         MDSnackbar(
@@ -232,6 +242,6 @@ def run_async():
     # Запускаем цикл событий asyncio
     loop.run_forever()
 
-
 if __name__ == "__main__":
     run_async()
+

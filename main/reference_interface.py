@@ -49,7 +49,7 @@ async def async_autoclick(a, b, c, d, e, f):
 
 def base_get():
     logging.info('ИНТЕРФЕЙС: base_get')
-    with open('Wildberries_database.txt', 'r') as f:
+    with open('Wildberries_database.txt') as f:
         data = f.read()
         if data.find('|') != -1:
             data = data.split('|')
@@ -71,6 +71,7 @@ class BotiIko(MDApp):
     def __init__(self):  # Переменные класса
         super().__init__()
         # Оформление
+        self.btn_doc_read = None
         self.teafiles = []
         self.onlyfiles = [] # Файлы документов
         self.color_acent_1 = '#fefefe'
@@ -738,7 +739,7 @@ class BotiIko(MDApp):
             self.verify = MDLabel(halign="center", size_hint_x=None,
                                   theme_text_color='Custom', text_color=self.color_acent_1)
             # Наполнение верхнего меню
-            with open('Wildberries_database.txt', 'r'):
+            with open('Wildberries_database.txt'):
                 if base_get() is None:
                     self.verify.text = 'Введите данные в форму ниже!'
                 else:

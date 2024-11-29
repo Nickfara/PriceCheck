@@ -4,7 +4,7 @@ import db_connect as db
 log = True
 
 try:
-    with open('Database_iIko_items.db', 'r') as f:
+    with open('Database_iIko_items.db') as f:
         pass
 except:
     db.create_base()
