@@ -1,6 +1,7 @@
 import sqlite3
 log = False
 
+# !/usr/bin/env python # -* - coding: utf-8-* -
 # Соединение с row
 def get_db_connection():
     conn = sqlite3.connect('database.db')

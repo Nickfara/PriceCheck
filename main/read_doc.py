@@ -1,10 +1,15 @@
+import json
+
 from openpyxl import load_workbook as open_xlsx
 
 from xlrd import open_workbook as open_xls
 
-shops = {'Матушка.xlsx': {'sid': (0, 12), 'seller': 'Матушка', 'findname': (0, 0), 'findtext': 'Прайс-лист на '},
-         'Алма.xls': {'sid': (0, 2, 1), 'seller': 'Алма', 'findname': (3, 0), 'findtext': 'Алма'}
-         }
+# !/usr/bin/env python # -* - coding: utf-8-* -
+
+with open('config.json') as f:
+    shops = json.load(f)['shops']
+
+
 temp = {'Интерфиш.xls':{'sid': (0, 2, 1), 'seller': 'Интерфиш', 'findname': (0, 0)}}
 h = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
      "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE",
@@ -40,9 +45,9 @@ def xls(worksheet):
     sid = False
     seller = False
     for i in shops:
-        if shops[i]['findtext'].lower() in str(worksheet.cell_value(shops[i]['findname'][0], shops[i]['findname'][1])).lower():
-            sid = shops[i]['sid']
-            seller = shops[i]['seller']
+        if i['findtext'].lower() in str(worksheet.cell_value(i['findname'][0], i['findname'][1])).lower():
+            sid = i['sid']
+            seller = i['seller']
             break
 
     print(sid)
@@ -74,9 +79,9 @@ def xlsx(worksheet):
     sid = False
     seller = False
     for i in shops:
-        if shops[i]['findtext'].lower() in str(worksheet.active[h[shops[i]['findname'][0]]][shops[i]['findname'][1]].value).lower():
-            sid = (h[shops[i]['sid'][0]], h[shops[i]['sid'][1]])
-            seller = shops[i]['seller']
+        if i['findtext'].lower() in str(worksheet.active[h[i['findname'][0]]][i['findname'][1]].value).lower():
+            sid = (h[i['sid'][0]], h[i['sid'][1]])
+            seller = i['seller']
             break
     if sid:
         for i in range(0, 1000):  # Чтение строк
@@ -107,8 +112,8 @@ def scanner(name):
     name = str(name)
     items = []
     result = []
-    for filename in shops:
-        table = read(filename)
+    for file in shops:
+        table = read(file['filename'])
         if table:
             for i in table:
                 items.append(i)

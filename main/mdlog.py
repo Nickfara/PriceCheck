@@ -1,5 +1,6 @@
 import inspect
 
+# !/usr/bin/env python # -* - coding: utf-8-* -
 
 def log(text):
     try:

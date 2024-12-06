@@ -18,10 +18,11 @@ import commands
 #import mdlog as print
 import parse_metro
 import telegram
-import dialog_settings
-import dialog_cart
+from dialog_cart import dialog_cart
+from dialog_settings import dialog_settings
 
 cart = []
+# !/usr/bin/env python # -* - coding: utf-8-* -
 
 
 class MC(MDApp):
@@ -44,7 +45,7 @@ class MC(MDApp):
         self.btn_send_files = IconButton(icon='download', icon_color=self.color_button,
                                      line_color=self.color_button, text_color=self.color_button,
                                      on_release=self.start_send_files)
-        self.btn_settings = IconButton(icon='settings', icon_color=self.color_button,
+        self.btn_settings = IconButton(icon='cog', icon_color=self.color_button,
                                      line_color=self.color_button, text_color=self.color_button,
                                      on_release=self.dialog_settings)
         self.checkbox_parser_metro = MDCheckbox(size_hint_x=.1)
@@ -190,8 +191,18 @@ class MC(MDApp):
 
     def dialog_editCart_open(self, instance):
         dialog_cart.dialog_editCart_open(self)
+
     def dialog_settings(self, instance):
         dialog_settings.dialog_settings_open(self)
+
+    def add_shop(self,instance):
+        dialog_settings.add_shop(self)
+
+    def save_settings(self,instance):
+        dialog_settings.save_settings(self)
+
+    def exit_settings(self, instance):
+        dialog_settings.exit_settings(self)
 
     def start_send_files(self, instance):
         dialog_cart.start_send_files(self, instance)

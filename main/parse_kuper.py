@@ -8,6 +8,8 @@ import requests
 import json
 import time
 
+# !/usr/bin/env python # -* - coding: utf-8-* -
+
 cookies = {}
 try:
     with open('cookies_kuper.json') as f:
@@ -35,7 +37,7 @@ def auth():
     cookies = browser.get_cookies()
 
     with open('cookies_kuper.json', 'w') as f:
-        json.dump(cookies, str(f))
+        json.dump(cookies, f)
         return True
 
 def auth_check():
@@ -126,6 +128,3 @@ def test():
         'latitude': '45.0001',
         'longitude': '36.0001'
     }
-
-
-def

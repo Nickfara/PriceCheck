@@ -2,6 +2,7 @@ import json
 import mdlog
 import db_connect as db
 log = True
+# !/usr/bin/env python # -* - coding: utf-8-* -
 
 try:
     with open('Database_iIko_items.db') as f:

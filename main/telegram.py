@@ -5,7 +5,7 @@ from telebot import types
 
 bot = telebot.TeleBot(token)
 cache = {'check_file': ''}
-# utf-8
+# !/usr/bin/env python # -* - coding: utf-8-* -
 def create_call(message):
     class call(object):
         def __init__(self):

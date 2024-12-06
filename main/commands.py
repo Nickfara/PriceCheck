@@ -3,6 +3,7 @@ import json
 
 from kivymd.uix.snackbar import MDSnackbar
 
+# !/usr/bin/env python # -* - coding: utf-8-* -
 
 def str_to_dict1(str_):
     str_ = str(str_)
