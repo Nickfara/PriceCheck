@@ -98,7 +98,7 @@ class dialog_cart():
         if self.dialog:  # Закрыть диалоговое окно, если оно открыто
             self.dialog.dismiss()
 
-        def send_cart(self, instance):
+        def send_cart(instance):
             print(self.send_text)
 
             for shop in self.send_text:
@@ -162,6 +162,8 @@ class dialog_cart():
 
     def start_send_files(self, instance):
         asyncio.ensure_future(commands.start_telegram(self, telegram))
+        if self.dialog:
+            self.dialog.dismiss()
 
     def cart_list(self, instance):  # Нажатие на кнопку корзины
         item = commands.str_to_dict(instance.id)

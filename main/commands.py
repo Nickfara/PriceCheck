@@ -12,6 +12,7 @@ def str_to_dict1(str_):
     new = {new[0][0]: new[0][1], new[1][0]: new[1][1], new[2][0]: new[2][1]}
     return new
 
+
 def str_to_dict(text):
     text = str(text)
     new = ''.join((''.join(''.join(text.split('{')).split('}')).split("'")))
@@ -22,6 +23,8 @@ def str_to_dict(text):
         if len(data) == 2:
             end[data[0]] = data[1]
     return end
+
+
 def str_to_list(text):
     text = str(text)
     list_ = []
@@ -33,6 +36,7 @@ def str_to_list(text):
         if len(data) == 2:
             end[data[0]] = data[1]
     return end
+
 
 def finder(text, items):
     text = text.split(' ')
@@ -58,29 +62,31 @@ def finder(text, items):
 
 active_bot = [False]
 
+
 async def start_telegram(self, telegram):
     loop = asyncio.get_event_loop()
     from concurrent.futures import ThreadPoolExecutor
     executor = ThreadPoolExecutor()
     def start():
         if active_bot[0] == False:
-            self.send_files.text = 'Остановить бота'
-            self.send_files.icon = 'stop_circle_outline'
+            self.btn_send_files.text = 'Остановить бота'
+            self.btn_send_files.icon = 'stop_circle_outline'
             active_bot[0] = True
             print('Телеграм бот запущен!')
             telegram.start()
             print('Телеграм бот закончил свою работу!')
-            self.send_files.text = 'Запустить бота'
-            self.send_files.icon = 'download'
+            self.btn_send_files.text = 'Запустить бота'
+            self.btn_send_files.icon = 'download'
             active_bot[0] = False
         else:
             telegram.exit('Выход')
-            self.send_files.text = 'Запустить бота'
-            self.send_files.icon = 'download'
+            self.btn_send_files.text = 'Запустить бота'
+            self.btn_send_files.icon = 'download'
 
             active_bot[0] = False
 
     await loop.run_in_executor(executor, start)
+
 
 async def background_load(self, parse_metro):
     loop = asyncio.get_event_loop()
@@ -98,7 +104,7 @@ async def background_load(self, parse_metro):
         except:
             with open('cache.json', 'w') as f:
                 json.dump({'cart': []}, f)
-        #self.activate_enter_finder(self)
+        self.activate_enter_finder(self)
         print('Активация энтером включена!')
 
         print('Кэширование базы началось!')
@@ -120,6 +126,7 @@ async def send_to_cart(item, parse_metro):
 
     await loop.run_in_executor(executor, start)
 
+
 async def remove_from_cart(item, parse_metro):
     loop = asyncio.get_event_loop()
     from concurrent.futures import ThreadPoolExecutor
@@ -137,6 +144,7 @@ def get_cart():
         cart = json.load(f)
         return cart['cart']
 
+
 def add_cart(item):
     cart = get_cart()
     cart.append(item)
@@ -146,6 +154,7 @@ def add_cart(item):
         json.dump(cart, f)
         return True
 
+
 def remove_cart(item):
     cart = get_cart()
     cart.remove(item)
@@ -153,3 +162,53 @@ def remove_cart(item):
     with open('cache.json', 'w') as f:
         json.dump(cart, f)
         return True
+
+
+def chablone(name, back_list, new):
+    name_ = None
+    if type(back_list) not in (list, tuple):
+        return None
+
+    for i in back_list:
+        if i in name.lower():
+            name_ =  new.join(name.lower().split(i))
+            break
+    return name_
+
+
+def filter_names(name):
+    base = {
+        'куриное': ('цб', 'цыпленка-бройлеров', 'цыпленка бройлера', 'кур.грудки', 'цыпленка'),
+        'филе грудки': ('филе  грудки')
+    }
+
+    all_check = {}
+    find_type = None
+    name_ = name
+
+    for i in base:
+        for i2 in base[i]:
+            all_check[i2] = i # Наполнение всех вариантов замен
+
+    for i in all_check:
+        if i in name:
+            find_type = all_check[i]
+            break
+
+    if find_type:
+        back_list = base[find_type]
+        new = find_type
+        if type(back_list) not in (list, tuple):
+            return None
+
+        for i in back_list:
+            if i in name.lower():
+                name_ = new.join(name.lower().split(i))
+                break
+
+    return name_
+
+
+res = filter_names('Филе цыпленка-бройлеров БК 123')
+print(res)
+

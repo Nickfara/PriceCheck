@@ -1,6 +1,7 @@
 import asyncio
 
 from kivy.metrics import dp
+from kivy.core.window import Window
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout as BoxLayout
 from kivymd.uix.button import MDIconButton as IconButton
@@ -13,6 +14,7 @@ from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarSupportingText, MDSnackbarButtonContainer, MDSnackbarActionButton, \
     MDSnackbarActionButtonText, MDSnackbarCloseButton
 from kivymd.uix.textfield import MDTextField, MDTextFieldLeadingIcon
+
 
 import commands
 #import mdlog as print
@@ -103,12 +105,18 @@ class MC(MDApp):
 
         for item in finder_items:  # Добавление товаров в список на главный экран
             text = item['name'] + '.'
+
+            if item['type'] != '':
+                cost = 'Цена: ' + item['cost'] + '₽' + ' за ' + item['type']
+            else:
+                cost = 'Цена: ' + item['cost'] + '₽'
+
             item_layout = MDListItem(MDListItemSupportingText(text=item['seller']), MDListItemHeadlineText(text=text),
-                                     MDListItemTertiaryText(text='Цена: ' + item['cost']),
+                                     MDListItemTertiaryText(text=cost),
                                      orientation='horizontal', size_hint_y=None, height='40dp',
                                      on_release=self.cart_list, id=str(item))
+            print(item)
 
-            cost = MDLabel(text='Цена: ' + item['cost'] + '₽', size_hint_x=None, width='110dp')
             if item in commands.get_cart():
                 if item['seller'] == 'METRO':
                     cart_plus = IconButton(icon='cart-remove', id=str(item), on_release=self.remove_to_cart_metro,
@@ -137,7 +145,6 @@ class MC(MDApp):
 
         if item not in commands.get_cart():  # Если обьекта нет в корзине
             commands.add_cart(dict(item))  # Отправка в корзину на сервер
-
 
     def remove_to_cart(self, instance):
         instance.icon = 'cart-plus'
@@ -186,6 +193,7 @@ class MC(MDApp):
 
     def cart_list(self,instance):
         dialog_cart.cart_list(self,instance)
+
     def dialog_cart_open(self, instance):  # Открытие корзины
         dialog_cart.dialog_cart_open(self)
 
@@ -213,7 +221,7 @@ class MC(MDApp):
                 self.find(self)
 
     def activate_enter_finder(self, instance):
-        self.root_window.bind(on_key_down=self.func_dialog_save_enter)
+        Window.bind(on_key_down=self.func_dialog_save_enter)
 
     def on_focus_change(self, instance, text):
         shop = str(instance.id)

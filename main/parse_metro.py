@@ -197,9 +197,13 @@ def auth():
 
     browser.get(url)
     #browser.execute_script("document.body.style.zoom='15%'")
-
-    browser.find_element('user_id').send_keys("bokova_shura@mail.ru")  # Ввод логина
-    browser.find_element('password').send_keys("Dlink1980!!!")  # Ввод пароля
+    while True:
+        try:
+            browser.find_element('user_id').send_keys("bokova_shura@mail.ru")  # Ввод логина
+            browser.find_element('password').send_keys("Dlink1980!!!")  # Ввод пароля
+            break
+        except:
+            time.sleep(1)
 
     while True:
         try:
