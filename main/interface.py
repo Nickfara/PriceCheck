@@ -106,12 +106,15 @@ class MC(MDApp):
         for item in finder_items:  # Добавление товаров в список на главный экран
             text = item['name'] + '.'
 
-            if item['type'] != '':
-                cost = 'Цена: ' + item['cost'] + '₽' + ' за ' + item['type']
+            if 'type' in item:
+                if item['type'] != '':
+                    cost = 'Цена: ' + item['cost'] + '₽' + ' за ' + item['type']
+                else:
+                    cost = 'Цена: ' + item['cost'] + '₽'
             else:
                 cost = 'Цена: ' + item['cost'] + '₽'
 
-            item_layout = MDListItem(MDListItemSupportingText(text=item['seller']), MDListItemHeadlineText(text=text),
+            item_layout = MDListItem(MDListItemSupportingText(text=item['seller']), MDListItemHeadlineText(text=text.capitalize()),
                                      MDListItemTertiaryText(text=cost),
                                      orientation='horizontal', size_hint_y=None, height='40dp',
                                      on_release=self.cart_list, id=str(item))

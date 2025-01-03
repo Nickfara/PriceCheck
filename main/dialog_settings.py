@@ -34,12 +34,12 @@ class dialog_settings():
                 temp = {}
                 print(data["shops"])
                 temp['filename'] = MDTextField(text=str(shop['filename']))
-                temp['sid_w'] = MDTextField(text=str(shop['sid'][0]), size_hint_x=None, width="35dp")
-                temp['sid_h'] = MDTextField(text=str(shop['sid'][1]), size_hint_x=None, width="35dp")
-                temp['sid_t'] = MDTextField(text=str(shop['sid'][2]), size_hint_x=None, width="35dp")
+                temp['sid_w'] = MDTextField(text=str(shop['sid'][0]), size_hint_x=None, width="42dp")
+                temp['sid_h'] = MDTextField(text=str(shop['sid'][1]), size_hint_x=None, width="42dp")
+                temp['sid_t'] = MDTextField(text=str(shop['sid'][2]), size_hint_x=None, width="42dp")
                 temp['seller'] = MDTextField(text=shop['seller'])
-                temp['findname_w'] = MDTextField(text=str(shop['findname'][0]), size_hint_x=None, width="35dp")
-                temp['findname_h'] = MDTextField(text=str(shop['findname'][1]), size_hint_x=None, width="35dp")
+                temp['findname_w'] = MDTextField(text=str(shop['findname'][0]), size_hint_x=None, width="42dp")
+                temp['findname_h'] = MDTextField(text=str(shop['findname'][1]), size_hint_x=None, width="42dp")
                 temp['findtext'] = MDTextField(text=shop['findtext'])
                 temp['active'] = MDCheckbox(active=shop['active'], size_hint_x=None, width="25dp")
                 self.data['shops'].append(temp)
@@ -68,7 +68,7 @@ class dialog_settings():
         btn_save = IconButton(icon='check', on_release=self.save_settings, icon_color='green',
                               line_color='green', text_color='green')
 
-        self.dialog = MDDialog(size_hint_y=None, size_hint_max_y=.9, size_hint_min_y=.1)
+        self.dialog = MDDialog(size_hint_min_x='800dp', size_hint_max_y=.9, size_hint_min_y=.1)
         add_shop = IconButton(icon='plus', on_release=self.add_shop)
         self.dialog.add_widget(MDDialogHeadlineText(text='Настройки'))
         self.dialog.add_widget(MDDialogContentContainer(content()))

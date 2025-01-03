@@ -98,11 +98,16 @@ def xlsx(workbook):
     for i in shops:
         for i2 in sheetnames:
             worksheet = workbook[i2]
-            if i['findtext'].lower() in str(worksheet[h[i['findname'][0]]][i['findname'][1]].value).lower():
-                sid = (h[i['sid'][0]], h[i['sid'][1]])
-                seller = i['seller']
-                type_n = (i['sid'][2])
-                break
+            try:
+                if i['findtext'].lower() in str(worksheet[h[i['findname'][0]]][i['findname'][1]].value).lower():
+                    sid = (h[i['sid'][0]], h[i['sid'][1]])
+                    seller = i['seller']
+                    type_n = (i['sid'][2])
+                    break
+            except Exception as e:
+                print('Ошибка:')
+                print(e)
+                print(i)
     if sid:
         for i2 in sheetnames:
             print('СТРАНИЦА: ' + str(i2))

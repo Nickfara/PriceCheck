@@ -4,7 +4,7 @@ import requests
 
 from mdlog import log as print
 from bs4 import BeautifulSoup as bs
-from selenium.webdriver import Chrome as Firefox
+from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
 from fake_useragent import UserAgent
 ua = UserAgent()
@@ -199,15 +199,22 @@ def auth():
     #browser.execute_script("document.body.style.zoom='15%'")
     while True:
         try:
-            browser.find_element('user_id').send_keys("bokova_shura@mail.ru")  # Ввод логина
-            browser.find_element('password').send_keys("Dlink1980!!!")  # Ввод пароля
+            try:
+                browser.find_element('user_id').send_keys("bokova_shura@mail.ru")  # Ввод логина
+                browser.find_element('password').send_keys("Dlink1980!!!")  # Ввод пароля
+            except:
+                browser.find_element(By.XPATH, '//*[@id="user_id"]').send_keys("bokova_shura@mail.ru")  # Ввод логина
+                browser.find_element(By.XPATH, '//*[@id="password"]').send_keys("Dlink1980!!!")  # Ввод пароля
             break
         except:
             time.sleep(1)
 
     while True:
         try:
-            browser.find_element('submit').click()  # Нажатие кнопки "Войти
+            try:
+                browser.find_element('submit').click()  # Нажатие кнопки "Войти
+            except:
+                browser.find_element(By.XPATH,'//*[@id="submit"]').click()
             break
         except:
             time.sleep(1)
@@ -320,6 +327,7 @@ def search(text):
                     }
 
         url_findID = create_link(data_url_findID) # Генерация ссылки для поиска айди
+        s.headers.update({'Content-Type': 'application/json', 'Priority': 'u=4'})
         ids = s.get(url=url_findID).json()['resultIds'] # Получение айди найденных товаров
         ids_text = '&ids='.join(ids)
         print(ids_text)
@@ -411,7 +419,7 @@ def remove_cart(item):
             'requestId': profile['requestId']  # Непонятный айди запроса,хз что это
         }
 
-        s.headers.update({'Content-Type': 'application/json'})
+        s.headers.update({'Content-Type': 'application/json', 'Priority': 'u=4'})
         result = s.delete(url=url)
         print(result.json())
         if result:
@@ -421,3 +429,6 @@ def remove_cart(item):
     else:
         result = None
     return result
+
+
+search('Молоко')
