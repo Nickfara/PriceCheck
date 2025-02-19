@@ -1,12 +1,18 @@
 import json
 
+from kivy.uix.scrollview import ScrollView
+from kivymd.uix.boxlayout import MDBoxLayout as BoxLayout
 from kivymd.uix.button import MDIconButton as IconButton
 from kivymd.uix.dialog import MDDialog, MDDialogHeadlineText, MDDialogContentContainer, MDDialogButtonContainer
-from kivymd.uix.boxlayout import MDBoxLayout as BoxLayout
 from kivymd.uix.label import MDLabel
-from kivymd.uix.textfield import MDTextField, MDTextFieldLeadingIcon
-from kivy.uix.scrollview import ScrollView
 from kivymd.uix.selectioncontrol import MDCheckbox
+from kivymd.uix.textfield import MDTextField
+
+import commands
+from log import log
+
+
+
 
 # !/usr/bin/env python # -* - coding: utf-8-* -
 class dialog_settings():
@@ -14,7 +20,7 @@ class dialog_settings():
         super().__init__()
         self.dialog_settings_open()
 
-    def dialog_settings_open(self):
+    def dialog_settings_open(self, Settings, SettingShop):
         if self.dialog:  # Закрыть диалоговое окно, если оно открыто
             self.dialog.dismiss()
 
@@ -22,17 +28,16 @@ class dialog_settings():
             dialog_main_layout = BoxLayout(spacing="12dp", size_hint_y=None, height="400dp", orientation='vertical')
             scroll_global = ScrollView(do_scroll_x=False, size_hint=(1, 1))
             self.scroll_global_layout = BoxLayout(orientation='vertical', spacing=20, padding=(0, 10, 0, 0),
-                                             adaptive_height=True)
+                                                  adaptive_height=True)
 
             self.data = {}
             self.data['shops'] = []
 
-            with open('config.json') as f:
+            with open('data/config.json') as f:
                 data = json.load(f)
 
             for shop in data["shops"]:
                 temp = {}
-                print(data["shops"])
                 temp['filename'] = MDTextField(text=str(shop['filename']))
                 temp['sid_w'] = MDTextField(text=str(shop['sid'][0]), size_hint_x=None, width="42dp")
                 temp['sid_h'] = MDTextField(text=str(shop['sid'][1]), size_hint_x=None, width="42dp")
@@ -45,9 +50,8 @@ class dialog_settings():
                 self.data['shops'].append(temp)
 
             for shop in self.data['shops']:
-                layout_items = BoxLayout(orientation='horizontal', size_hint_y=None, height='40dp', spacing=2, md_bg_color='white')
-                print('ПРОВЕРКА')
-                print(shop)
+                layout_items = BoxLayout(orientation='horizontal', size_hint_y=None, height='40dp', spacing=2,
+                                         md_bg_color='white')
                 for obj in shop:
                     layout_items.add_widget(shop[obj])
                 self.scroll_global_layout.add_widget(layout_items)
@@ -56,11 +60,14 @@ class dialog_settings():
             for i in ('Имя файла', 'Название', 'Цена', 'Тип', 'Поставщик', 'Горизонталь', 'Вертикаль', 'Поиск'):
                 text_layout.add_widget(MDLabel(text=i))
 
+            Settings.ids.checkbox_parser_metro.active = data['metro_active']
+            metro_layout = BoxLayout(MDLabel(text='METRO: '), self.checkbox_parser_metro, size_hint_y=None,
+                                     height=self.checkbox_parser_metro.height)
+            dialog_main_layout.add_widget(metro_layout)
             scroll_global.add_widget(self.scroll_global_layout)
             dialog_main_layout.add_widget(text_layout)
             dialog_main_layout.add_widget(scroll_global)
             return dialog_main_layout
-
 
         btn_dismiss = IconButton(icon='close', on_release=self.exit_settings,
                                  icon_color='red',
@@ -72,12 +79,12 @@ class dialog_settings():
         add_shop = IconButton(icon='plus', on_release=self.add_shop)
         self.dialog.add_widget(MDDialogHeadlineText(text='Настройки'))
         self.dialog.add_widget(MDDialogContentContainer(content()))
+
         self.dialog.add_widget(MDDialogButtonContainer(add_shop, BoxLayout(), btn_dismiss, btn_save))
 
         self.dialog.open()
 
     def add_shop(self):
-
         new_shop = {}
         new_shop['filename'] = MDTextField()
         new_shop['sid_w'] = MDTextField()
@@ -100,18 +107,16 @@ class dialog_settings():
                                      md_bg_color='white')
 
             for obj in shop:
-                print('ПРоверка')
-                print(obj)
-                print(shop)
                 layout_items.add_widget(shop[obj])
 
             self.scroll_global_layout.add_widget(layout_items)
 
     def save_settings(self):
-        with open('config.json') as f:
+        with open('data/config.json') as f:
             data = json.load(f)
-        with open('config.json', 'w') as f:
+        with open('data/config.json', 'w') as f:
             data["shops"] = []
+            data['metro_active'] = self.checkbox_parser_metro.active
             for shop in self.data['shops']:
                 sid_w = shop['sid_w'].text
                 sid_h = shop['sid_h'].text
@@ -124,11 +129,19 @@ class dialog_settings():
 
                 filename = shop['filename'].text
 
-                data["shops"].append({'filename': filename, 'sid': (int(sid_w), int(sid_h), int(sid_t)), 'seller': seller, 'findname': (int(findname_w), int(findname_h)),'findtext': findtext, 'active': active})
-            print(data)
+                data["shops"].append(
+                    {'filename': filename, 'sid': (int(sid_w), int(sid_h), int(sid_t)), 'seller': seller,
+                     'findname': (int(findname_w), int(findname_h)), 'findtext': findtext, 'active': active})
             json.dump(data, f)
-            if self.dialog:
-                self.dialog.dismiss()
+
+        with open('data/cache_prices.json') as f:
+            result = json.load(f)
+            result_filtered = commands.filter_shops(result)
+            self.base_price = result_filtered
+            log('Кэш прайса обновлён!', 1)
+
+        if self.dialog:
+            self.dialog.dismiss()
 
     def exit_settings(self):
         if self.dialog:

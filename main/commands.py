@@ -1,8 +1,8 @@
 import asyncio
 import json
-
-from kivymd.uix.snackbar import MDSnackbar
-
+from log import log
+import telebot_jobBot
+from Tele2 import telebot_t2Market
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
 def str_to_dict1(str_):
@@ -56,91 +56,158 @@ def finder(text, items):
                         finded_items_temp.append(item)
                 finded_items = finded_items_temp
 
-
     return finded_items
 
 
-active_bot = [False]
+active_bot = [False, False, False]
 
 
-async def start_telegram(self, telegram):
+async def async_start(start):
     loop = asyncio.get_event_loop()
     from concurrent.futures import ThreadPoolExecutor
     executor = ThreadPoolExecutor()
+    await loop.run_in_executor(executor, start)
+
+
+async def start_telegram(self):
     def start():
         if active_bot[0] == False:
-            self.btn_send_files.text = 'Остановить бота'
-            self.btn_send_files.icon = 'stop_circle_outline'
+            self.ids.btn_start_jobBot.icon = 'stop-circle-outline'
             active_bot[0] = True
-            print('Телеграм бот запущен!')
-            telegram.start()
-            print('Телеграм бот закончил свою работу!')
-            self.btn_send_files.text = 'Запустить бота'
-            self.btn_send_files.icon = 'download'
+            log('Бот "Работа" запущен!', 1)
+            telebot_jobBot.start()
+
+            self.ids.btn_start_jobBot.icon = 'download'
             active_bot[0] = False
+            log('Бот "Работа" закончил свою работу!', 1)
         else:
-            telegram.exit('Выход')
-            self.btn_send_files.text = 'Запустить бота'
-            self.btn_send_files.icon = 'download'
-
+            telebot_jobBot.exit('Выход')
             active_bot[0] = False
 
-    await loop.run_in_executor(executor, start)
+    await async_start(start)
 
 
-async def background_load(self, parse_metro):
-    loop = asyncio.get_event_loop()
-    from concurrent.futures import ThreadPoolExecutor
-    executor = ThreadPoolExecutor()
-
+async def start_taxiParser(self):
     def start():
-        print('Авторизация MSHOP началась!')
-        #parse_metro.auth_check()
-        print('Авторизация MSHOP закончилась!')
+        import ParserTaxi.taxi_parser as tp
+        if active_bot[1] == False:
+            active_bot[1] = True
+
+            self.ids.btn_start_taxiParser.icon = 'stop-circle-outline'
+            tp.active_bot_taxi[0] = True
+            log('Парсер такси включен!', 1)
+            tp.run()
+
+            self.ids.btn_start_taxiParser.icon = 'car'
+            tp.active_bot_taxi[0] = False
+            active_bot[1] = False
+            log('Парсер такси выключен!', 1)
+        else:
+            tp.active_bot_taxi[0] = False
+            active_bot[1] = False
+            self.btn_start_taxiParser.icon = 'car'
+
+
+
+    await async_start(start)
+
+
+async def start_t2Market(self):
+    def start():
+        if active_bot[2] == False:
+            active_bot[2] = True
+
+            self.ids.btn_start_t2Market.icon = 'stop-circle-outline'
+            log('Т2 Маркет включен', 1)
+            telebot_t2Market.start()
+
+            self.ids.btn_start_t2Market.icon = 'store'
+            active_bot[2] = False
+            log('Т2 Маркет выключен', 1)
+        else:
+            telebot_t2Market.exit('Выход')
+            active_bot[2] = False
+
+
+
+    await async_start(start)
+
+
+def filter_shops(items):
+    shops = []
+    items_filtered = []
+    with open('data/config.json') as f:
+        config = json.load(f)
+        for shop in config['shops']:
+            if shop['active']:
+                shops.append(shop['seller'])
+
+    for item in items:
+        if item['seller'] in shops:
+            items_filtered.append(item)
+    return items_filtered
+
+
+async def background_load(self):
+    def start():
+        with open('data/cache_prices.json') as f:
+            result = json.load(f)
+            result_filtered = filter_shops(result)
+            self.base_price = result_filtered
+            log('Прайс загружен в кэш!', 1)
 
         try:
-            with open('cache.json', 'w') as f:
+            with open('data/cache_cart.json', 'w') as f:
                 json.dump({'cart': []}, f)
         except:
-            with open('cache.json', 'w') as f:
+            with open('data/cache_cart.json', 'w') as f:
                 json.dump({'cart': []}, f)
         self.activate_enter_finder(self)
-        print('Активация энтером включена!')
+        log('Поиск по нажатию "enter" включен!', 1)
 
-        print('Кэширование базы началось!')
+    await async_start(start)
+
+
+async def refresh(self):
+    def start():
         from read_doc import scanner
-        self.base_price = scanner('')
-        print('Кэширование базы закончилось!')
+        scanner('')
+        log('Сканирование прайсов запущено!', 1)
+        with open('data/cache_prices.json') as f:
+            result = json.load(f)
+            result_filtered = filter_shops(result)
+            self.base_price = result_filtered
+            log('Отсканированы файлы и обновлён кэш!', 1)
 
+        with open('data/config.json') as f:
+            data = json.load(f)
+            if data['metro_active']:  # Если метро включено в настройках, запускает авторизацию
+                import parse_metro
+                parse_metro.auth_check()
+                # self.checkbox_parser_metro.active = True
+                log('MShop авторизован!', 1)
 
-    await loop.run_in_executor(executor, start)
+    await async_start(start)
 
 
 async def send_to_cart(item, parse_metro):
-    loop = asyncio.get_event_loop()
-    from concurrent.futures import ThreadPoolExecutor
-    executor = ThreadPoolExecutor()
     def start():
-        print(f'Добавляем товар {item["name"]} в корзину!')
         parse_metro.add_cart(item)
+        log(f'Товар: "{item["name"]}" добавлен в корзину!', 1)
 
-    await loop.run_in_executor(executor, start)
+    await async_start(start)
 
 
 async def remove_from_cart(item, parse_metro):
-    loop = asyncio.get_event_loop()
-    from concurrent.futures import ThreadPoolExecutor
-    executor = ThreadPoolExecutor()
-
     def start():
-        print(f'Удаляем товар {item["name"]} из корзины!')
         parse_metro.remove_cart(item)
+        log(f'Товар: "{item["name"]}" удалён из корзины!', 1)
 
-    await loop.run_in_executor(executor, start)
+    await async_start(start)
 
 
 def get_cart():
-    with open('cache.json') as f:
+    with open('data/cache_cart.json') as f:
         cart = json.load(f)
         return cart['cart']
 
@@ -149,17 +216,26 @@ def add_cart(item):
     cart = get_cart()
     cart.append(item)
     cart = {'cart': cart}
-    print(cart)
-    with open('cache.json', 'w') as f:
+    with open('data/cache_cart.json', 'w') as f:
         json.dump(cart, f)
         return True
+
+
+def send_cart(self):
+    for shop in self.send_text:
+        if len(self.send_text[shop]) > 1:
+            text_cart = (((
+                              'Екатерина' if shop.lower() == 'матушка' else 'Ульяна' if shop.lower() == 'алма' else '') + ', добрый день!\nЗаявка на завтра:') if shop.lower() not in (
+                'metro', 'купер') else 'METRO:') + '\n' + self.send_text[shop]
+
+            telebot_jobBot.send(text_cart)
 
 
 def remove_cart(item):
     cart = get_cart()
     cart.remove(item)
     cart = {'cart': cart}
-    with open('cache.json', 'w') as f:
+    with open('data/cache_cart.json', 'w') as f:
         json.dump(cart, f)
         return True
 
@@ -171,7 +247,7 @@ def chablone(name, back_list, new):
 
     for i in back_list:
         if i in name.lower():
-            name_ =  new.join(name.lower().split(i))
+            name_ = new.join(name.lower().split(i))
             break
     return name_
 
@@ -188,7 +264,7 @@ def filter_names(name):
 
     for i in base:
         for i2 in base[i]:
-            all_check[i2] = i # Наполнение всех вариантов замен
+            all_check[i2] = i  # Наполнение всех вариантов замен
 
     for i in all_check:
         if i in name:
@@ -207,8 +283,3 @@ def filter_names(name):
                 break
 
     return name_
-
-
-res = filter_names('Филе цыпленка-бройлеров БК 123')
-print(res)
-

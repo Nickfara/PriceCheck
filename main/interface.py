@@ -1,255 +1,105 @@
 import asyncio
 
-from kivy.metrics import dp
 from kivy.core.window import Window
+from kivy.metrics import dp
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout as BoxLayout
-from kivymd.uix.button import MDIconButton as IconButton
-from kivymd.uix.dialog import MDDialog, MDDialogHeadlineText, MDDialogContentContainer, MDDialogButtonContainer
-from kivymd.uix.label import MDLabel
-from kivymd.uix.list import MDListItem, MDListItemHeadlineText, MDListItemSupportingText, MDListItemTertiaryText
+from kivymd.uix.button import MDIconButton
+from kivymd.uix.list import MDListItem, MDListItemSupportingText, MDListItemHeadlineText, MDListItemTertiaryText
 from kivymd.uix.screen import Screen
 from kivymd.uix.scrollview import MDScrollView as ScrollView
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.uix.snackbar import MDSnackbar, MDSnackbarSupportingText, MDSnackbarButtonContainer, MDSnackbarActionButton, \
     MDSnackbarActionButtonText, MDSnackbarCloseButton
-from kivymd.uix.textfield import MDTextField, MDTextFieldLeadingIcon
 
-
+import functions
 import commands
-#import mdlog as print
+from log import log
+
 import parse_metro
-import telegram
-from dialog_cart import dialog_cart
 from dialog_settings import dialog_settings
+from dialog_cart import Carts
 
 cart = []
+
+
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
+class Settings(BoxLayout):
+    def one(self):
+        pass
 
-class MC(MDApp):
+
+class SettingShop(BoxLayout):
+    def one(self):
+        pass
+
+
+class ItemObj(BoxLayout):
+    def one(self):
+        pass
+
+
+class CartMain(BoxLayout):
+    def one(self):
+        pass
+
+class CartShop(BoxLayout):
+    def one(self):
+        pass
+
+class CartItem(BoxLayout):
+    def one(self):
+        pass
+
+
+class Main(BoxLayout, Carts):
     def __init__(self, **kwargs):
-        super().__init__()
+        super(Main, self).__init__()
+        self.base_price = [] # Кэш прайсов
+        asyncio.ensure_future(commands.background_load(self))  # Прогрузка кэша
         self.layout_scroll = None
         self.color_bg = '#f0faff'
         self.color_button = '#002538'
+        self.theme_cls.btnColor = '#002538'
         self.color_top = '#c9e5ff'
 
-        self.text_find = MDTextField(MDTextFieldLeadingIcon(icon="magnify", ), text_color_focus='black',
-                                     pos_hint={'center_x': .5, 'center_y': .5}, hint_text='Найти товары')
-
-        self.btn_find= IconButton(icon='store-search', icon_color=self.color_button,
-                                    line_color=self.color_button, text_color=self.color_button,
-                                    on_release=self.find)
-        self.btn_cart = IconButton(icon='cart', id='1', icon_color=self.color_button,
-                               line_color=self.color_button, text_color=self.color_button,
-                               on_release=self.dialog_cart_open)
-        self.btn_send_files = IconButton(icon='download', icon_color=self.color_button,
-                                     line_color=self.color_button, text_color=self.color_button,
-                                     on_release=self.start_send_files)
-        self.btn_settings = IconButton(icon='cog', icon_color=self.color_button,
-                                     line_color=self.color_button, text_color=self.color_button,
-                                     on_release=self.dialog_settings)
         self.checkbox_parser_metro = MDCheckbox(size_hint_x=.1)
-        self.base_price = []  # Кэширование прайсов
-        self.text_find.text = ''
-        self.text_find.focus = True
 
         # Переменные диалоговых окон:
         self.dialog = False
         self.send_text = {}
 
-        asyncio.ensure_future(commands.background_load(self, parse_metro))
+        asyncio.ensure_future(commands.background_load(self))
 
     def build(self):
-        screen = Screen()
-        layout_main = BoxLayout(orientation='vertical', md_bg_color=self.color_bg)
-        layout_top = BoxLayout(orientation='horizontal', size_hint_y=None, height=self.text_find.height,
-                               md_bg_color='#c9e5ff')
-        layout_middle = BoxLayout(orientation='vertical', padding=(50, 0, 50, 0),)
 
-        self.layout_scroll = BoxLayout(orientation='vertical', spacing=0, md_bg_color='gray', adaptive_height=True)
-        self.layout_scroll.size_hint_y = None
-        self.layout_scroll.bind(minimum_height=self.layout_scroll.setter('height'))
-        scroll = ScrollView(do_scroll_x=False)
+        return Main()
+    def find(self, instance):functions.Main.find(self, ItemObj)
+    def add_to_cart(self, instance):functions.Cart.add_to_cart(self, instance)
+    def add_to_cart_metro(self, instance):functions.Cart.add_to_cart_metro(self, instance)
+    def remove_from_cart(self, instance):functions.Cart.remove_from_cart(self, instance)
+    def remove_from_cart_metro(self, instance):functions.Cart.remove_from_cart_metro(self, instance)
+    def cart_open(self, instance):functions.Cart.open(self, CartMain(), CartShop, CartItem)
+    def dialog_editCart_open(self, instance):functions.Cart.edit(self)
+    def settings_open(self, instance):functions.Settings.open(self, Settings(), SettingShop)
+    def add_shop(self, instance):functions.Settings.add_shop(self)
+    def save_settings(self, instance):functions.Settings.save(self)
+    def exit_settings(self, instance):functions.Settings.exit(self)
+    def start_jobBot(self, instance):functions.Main.start_jobBot(self)
+    def start_t2Market(self, instance):functions.Main.start_t2Market(self)
+    def start_taxiParser(self, instance):functions.Main.start_taxiParser(self)
+    def func_dialog_save_enter(self, window, key, i, r, x):functions.Base.func_dialog_save_enter(self, key)
+    def activate_enter_finder(self, instance):functions.Base.activate_enter_finder(self)
+    def on_focus_change(self, instance, text):functions.Base.on_focus_change(self, instance, text)
+    def notify(self, text):functions.Base.notify(self, text)
+    def refresh(self, instance):functions.Main.refresh(self)
 
-        layout_top.add_widget(self.btn_send_files)
-        layout_top.add_widget(self.checkbox_parser_metro)
-        layout_top.add_widget(self.text_find)
-        layout_top.add_widget(self.btn_find)
-        layout_top.add_widget(self.btn_cart)
-        layout_top.add_widget(self.btn_settings)
 
-        scroll.add_widget(self.layout_scroll)
-        layout_middle.add_widget(scroll)
+class ToolsAJob(MDApp):
+    def build(self):
+        return Main()
 
-        layout_main.add_widget(layout_top)
-        layout_main.add_widget(layout_middle)
-        screen.add_widget(layout_main)
-        return screen
-
-    def find(self, instance):
-        name = self.text_find.text
-        self.layout_scroll.clear_widgets()
-        finder_items = commands.finder(name, self.base_price)  # Поиск товара
-
-        result_metro = []
-        if self.checkbox_parser_metro.active:
-            result_metro = parse_metro.search(name)
-
-        if type(result_metro) is list:
-            for item in result_metro:
-                finder_items.append(
-                    {'seller': 'METRO', 'name': item['name'], 'cost': str(item['price']), 'bundleId': item['bundleId'],
-                     'minOrderQuantity': item['minOrderQuantity']})
-
-        for item in finder_items:  # Добавление товаров в список на главный экран
-            text = item['name'] + '.'
-
-            if 'type' in item:
-                if item['type'] != '':
-                    cost = 'Цена: ' + item['cost'] + '₽' + ' за ' + item['type']
-                else:
-                    cost = 'Цена: ' + item['cost'] + '₽'
-            else:
-                cost = 'Цена: ' + item['cost'] + '₽'
-
-            item_layout = MDListItem(MDListItemSupportingText(text=item['seller']), MDListItemHeadlineText(text=text.capitalize()),
-                                     MDListItemTertiaryText(text=cost),
-                                     orientation='horizontal', size_hint_y=None, height='40dp',
-                                     on_release=self.cart_list, id=str(item))
-            print(item)
-
-            if item in commands.get_cart():
-                if item['seller'] == 'METRO':
-                    cart_plus = IconButton(icon='cart-remove', id=str(item), on_release=self.remove_to_cart_metro,
-                                           icon_color='red', line_color='white')
-                else:
-                    cart_plus = IconButton(icon='cart-remove', id=str(item), on_release=self.remove_to_cart,
-                                           icon_color='red', line_color='white')
-            else:
-                if item['seller'] == 'METRO':
-                    cart_plus = IconButton(icon='cart-plus', id=str(item), on_release=self.add_to_cart_metro,
-                                           icon_color='blue', line_color='white')
-                else:
-                    cart_plus = IconButton(icon='cart-plus', id=str(item), on_release=self.add_to_cart,
-                                           icon_color='blue', line_color='white')
-
-            item_layout.add_widget(cart_plus)
-            self.layout_scroll.add_widget(item_layout)
-
-    def add_to_cart(self, instance):
-        instance.icon = 'cart-remove'
-        instance.icon_color = 'red'
-        instance.unbind(on_release=self.add_to_cart)
-        instance.bind(on_release=self.remove_to_cart)
-        item = instance.id
-        item = commands.str_to_dict(item)  # Конвертация строки в словарь
-
-        if item not in commands.get_cart():  # Если обьекта нет в корзине
-            commands.add_cart(dict(item))  # Отправка в корзину на сервер
-
-    def remove_to_cart(self, instance):
-        instance.icon = 'cart-plus'
-        instance.icon_color = 'blue'
-        instance.unbind(on_release=self.remove_to_cart)
-        instance.bind(on_release=self.add_to_cart)
-        item = instance.id
-        item = commands.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
-
-        if item in commands.get_cart():  # Если обьект есть в корзине
-            commands.remove_cart(dict(item))  # То обьект удаляется из корзины
-
-        if self.dialog:  # Закрыть диалоговое окно, если оно открыто
-            self.dialog.dismiss()
-            self.dialog_cart_open(self)
-
-    def add_to_cart_metro(self, instance):
-        instance.icon = 'cart-remove'
-        instance.icon_color = 'red'
-        instance.unbind(on_release=self.add_to_cart_metro)
-        instance.bind(on_release=self.remove_to_cart_metro)
-        item = instance.id
-        print(item)
-        item = commands.str_to_dict1(item)  # Конвертация строки в словарь
-        print(item)
-
-        if item not in commands.get_cart():  # Если обьекта нет в корзине
-            asyncio.ensure_future(commands.send_to_cart(item, parse_metro))  # Отправка в корзину на сервер
-            commands.add_cart(dict(item))  # То обьект добавляется в корзину
-
-    def remove_to_cart_metro(self, instance):
-        instance.icon = 'cart-plus'
-        instance.icon_color = 'blue'
-        instance.unbind(on_release=self.remove_to_cart_metro)
-        instance.bind(on_release=self.add_to_cart_metro)
-        item = instance.id
-        item = commands.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
-
-        if item in commands.get_cart():  # Если обьект есть в корзине
-            asyncio.ensure_future(commands.remove_from_cart(item, parse_metro))  # Удаление из корзины на сервере
-            commands.remove_cart(dict(item))  # То обьект удаляется из корзины
-
-        if self.dialog:  # Закрыть диалоговое окно, если оно открыто
-            self.dialog.dismiss()
-            self.dialog_cart_open(self)
-
-    def cart_list(self,instance):
-        dialog_cart.cart_list(self,instance)
-
-    def dialog_cart_open(self, instance):  # Открытие корзины
-        dialog_cart.dialog_cart_open(self)
-
-    def dialog_editCart_open(self, instance):
-        dialog_cart.dialog_editCart_open(self)
-
-    def dialog_settings(self, instance):
-        dialog_settings.dialog_settings_open(self)
-
-    def add_shop(self,instance):
-        dialog_settings.add_shop(self)
-
-    def save_settings(self,instance):
-        dialog_settings.save_settings(self)
-
-    def exit_settings(self, instance):
-        dialog_settings.exit_settings(self)
-
-    def start_send_files(self, instance):
-        dialog_cart.start_send_files(self, instance)
-
-    def func_dialog_save_enter(self, window, key, i, r, x):
-        if len(self.text_find.text) > 0:
-            if key == 13:
-                self.find(self)
-
-    def activate_enter_finder(self, instance):
-        Window.bind(on_key_down=self.func_dialog_save_enter)
-
-    def on_focus_change(self, instance, text):
-        shop = str(instance.id)
-        self.send_text[shop] = str(text)
-        print(self.send_text)
-
-    def notify(self, text):
-        MDSnackbar(
-            MDSnackbarSupportingText(text=text, ),
-            MDSnackbarButtonContainer(
-                MDSnackbarActionButton(
-                    MDSnackbarActionButtonText(
-                        text="Action button"
-                    ),
-                ),
-                MDSnackbarCloseButton(
-                    icon="close",
-                ),
-                pos_hint={"center_y": 0.5}
-            ),
-            y=dp(24),
-            orientation="horizontal",
-            pos_hint={"center_x": 0.5},
-            size_hint_x=0.5,
-        ).open()
 
 
 def run_async():
@@ -257,13 +107,13 @@ def run_async():
     asyncio.set_event_loop(loop)
 
     # Запускаем цикл событий Kivy
-    async_run = asyncio.ensure_future(asyncio.gather(MC().async_run(async_lib='asyncio')))
+    async_run = asyncio.ensure_future(asyncio.gather(ToolsAJob().async_run(async_lib='asyncio')))
     # Планируем остановку цикла, когда Kivy App закроется
     async_run.add_done_callback(lambda *args: loop.stop())
 
     # Запускаем цикл событий asyncio
     loop.run_forever()
 
+
 if __name__ == "__main__":
     run_async()
-

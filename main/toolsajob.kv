@@ -1,0 +1,224 @@
+#:set btn "#002538"
+#:set mainBgClr "#f0faff"
+#:set topBgClr "#c9e5ff"
+
+<Main>:
+    MDScreen:
+        MDBoxLayout:
+            md_bg_color: mainBgClr
+            orientation: 'vertical'
+            MDBoxLayout:
+                id: topLay
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: "60dp"
+                md_bg_color: topBgClr
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    MDIconButton:
+                        id: btn_refresh
+                        on_release: root.refresh()
+                        icon: "refresh"
+                        icon_color: btn
+                        line_color: btn
+                    MDIconButton:
+                        id: btn_start_jobBot
+                        on_release: root.start_jobBot()
+                        icon: "download"
+                        icon_color: btn
+                        line_color: btn
+                    MDIconButton:
+                        id: btn_start_t2Market
+                        on_release: root.start_t2Market()
+                        icon: "store"
+                        icon_color: btn
+                        line_color: btn
+                    MDIconButton:
+                        id: btn_start_taxiParser
+                        on_release: root.start_taxiParser()
+                        icon: "car"
+                        icon_color: btn
+                        line_color: btn
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    padding: (50, 0, 50, 0)
+                    MDTextField:
+                        id: text_find
+                        hint_text: "Найти товары"
+                        pos_hint: {'center_x': .5, 'center_y': .5}
+                        text_color_focus: "black"
+                        text: ""
+                        focus: True
+                        MDTextFieldLeadingIcon:
+                            icon: "magnify"
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    MDIconButton:
+                        on_release: root.settings_open(self)
+                        icon: "cog"
+                        icon_color: btn
+                        line_color: btn
+                    MDIconButton:
+                        on_release: root.cart_open(self)
+                        icon: "cart"
+                        icon_color: btn
+                        line_color: btn
+                    MDIconButton:
+                        on_release: root.find(self)
+                        icon: "store-search"
+                        icon_color: btn
+                        line_color: btn
+            MDBoxLayout:
+                orientation: 'vertical'
+                padding: (50, 0, 50, 0)
+                ScrollView:
+                    do_scroll_x: False
+                    MDBoxLayout:
+                        id: list_items_obj
+                        orientation: 'vertical'
+                        spacing: 80
+                        md_bg_color: 'gray'
+                        adaptive_height: True
+                        size_hint_y: None
+
+
+<Settings>
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: None
+        height: 400
+        spacing: 12
+
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: 20
+
+            MDLabel:
+                text: 'Имя файла'
+            MDLabel:
+                text: 'Название'
+            MDLabel:
+                text: 'Цена'
+            MDLabel:
+                text: 'Тип'
+            MDLabel:
+                text: 'Поставщик'
+            MDLabel:
+                text: 'Горизонталь'
+            MDLabel:
+                text: 'Вертикаль'
+            MDLabel:
+                text: 'Поиск'
+
+        ScrollView:
+            do_scroll_x: False
+            size_hint: (1, 1)
+
+            BoxLayout:
+                id: main
+                orientation: 'vertical'
+                spacing: 20
+                padding: (0, 10, 0, 0)
+                adaptive_height: True
+                size_hint_y: None
+                minimum_height: self.height
+
+                BoxLayout:
+                    size_hint_y: None
+                    height: checkbox_parser_metro.height
+
+                    MDLabel:
+                        text: 'METRO: '
+                        size_hint_y: None
+
+                    MDCheckbox:
+                        id: checkbox_parser_metro
+                        size_hint_x: .1
+
+
+
+
+<SettingShop>
+    BoxLayout:
+        id: shop
+        orientation: 'horizontal'
+        size_hint_y: None
+        height: '40dp'
+        spacing: 2
+        md_bg_color: 'white'
+
+
+<CartMain>
+    BoxLayout:
+        orientation:'vertical'
+        size_hint_y: None
+        height: 400
+        spacing: 12
+
+        ScrollView:
+            do_scroll_x: False
+            size_hint: (1, 1)
+
+            BoxLayout:
+                id: listShops
+                orientation: 'vertical'
+                spacing: 0
+                padding: (0, 10, 0, 0)
+                adaptive_height: True
+                size_hint_y: None
+                minimum_height: self.height
+<CartShop>
+    BoxLayout:
+        orientation:'vertical'
+        size_hint_y: None
+        height: '150dp'
+        spacing: "12dp"
+
+        ScrollView:
+            do_scroll_x: False
+            size_hint: (1, 1)
+
+            BoxLayout:
+                id: listItems
+                orientation: 'vertical'
+                spacing: 0
+                padding: (0, 10, 0, 0)
+                adaptive_height: True
+                md_bg_color: 'gray'
+
+                MDLabel:
+                    id:CartName
+                    text: ''
+
+<CartItem>
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: None
+        height: '40dp'
+
+        MDLabel:
+            id: textItem
+            text: ''
+        MDIconButton:
+            id: buttonItem
+            text: ' '
+            line_color: 'white'
+
+<ItemObj>
+    MDListItem:
+        id: item_object
+        orientation: 'horizontal'
+        size_hint_y: None
+        height: '80dp'
+
+        MDListItemSupportingText:
+            id: item_seller
+        MDListItemHeadlineText:
+            id: item_name
+        MDListItemTertiaryText:
+            id: item_cost
+        MDIconButton:
+            id: idItem
+            icon_color: 'white'
+            line_color: 'white'

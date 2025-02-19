@@ -1,9 +1,12 @@
-#import interface
+# import interface
 import os
+from log import log
+
 
 dir = os.listdir('doc')
+
 for i in dir:
-    print(i)
+    log(i)
 
 with open('doc/Интерфиш.xls', "rb") as f:
     peek = f.read()

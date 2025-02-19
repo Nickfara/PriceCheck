@@ -1,0 +1,91 @@
+[
+  {
+    "domain": ".metro-cc.ru",
+    "expiry": 1732990261,
+    "httpOnly": false,
+    "name": "SES2_customerAdr_",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": true,
+    "value": "{%22addressId%22:null%2C%22addressHash%22:null%2C%22storeId%22:%2200030%22}"
+  },
+  {
+    "domain": "mshop.metro-cc.ru",
+    "expiry": 1763921459,
+    "httpOnly": false,
+    "name": "selectedLocale_RU",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "ru-RU"
+  },
+  {
+    "domain": "mshop.metro-cc.ru",
+    "expiry": 1732745460,
+    "httpOnly": false,
+    "name": "compressedJWT",
+    "path": "/",
+    "sameSite": "Strict",
+    "secure": true,
+    "value": "eNpVUtuSojAQ/SK3uKo8KrcJEkAMAfIyJQERJOgIyuXrN8xsbe0+pLqq+5zT3adTTM41s2nlV84pmoHoVY72q5icB5XhknSo7IkkAZWrO9c8Pi65fR6HDxKrNTmBDrCHcD6BNaidPkyciMj5F7auFy8aUXQS1zB2TqlgLvw5j8HCr0gSCsU3F79yuxEyG/dcT6AT12HEQCL4wdvaRCKO+eCzMFXM7KEDLUb/5StHOWLYFaYHkZgj9+O6R8LQ5TcLuh8ERRboUtFbNP9E2pFmH7g2gaGpnUA1VDn2hEx2mu/+jYNDA6iutUQ4LHVqW2pma1ei83rbU9A6bz4zBfWDAuaJVA7fWYynRAddojsitdWfWp0KcDZHaOwGWN9GzzAVr3YoqMaFd6UsvGfSeCOJ4+exyH1x/vCsH0wbNql0xVTCU8S0juDhrw+8j3DmPZGNJRKPC++Vx2PnWkOVSpqYteFU/MWP2vceDDP+5rNJ3pR5zbIPYVZHpYj76j0ylvMe3oNIapBV/9YI/yTNLec3OsdcszZlOIPZN26DV+8miG7LLRXK9SCiM6yh4qOdBPWhOicevzs20yRsQH0fvRlOcC75JVLuialejr+IXF3a+nTIqj7VDTnB4UZ/3zzcKs/i6/6VTOutvzp8xjujPxiDwHJVnYeo3W7r1+pT3Zm6hgWAaGeZF9uQN25fHM2eRuZRyREQiRbb5axM4av0cThbRnI0W7+NO7YNhPBpfCZfq7fRHcc00KezutLvXVu469ljOptr0rb4U9teNPwM/WcglUaJjCiRr/Y0gUuEwESDqTgfnk95Q1ivSKSoXodNn2obGu/WioFSdwbs0B+0k6A+p2zfA6Vc1a7/TItNfPTl89GOX2ngz635aKqpLLJnZyJrDC640ZEHt5XvfRQaA4lj29kVvIsyfg+V8shZosV3sH8FWhOYdhTIsBsOqFNk9VFuy9+UR06Z"
+  },
+  {
+    "domain": ".metro-cc.ru",
+    "expiry": 1732990261,
+    "httpOnly": false,
+    "name": "SES2_customerAdr_6431100029141862",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": true,
+    "value": "{%22addressId%22:%226431100029141862994-4G20RSEO%22%2C%22addressHash%22:%226431100029141862994-4G20RSEO%22%2C%22storeId%22:%2200030%22}"
+  },
+  {
+    "domain": "mshop.metro-cc.ru",
+    "expiry": 1732745460,
+    "httpOnly": false,
+    "name": "USER_TYPE",
+    "path": "/",
+    "sameSite": "Strict",
+    "secure": true,
+    "value": "CUST"
+  },
+  {
+    "domain": ".metro-cc.ru",
+    "expiry": 1734977461,
+    "httpOnly": false,
+    "name": "UserSettings",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": true,
+    "value": "SelectedStore=1fb02a1b-53e0-4560-bed1-c629aee00a26&SelectedAddress=6431100029141862994-4g20rseo"
+  },
+  {
+    "domain": "mshop.metro-cc.ru",
+    "expiry": 1732745460,
+    "httpOnly": false,
+    "name": "idamUserIdToken",
+    "path": "/",
+    "sameSite": "Strict",
+    "secure": true,
+    "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IktfYWE1NTAxNWEtMjA2YS0xMWVkLTk4ZDUtZTJjYzEyYjBkYzUwIn0.eyJwYXNzd29yZGxlc3MiOmZhbHNlLCJleHAiOjE3MzIzODcyNTksImlhdCI6MTczMjM4NTQ1OSwiYXVkIjoiQlRFWCIsInNlc3Npb25fc3RhdGUiOiJDV2JURmNoTXB2MWprdk9iX3NWSm9HX0RHYWNTSlJ3ZUhHS2tOVm1iZmpZLlJkbGhhc2Q5IiwiaXNzIjoiaHR0cHM6Ly9pZGFtLm1ldHJvLWNjLnJ1IiwiZW1haWwiOiJib2tvdmFfc2h1cmFAbWFpbC5ydSIsImNfaGFzaCI6InVoNmZTRGxuaHM4d0k5clJ1djRWSXciLCJzdWIiOiJVXzgyNjYwMmYzLWQ4YzMtNGYxOS05N2JjLTkyNTZmMjZkZTY4YyIsImF0X2hhc2giOiJjRDlIQ1lsQ0psUlFldGNOZ3NfR0lBIiwicmVhbG0iOiJTU09fQ1VTVF9SVSIsImF1dGhfdGltZSI6MTczMjM4NTQ1NywiYW1yIjpbIlVTRVJfQ1JFREVOVElBTFMiXX0.Ak65w6HDDiqCSkTSmV_dFnYbb1UUouCUKwd2FMF6zz6zrTBQAr1NWWjZV4Ew2ARAkgY4xsRgAEDSTCLmKAeLqkf2OswRK2ovp49U-MYNtfFQwVViQOscwd2qOVqR9i8-WmNnT7UhdQwyanq1f1g_8AUW1qCMJixWZ9RaqJ30Jpeat3GSC-zSHzANp5eT-i36QkdmJiSNKd3PqIFZqKOCeeYPZny5G_iIPV3nUdxBmC3khU68baHQFQ-r5W5oFV7GGXmTMnasqiETZnme-ovcfFT13M0QUoAosQZdbNAqa9ayGU35tBr9V8SLGn93GyCK6fSfChE_pwj7ypDHqKsb3APhF5uCBcw"
+  },
+  {
+    "domain": ".metro-cc.ru",
+    "httpOnly": false,
+    "name": "_ts",
+    "path": "/",
+    "sameSite": "None",
+    "secure": true,
+    "value": "l+9033eb1821ef4225830b87b328ddeb3a"
+  },
+  {
+    "domain": "mshop.metro-cc.ru",
+    "expiry": 1763921458,
+    "httpOnly": false,
+    "name": "anonymousUserId",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "0DFB111F-4766-4FF6-98E5-7518D838CCDF"
+  }
+]

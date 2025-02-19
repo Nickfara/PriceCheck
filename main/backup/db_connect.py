@@ -1,5 +1,7 @@
 import sqlite3
+
 log = False
+
 
 # !/usr/bin/env python # -* - coding: utf-8-* -
 # Соединение с row
@@ -42,7 +44,9 @@ def get_item_names(name=None):
     conn = get_db_connection()
     if type(name) is str:
         name = name.lower()
-        user_row = conn.execute("SELECT * FROM Items WHERE names LIKE ? OR names LIKE ? OR names LIKE ? OR names LIKE ?", (f'{name}', f'{name}///%', f'%///{name}', f'%///{name}///%')).fetchone()
+        user_row = conn.execute(
+            "SELECT * FROM Items WHERE names LIKE ? OR names LIKE ? OR names LIKE ? OR names LIKE ?",
+            (f'{name}', f'{name}///%', f'%///{name}', f'%///{name}///%')).fetchone()
         if log: print(user_row)
         conn.close()
         if user_row:
@@ -106,7 +110,8 @@ def clear_item(item=None, names=None):
     if log: print('\033[44m')
     if item != None:
         conn = get_db_connection()
-        conn.execute('UPDATE Items SET item = ?, names = ? WHERE item = ?', (str(item).lower(), str(names).lower(), str(item).lower()))
+        conn.execute('UPDATE Items SET item = ?, names = ? WHERE item = ?',
+                     (str(item).lower(), str(names).lower(), str(item).lower()))
         conn.commit()
         conn.close()
         return True
@@ -151,4 +156,3 @@ def lowered_base():
 
 
 lowered_base()
-

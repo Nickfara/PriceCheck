@@ -1,0 +1,22 @@
+[
+  {
+    "name": "selectedLocale_RU",
+    "value": "ru-RU",
+    "path": "/",
+    "domain": "mshop.metro-cc.ru",
+    "secure": false,
+    "httpOnly": false,
+    "expiry": 1769074872,
+    "sameSite": "None"
+  },
+  {
+    "name": "anonymousUserId",
+    "value": "04198B04-D679-4464-B0CB-162018177977",
+    "path": "/",
+    "domain": "mshop.metro-cc.ru",
+    "secure": false,
+    "httpOnly": false,
+    "expiry": 1769074879,
+    "sameSite": "None"
+  }
+]
