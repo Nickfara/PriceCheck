@@ -82,92 +82,138 @@
                         size_hint_y: None
 
 
-<Settings>
-    BoxLayout:
-        orientation: 'vertical'
-        size_hint_y: None
-        height: 400
-        spacing: 12
+<SettingsMain>
+    id: dialog
+    size_hint_y: None
+    size_hint_max_y: .9
+    size_hint_min_y: .1
 
+    MDDialogHeadlineText:
+        text: 'Настройки'
+
+    MDDialogContentContainer:
         BoxLayout:
-            orientation: 'horizontal'
+            orientation: 'vertical'
             size_hint_y: None
-            height: 20
-
-            MDLabel:
-                text: 'Имя файла'
-            MDLabel:
-                text: 'Название'
-            MDLabel:
-                text: 'Цена'
-            MDLabel:
-                text: 'Тип'
-            MDLabel:
-                text: 'Поставщик'
-            MDLabel:
-                text: 'Горизонталь'
-            MDLabel:
-                text: 'Вертикаль'
-            MDLabel:
-                text: 'Поиск'
-
-        ScrollView:
-            do_scroll_x: False
-            size_hint: (1, 1)
+            height: '400dp'
+            spacing: 12
 
             BoxLayout:
-                id: main
-                orientation: 'vertical'
-                spacing: 20
-                padding: (0, 10, 0, 0)
-                adaptive_height: True
                 size_hint_y: None
-                minimum_height: self.height
+                height: checkbox_parser_metro.height
 
-                BoxLayout:
+                MDLabel:
+                    text: 'METRO: '
                     size_hint_y: None
-                    height: checkbox_parser_metro.height
 
-                    MDLabel:
-                        text: 'METRO: '
-                        size_hint_y: None
+                MDCheckbox:
+                    id: checkbox_parser_metro
+                    size_hint_x: .1
 
-                    MDCheckbox:
-                        id: checkbox_parser_metro
-                        size_hint_x: .1
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: 20
 
+                MDLabel:
+                    text: 'Имя файла'
+                MDLabel:
+                    text: 'Название'
+                MDLabel:
+                    text: 'Цена'
+                MDLabel:
+                    text: 'Тип'
+                MDLabel:
+                    text: 'Поставщик'
+                MDLabel:
+                    text: 'Горизонталь'
+                MDLabel:
+                    text: 'Вертикаль'
+                MDLabel:
+                    text: 'Поиск'
 
+            ScrollView:
+                do_scroll_x: False
 
+                MDBoxLayout:
+                    id: main
+                    orientation: 'vertical'
+                    spacing: 40
+                    padding: (0, 60, 0, 0)
+                    pos_hint: {"center_x"== .5, "center_y== .5"}
+                    adaptive_height: True
+                    size_hint_y: None
+                    minimum_height: self.height
+
+    MDDialogButtonContainer:
+        MDIconButton:
+            icon: 'plus'
+            on_release: root.add_shop(app.MainApp)
+
+        BoxLayout:
+
+        MDIconButton:
+            icon: 'close'
+            on_release: root.exit_settings(app.MainApp)
+            icon_color: 'red'
+            line_color: 'red'
+            text_color: 'red'
+
+        MDIconButton:
+            icon: 'check'
+            on_release: root.save_settings(app.MainApp)
+            icon_color: 'green'
+            line_color: 'green'
+            text_color: 'green'
 
 <SettingShop>
     BoxLayout:
         id: shop
         orientation: 'horizontal'
         size_hint_y: None
-        height: '40dp'
+        height: '80dp'
         spacing: 2
         md_bg_color: 'white'
 
 
 <CartMain>
-    BoxLayout:
-        orientation:'vertical'
-        size_hint_y: None
-        height: 400
-        spacing: 12
+    size_hint_y: None
+    size_hint_max_y: .9
+    size_hint_min_y: .1
 
-        ScrollView:
-            do_scroll_x: False
-            size_hint: (1, 1)
+    MDDialogHeadlineText:
+        text: 'Корзина'
+        halign: 'left'
 
-            BoxLayout:
-                id: listShops
-                orientation: 'vertical'
-                spacing: 0
-                padding: (0, 10, 0, 0)
-                adaptive_height: True
-                size_hint_y: None
-                minimum_height: self.height
+    MDDialogContentContainer:
+        BoxLayout:
+            orientation:'vertical'
+            size_hint_y: None
+            height: 400
+            spacing: 12
+
+            ScrollView:
+                do_scroll_x: False
+                size_hint: (1, 1)
+
+                BoxLayout:
+                    id: listShops
+                    orientation: 'vertical'
+                    spacing: 0
+                    padding: (0, 10, 0, 0)
+                    adaptive_height: True
+                    size_hint_y: None
+                    minimum_height: self.height
+
+    MDDialogButtonContainer:
+        BoxLayout:
+            MDIconButton:
+                icon: 'page-next'
+                on_release: root.edit
+                icon_color: 'green'
+                line_color: 'green'
+                text_color: 'green'
+
 <CartShop>
     BoxLayout:
         orientation:'vertical'
@@ -200,6 +246,12 @@
         MDLabel:
             id: textItem
             text: ''
+            allow_selection: True
+            allow_copy: True
+
+        MDIconButton:
+            icon: 'edit'
+
         MDIconButton:
             id: buttonItem
             text: ' '
@@ -214,11 +266,22 @@
 
         MDListItemSupportingText:
             id: item_seller
+            allow_selection: True
+            allow_copy: True
         MDListItemHeadlineText:
             id: item_name
+            allow_selection: True
+            allow_copy: True
         MDListItemTertiaryText:
             id: item_cost
+            allow_selection: True
+            allow_copy: True
         MDIconButton:
             id: idItem
             icon_color: 'white'
             line_color: 'white'
+
+<Plain>
+    MDTooltipPlain:
+        id: plain
+        text: ''

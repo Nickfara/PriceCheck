@@ -1,33 +1,33 @@
 import asyncio
 
-from kivy.core.window import Window
-from kivy.metrics import dp
+from kivy.app import App
+MainApp = App.get_running_app()
+
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout as BoxLayout
-from kivymd.uix.button import MDIconButton
-from kivymd.uix.list import MDListItem, MDListItemSupportingText, MDListItemHeadlineText, MDListItemTertiaryText
-from kivymd.uix.screen import Screen
-from kivymd.uix.scrollview import MDScrollView as ScrollView
+from kivymd.uix.dialog import MDDialog
 from kivymd.uix.selectioncontrol import MDCheckbox
-from kivymd.uix.snackbar import MDSnackbar, MDSnackbarSupportingText, MDSnackbarButtonContainer, MDSnackbarActionButton, \
-    MDSnackbarActionButtonText, MDSnackbarCloseButton
+from kivymd.uix.tooltip import MDTooltip
 
 import functions
-import commands
-from log import log
+import handler
 
-import parse_metro
-from dialog_settings import dialog_settings
-from dialog_cart import Carts
 
 cart = []
 
 
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
-class Settings(BoxLayout):
-    def one(self):
-        pass
+class SettingsMain(MDDialog):
+    def __init__(self, **kwargs):
+        super(SettingsMain, self).__init__()
+        self.data = {'shops': []}
+
+    def add_shop(self, temp_main): functions.Settings.add_shop(self, temp_main)
+
+    def save_settings(self, temp_main): functions.Settings.save(self, temp_main)
+
+    def exit_settings(self, temp_main): functions.Settings.exit(self, temp_main)
 
 
 class SettingShop(BoxLayout):
@@ -40,7 +40,7 @@ class ItemObj(BoxLayout):
         pass
 
 
-class CartMain(BoxLayout):
+class CartMain(MDDialog):
     def one(self):
         pass
 
@@ -53,39 +53,40 @@ class CartItem(BoxLayout):
         pass
 
 
-class Main(BoxLayout, Carts):
+class Plain(MDTooltip):
+    def one(self):
+        pass
+
+
+class Main(BoxLayout):
     def __init__(self, **kwargs):
         super(Main, self).__init__()
         self.base_price = [] # Кэш прайсов
-        asyncio.ensure_future(commands.background_load(self))  # Прогрузка кэша
-        self.layout_scroll = None
-        self.color_bg = '#f0faff'
-        self.color_button = '#002538'
+        asyncio.ensure_future(handler.background_load(self))  # Прогрузка кэша
+
+        self.theme_cls.bgColor = '#f0faff'
         self.theme_cls.btnColor = '#002538'
-        self.color_top = '#c9e5ff'
+        self.theme_cls.topColor = '#c9e5ff'
 
         self.checkbox_parser_metro = MDCheckbox(size_hint_x=.1)
 
         # Переменные диалоговых окон:
         self.dialog = False
         self.send_text = {}
-
-        asyncio.ensure_future(commands.background_load(self))
+        self.data = {}
 
     def build(self):
-
         return Main()
+
     def find(self, instance):functions.Main.find(self, ItemObj)
     def add_to_cart(self, instance):functions.Cart.add_to_cart(self, instance)
     def add_to_cart_metro(self, instance):functions.Cart.add_to_cart_metro(self, instance)
     def remove_from_cart(self, instance):functions.Cart.remove_from_cart(self, instance)
     def remove_from_cart_metro(self, instance):functions.Cart.remove_from_cart_metro(self, instance)
-    def cart_open(self, instance):functions.Cart.open(self, CartMain(), CartShop, CartItem)
-    def dialog_editCart_open(self, instance):functions.Cart.edit(self)
-    def settings_open(self, instance):functions.Settings.open(self, Settings(), SettingShop)
-    def add_shop(self, instance):functions.Settings.add_shop(self)
-    def save_settings(self, instance):functions.Settings.save(self)
-    def exit_settings(self, instance):functions.Settings.exit(self)
+    def cart_open(self, instance):functions.Cart.open()
+    def cart_edit(self, instance):functions.Cart.edit(self, instance)
+    def settings_open(self, instance=None, add=False):functions.Settings.open(add)
+
     def start_jobBot(self, instance):functions.Main.start_jobBot(self)
     def start_t2Market(self, instance):functions.Main.start_t2Market(self)
     def start_taxiParser(self, instance):functions.Main.start_taxiParser(self)
@@ -95,10 +96,32 @@ class Main(BoxLayout, Carts):
     def notify(self, text):functions.Base.notify(self, text)
     def refresh(self, instance):functions.Main.refresh(self)
 
+    def plaiN(self, instance):
+        print('СОБАКА')
+        plain = Plain()
+        plain.ids.plain.text = 'Куку'
+
 
 class ToolsAJob(MDApp):
     def build(self):
-        return Main()
+        self.MainApp = Main()
+
+        self.SettingsMainApp = SettingsMain
+
+        self.CartMainApp = CartMain
+
+        self.SettingShopApp = SettingShop
+
+        self.ItemObjApp = ItemObj
+
+        self.CartShopApp = CartShop
+
+        self.CartItemApp = CartItem
+
+        #self.PlainApp = Plain()
+
+        return self.MainApp
+
 
 
 

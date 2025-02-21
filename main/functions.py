@@ -10,12 +10,16 @@ from kivymd.uix.dialog import MDDialog, MDDialogHeadlineText, MDDialogContentCon
 from kivymd.uix.label import MDLabel
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.uix.textfield import MDTextField
+from kivy.uix.textinput import TextInput
 
 from log import log
 import asyncio
 import json
-import commands
+import handler
 import parse_metro
+
+from kivy.app import App
+ToolsAJob = App.get_running_app
 
 
 class Base:
@@ -62,7 +66,7 @@ class Main:
         name = Main.ids.text_find.text
 
         Main.ids.list_items_obj.clear_widgets()
-        finder_items = commands.finder(name, Main.base_price)  # Поиск товара
+        finder_items = handler.finder(name, Main.base_price)  # Поиск товара
         result_metro = []
         if Main.checkbox_parser_metro.active:
             result_metro = parse_metro.search(name)
@@ -96,7 +100,7 @@ class Main:
                 ItemObj.ids.idItem.icon_color = icon_color
                 ItemObj.ids.idItem.id = id
 
-            if item in commands.get_cart():
+            if item in handler.get_cart():
                 if item['seller'] == 'METRO':
                     btnForItem('cart-remove', Main.remove_from_cart_metro, 'red')
                 else:
@@ -110,109 +114,92 @@ class Main:
             Main.ids.list_items_obj.add_widget(ItemObj)
 
     def refresh(self):
-        asyncio.ensure_future(commands.refresh(self))
+        asyncio.ensure_future(handler.refresh(self))
 
     def start_jobBot(self):
-        asyncio.ensure_future(commands.start_telegram(self))
+        asyncio.ensure_future(handler.start_telegram(self))
 
     def start_t2Market(self):
-        asyncio.ensure_future(commands.start_t2Market(self))
+        asyncio.ensure_future(handler.start_t2Market(self))
 
     def start_taxiParser(self):
-        asyncio.ensure_future(commands.start_taxiParser(self))
+        asyncio.ensure_future(handler.start_taxiParser(self))
 
 
 class Settings:
     @staticmethod
-    def open(Main, Settings, SettingsShop):
+    def preset_shop(shop):
+        temp = {}
+        temp['filename'] = TextInput(text=str(shop['filename']), size_hint_y=None, height="30dp")
+        temp['sid_w'] = TextInput(text=str(shop['sid'][0]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                  height="30dp")
+        temp['sid_h'] = TextInput(text=str(shop['sid'][1]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                  height="30dp")
+        temp['sid_t'] = TextInput(text=str(shop['sid'][2]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                  height="30dp")
+        temp['seller'] = TextInput(text=shop['seller'], size_hint_y=None, height="30dp")
+        temp['findname_w'] = TextInput(text=str(shop['findname'][0]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                       height="30dp")
+        temp['findname_h'] = TextInput(text=str(shop['findname'][1]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                       height="30dp")
+        temp['findtext'] = TextInput(text=shop['findtext'], size_hint_y=None, height="30dp")
+        temp['active'] = MDCheckbox(active=shop['active'], size_hint_x=None, width="25dp")
+        return temp
+    @staticmethod
+    def open(add):
+        Main = ToolsAJob().MainApp
         if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
+            Main.dialog.clear_widgets()
             Main.dialog.dismiss()
 
+        SettingsMain = ToolsAJob().SettingsMainApp()
+
         def content():
-            Main.data = {}
-            Main.data['shops'] = []
+            SettingsMain.data['shops'] = []
 
             with open('data/config.json') as f:
                 data = json.load(f)
 
-            for shop in data["shops"]:
-                temp = {}
-                temp['filename'] = MDTextField(text=str(shop['filename']))
-                temp['sid_w'] = MDTextField(text=str(shop['sid'][0]), size_hint_x=None, width="42dp")
-                temp['sid_h'] = MDTextField(text=str(shop['sid'][1]), size_hint_x=None, width="42dp")
-                temp['sid_t'] = MDTextField(text=str(shop['sid'][2]), size_hint_x=None, width="42dp")
-                temp['seller'] = MDTextField(text=shop['seller'])
-                temp['findname_w'] = MDTextField(text=str(shop['findname'][0]), size_hint_x=None, width="42dp")
-                temp['findname_h'] = MDTextField(text=str(shop['findname'][1]), size_hint_x=None, width="42dp")
-                temp['findtext'] = MDTextField(text=shop['findtext'])
-                temp['active'] = MDCheckbox(active=shop['active'], size_hint_x=None, width="25dp")
-                Main.data['shops'].append(temp)
+            if add:
+                new_shop = {"filename": "Введите имя файла", "sid": [0, 0, 0], "seller": "Введите название поставщика",
+                            "findname": [0, 0], "findtext": "Введите слово для поиска", "active": False}
+                data["shops"].append(new_shop)
 
-            for shop in Main.data['shops']:
-                SettingShop = SettingsShop()
+            for shop in data["shops"]:
+                print(shop)
+                preset_shop = Settings.preset_shop(shop)
+                SettingsMain.data['shops'].append(preset_shop)
+
+
+            for shop in SettingsMain.data['shops']:
+                SettingShop = ToolsAJob().SettingShopApp()
 
                 for obj in shop:
                     SettingShop.ids.shop.add_widget(shop[obj])
 
-                Settings.ids.main.add_widget(SettingShop)
+                SettingsMain.ids.main.add_widget(SettingShop)
 
+            SettingsMain.ids.checkbox_parser_metro.active = data['metro_active']
+            return SettingsMain
 
-            Settings.ids.checkbox_parser_metro.active = data['metro_active']
-            return Settings
-
-
-        btn_dismiss = IconButton(icon='close', on_release=Main.exit_settings,
-                                 icon_color='red',
-                                 line_color='red', text_color='red')
-        btn_save = IconButton(icon='check', on_release=Main.save_settings, icon_color='green',
-                              line_color='green', text_color='green')
-
-        Main.dialog = MDDialog(size_hint_y=None, size_hint_max_y=.9, size_hint_min_y=.1)
-        add_shop = IconButton(icon='plus', on_release=Main.add_shop)
-        Main.dialog.add_widget(MDDialogHeadlineText(text='Настройки'))
-        Main.dialog.add_widget(MDDialogContentContainer(content()))
-
-        Main.dialog.add_widget(MDDialogButtonContainer(add_shop, BoxLayout(), btn_dismiss, btn_save))
+        Main.dialog = content()
 
         Main.dialog.open()
 
     @staticmethod
-    def add_shop(Main):
-        new_shop = {}
-        new_shop['filename'] = MDTextField()
-        new_shop['sid_w'] = MDTextField()
-        new_shop['sid_h'] = MDTextField()
-        new_shop['sid_t'] = MDTextField()
-        new_shop['seller'] = MDTextField()
-        new_shop['findname_w'] = MDTextField()
-        new_shop['findname_h'] = MDTextField()
-        new_shop['findtext'] = MDTextField()
-        new_shop['active'] = MDCheckbox()
-
-        Main.data['shops'].append(new_shop)
-
-        for i in Main.scroll_global_layout.children:
-            i.clear_widgets()
-        Main.scroll_global_layout.clear_widgets()
-
-        for shop in Main.data['shops']:
-            layout_items = BoxLayout(orientation='horizontal', size_hint_y=None, height='40dp', spacing=2,
-                                     md_bg_color='white')
-
-            for obj in shop:
-                layout_items.add_widget(shop[obj])
-
-            Main.scroll_global_layout.add_widget(layout_items)
+    def add_shop(self, Main):
+        Main.settings_open(None, add=True)
 
     @staticmethod
-    def save(Main):
+    def save(self, Main):
 
         with open('data/config.json') as f:
             data = json.load(f)
         with open('data/config.json', 'w') as f:
             data["shops"] = []
             data['metro_active'] = Main.checkbox_parser_metro.active
-            for shop in Main.data['shops']:
+
+            for shop in self.data['shops']:
                 sid_w = shop['sid_w'].text
                 sid_h = shop['sid_h'].text
                 sid_t = shop['sid_t'].text
@@ -231,7 +218,7 @@ class Settings:
 
         with open('data/cache_prices.json') as f:
             result = json.load(f)
-            result_filtered = commands.filter_shops(result)
+            result_filtered = handler.filter_shops(result)
             Main.base_price = result_filtered
             log('Кэш прайса обновлён!', 1)
 
@@ -239,26 +226,29 @@ class Settings:
             Main.dialog.dismiss()
 
     @staticmethod
-    def exit(Main):
+    def exit(self, Main):
         if Main.dialog:
             Main.dialog.dismiss()
 
 
 class Cart:
     @staticmethod
-    def open(Main, CartMain, CartShops, CartItems):
+    def open():
+        Main = ToolsAJob().MainApp
         # Открытие корзины
+
         if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
             Main.dialog.dismiss()
 
         def content():
+            app = ToolsAJob()
             for shop in ['Матушка', 'Алма', 'METRO']:
-                CartShop = CartShops()
+                CartShop = app.CartShopApp()
                 items_list = []
 
-                cart_get = commands.get_cart()
+                cart_get = handler.get_cart()
                 for item in cart_get:  # Наполнение корзины товарами из
-                    CartItem = CartItems()
+                    CartItem = app.CartItemsApp()
                     if shop.lower() == item['seller'].lower():
                         if item in cart_get:
                             CartItem.ids.buttonItem.icon = 'cart-remove'
@@ -289,81 +279,19 @@ class Cart:
                     for i in items_list:
                         CartShop.ids.listItems.add_widget(i)
 
-                    CartMain.ids.listShops.add_widget(CartShop)
-            return Cart
+                    app.CartMainApp.ids.listShops.add_widget(CartShop)
+            return app.CartMainApp
 
-        copy_cart = IconButton(icon='page-next', on_release=Main.edit, icon_color='green',
-                               line_color='green', text_color='green')
-
-        Main.dialog = MDDialog(size_hint_y=None, size_hint_max_y=.9, size_hint_min_y=.1)
-
-        Main.dialog.add_widget(MDDialogHeadlineText(text='Корзина', halign='left'))
-        Main.dialog.add_widget(MDDialogContentContainer(content()))
-        Main.dialog.add_widget(MDDialogButtonContainer(BoxLayout(), copy_cart))
-
+        Main.dialog = content()
         Main.dialog.open()
 
     @staticmethod
-    def edit(Main):
-        # Открытие корзины
-        if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
-            Main.dialog.dismiss()
-
-        def send_cart(instance):
-            commands.start_taxiParser(Main)
-
-        def content():
-            dialog_main_layout = BoxLayout(spacing="12dp", size_hint_y=None, height="400dp", orientation='vertical')
-            scroll_global = ScrollView(do_scroll_x=False, size_hint=(1, 1))
-            scroll_global_layout = BoxLayout(orientation='vertical', spacing=0, padding=(0, 10, 0, 0),
-                                             adaptive_height=True)
-            for shop in ['Матушка', 'Алма', 'METRO']:
-                scroll_layout_dialog = BoxLayout(orientation='vertical', spacing=0, padding=(0, 10, 0, 0),
-                                                 adaptive_height=True)
-                items_main_layout = BoxLayout(spacing="12dp", size_hint_y=None, height="150dp", orientation='vertical')
-                scroll_layout_dialog.size_hint_y = None
-                scroll_layout_dialog.bind(minimum_height=Main.layout_scroll.setter('height'))
-                scroll = ScrollView(do_scroll_x=False, size_hint=(1, 1))
-                text_cart = ''
-                number = 1
-                for item in commands.get_cart():  # Наполнение корзины товарами из массива
-                    if shop.lower() == item['seller'].lower():
-                        text_cart += str(number) + '. ' + str(item['name'] + ' - \n')
-                        number += 1
-
-                if len(text_cart) > 0:
-                    shop_layout = BoxLayout(orientation='vertical', size_hint_y=None, height='40dp')
-                    shop_layout.add_widget(MDLabel(text=str(shop) + ':'))
-                    scroll_global_layout.add_widget(shop_layout)
-                    items_cart = MDTextField(multiline=True, id=str(shop), )
-                    items_cart.bind(text=Main.on_focus_change)
-                    items_cart.text = text_cart
-                    scroll_layout_dialog.add_widget(items_cart)
-                    scroll.add_widget(scroll_layout_dialog)
-                    items_main_layout.add_widget(scroll)
-                    scroll_global_layout.add_widget(items_main_layout)
-
-            scroll_global.add_widget(scroll_global_layout)
-            dialog_main_layout.add_widget(scroll_global)
-            return dialog_main_layout
-
-        copy_cart_dismiss = IconButton(icon='backburger', on_release=Main.dialog_cart_open, icon_color='red',
-                                       line_color='red', text_color='red')
-        send_cart = IconButton(icon='content-copy', on_release=send_cart, icon_color='green',
-                               line_color='green', text_color='green')
-
-        Main.dialog = MDDialog(size_hint_y=None, size_hint_max_y=.9, size_hint_min_y=.1)
-        Main.dialog.theme_bg_color = 'Custom'
-        Main.dialog.md_bg_color = Main.color_bg
-        Main.dialog.add_widget(MDDialogHeadlineText(text='Отправить', halign='left'))
-        Main.dialog.add_widget(MDDialogContentContainer(content()))
-        Main.dialog.add_widget(MDDialogButtonContainer(BoxLayout(), copy_cart_dismiss, send_cart))
-
-        Main.dialog.open()
+    def edit(Main, instance):
+        print(instance)
 
     @staticmethod
     def send(Main):
-        asyncio.ensure_future(commands.start_telegram(Main))
+        asyncio.ensure_future(handler.start_telegram(Main))
         if Main.dialog:
             Main.dialog.dismiss()
 
@@ -373,6 +301,7 @@ class Cart:
 
     @staticmethod
     def add_to_cart(Main, instance):
+        #Main = MainApp().Main
         print(instance)
         print('Разделитель')
         print(instance.icon)
@@ -382,10 +311,10 @@ class Cart:
         instance.unbind(on_release=Main.add_to_cart)
         instance.bind(on_release=Main.remove_from_cart)
         item = instance.id
-        item = commands.str_to_dict(item)  # Конвертация строки в словарь
+        item = handler.str_to_dict(item)  # Конвертация строки в словарь
 
-        if item not in commands.get_cart():  # Если обьекта нет в корзине
-            commands.add_cart(dict(item))  # Отправка в корзину на сервер
+        if item not in handler.get_cart():  # Если обьекта нет в корзине
+            handler.add_cart(dict(item))  # Отправка в корзину на сервер
 
 
     @staticmethod
@@ -395,10 +324,10 @@ class Cart:
         instance.unbind(on_release=Main.remove_from_cart)
         instance.bind(on_release=Main.add_to_cart)
         item = instance.id
-        item = commands.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
+        item = handler.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
-        if item in commands.get_cart():  # Если обьект есть в корзине
-            commands.remove_cart(dict(item))  # То обьект удаляется из корзины
+        if item in handler.get_cart():  # Если обьект есть в корзине
+            handler.remove_cart(dict(item))  # То обьект удаляется из корзины
 
         if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
             Main.dialog.dismiss()
@@ -411,11 +340,11 @@ class Cart:
         instance.unbind(on_release=Main.add_to_cart_metro)
         instance.bind(on_release=Main.remove_from_cart_metro)
         item = instance.id
-        item = commands.str_to_dict1(item)  # Конвертация строки в словарь
+        item = handler.str_to_dict1(item)  # Конвертация строки в словарь
 
-        if item not in commands.get_cart():  # Если обьекта нет в корзине
-            asyncio.ensure_future(commands.send_to_cart(item, parse_metro))  # Отправка в корзину на сервер
-            commands.add_cart(dict(item))  # То обьект добавляется в корзину
+        if item not in handler.get_cart():  # Если обьекта нет в корзине
+            asyncio.ensure_future(handler.send_to_cart(item, parse_metro))  # Отправка в корзину на сервер
+            handler.add_cart(dict(item))  # То обьект добавляется в корзину
 
     @staticmethod
     def remove_from_cart_metro(Main, instance):
@@ -424,11 +353,11 @@ class Cart:
         instance.unbind(on_release=Main.remove_from_cart_metro)
         instance.bind(on_release=Main.add_to_cart_metro)
         item = instance.id
-        item = commands.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
+        item = handler.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
-        if item in commands.get_cart():  # Если обьект есть в корзине
-            asyncio.ensure_future(commands.remove_from_cart(item, parse_metro))  # Удаление из корзины на сервере
-            commands.remove_cart(dict(item))  # То обьект удаляется из корзины
+        if item in handler.get_cart():  # Если обьект есть в корзине
+            asyncio.ensure_future(handler.remove_from_cart(item, parse_metro))  # Удаление из корзины на сервере
+            handler.remove_cart(dict(item))  # То обьект удаляется из корзины
 
         if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
             Main.dialog.dismiss()
