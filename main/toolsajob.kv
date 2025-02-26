@@ -92,13 +92,13 @@
         text: 'Настройки'
 
     MDDialogContentContainer:
-        BoxLayout:
+        MDBoxLayout:
             orientation: 'vertical'
             size_hint_y: None
             height: '400dp'
             spacing: 12
 
-            BoxLayout:
+            MDBoxLayout:
                 size_hint_y: None
                 height: checkbox_parser_metro.height
 
@@ -110,7 +110,7 @@
                     id: checkbox_parser_metro
                     size_hint_x: .1
 
-            BoxLayout:
+            MDBoxLayout:
                 orientation: 'horizontal'
                 size_hint_y: None
                 height: 20
@@ -150,7 +150,7 @@
             icon: 'plus'
             on_release: root.add_shop(app.MainApp)
 
-        BoxLayout:
+        MDBoxLayout:
 
         MDIconButton:
             icon: 'close'
@@ -167,7 +167,7 @@
             text_color: 'green'
 
 <SettingShop>
-    BoxLayout:
+    MDBoxLayout:
         id: shop
         orientation: 'horizontal'
         size_hint_y: None
@@ -186,27 +186,26 @@
         halign: 'left'
 
     MDDialogContentContainer:
-        BoxLayout:
-            orientation:'vertical'
+        MDBoxLayout:
+            orientation: 'vertical'
             size_hint_y: None
             height: 400
             spacing: 12
 
             ScrollView:
                 do_scroll_x: False
-                size_hint: (1, 1)
+                size: (1, 1)
 
-                BoxLayout:
+                MDBoxLayout:
                     id: listShops
                     orientation: 'vertical'
-                    spacing: 0
                     padding: (0, 10, 0, 0)
                     adaptive_height: True
                     size_hint_y: None
                     minimum_height: self.height
 
     MDDialogButtonContainer:
-        BoxLayout:
+        MDBoxLayout:
             MDIconButton:
                 icon: 'page-next'
                 on_release: root.edit
@@ -215,47 +214,48 @@
                 text_color: 'green'
 
 <CartShop>
-    BoxLayout:
+    size_hint_y: None
+    height: 200
+
+    MDBoxLayout:
+        id: cartGlobal
         orientation:'vertical'
-        size_hint_y: None
-        height: '150dp'
         spacing: "12dp"
 
-        ScrollView:
-            do_scroll_x: False
-            size_hint: (1, 1)
+        MDLabel:
+            id:CartName
+            text: ''
 
-            BoxLayout:
-                id: listItems
-                orientation: 'vertical'
-                spacing: 0
-                padding: (0, 10, 0, 0)
-                adaptive_height: True
-                md_bg_color: 'gray'
+        MDBoxLayout:
+            orientation: 'horizontal'
 
-                MDLabel:
-                    id:CartName
-                    text: ''
+            ScrollView:
+                do_scroll_x: False
+                size: (1, 1)
+                MDBoxLayout:
+                    id: listItems
+                    orientation: 'vertical'
+                    padding: (0, 10, 0, 0)
+                    adaptive_height: True
+                    size_hint_y: None
+
+
 
 <CartItem>
-    BoxLayout:
-        orientation: 'horizontal'
-        size_hint_y: None
-        height: '40dp'
+    size_hint_y: None
+    height: 30
+    orientation: 'horizontal'
 
-        MDLabel:
-            id: textItem
-            text: ''
-            allow_selection: True
-            allow_copy: True
+    MDLabel:
+        id: textItem
+        text: ''
+        allow_selection: True
+        allow_copy: True
 
-        MDIconButton:
-            icon: 'edit'
-
-        MDIconButton:
-            id: buttonItem
-            text: ' '
-            line_color: 'white'
+    MDIconButton:
+        id: buttonItem
+        text: ' '
+        line_color: 'white'
 
 <ItemObj>
     MDListItem:

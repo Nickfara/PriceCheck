@@ -1,3 +1,5 @@
+import time
+
 from Tele2 import base
 from Tele2 import functions
 from telebot import types
@@ -118,8 +120,9 @@ def home(call, bot):
         markup = types.InlineKeyboardMarkup(row_width=2)
         item1 = types.InlineKeyboardButton(text='🟢 Запуск', callback_data='Запуск')
         item2 = types.InlineKeyboardButton(text='👤 Мой профиль', callback_data='Профиль')
-        item3 = types.InlineKeyboardButton(text='🛠️ Настройки', callback_data='Настройки')
-        markup.add(item1, item2, item3)
+        item3 = types.InlineKeyboardButton(text='🟢 Поднять', callback_data='Поднять')
+        item4 = types.InlineKeyboardButton(text='🛠️ Настройки', callback_data='Настройки')
+        markup.add(item1, item2, item3, item4)
         answer = '🏠 *Главное меню\!* \n\nТут можно: \n*1\.* Запустить бота' \
                  '\n*2\.* Посмотреть профиль\n*3\.* Изменить настройки\!'
         reload(call, bot, answer, markup)
@@ -323,4 +326,12 @@ def remove_minutes_lots_confrim(call, bot, answer):
 def remove_minutes_lots(call, bot, answer):
     markup = types.InlineKeyboardMarkup(row_width=2)
     reload(call, bot, answer, markup)
+
+
+def up(call, bot):
+    answer = 'Лот был успешно поднят!'
+    markup = types.InlineKeyboardMarkup()
+    reload(call, bot, answer, markup)
+    time.sleep(3)
+    home(call, bot)
 

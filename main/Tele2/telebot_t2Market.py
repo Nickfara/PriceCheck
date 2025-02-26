@@ -233,6 +233,8 @@ def default(call):
                 commands.save(call, bot, lid)
             elif call.data == 'price':
                 commands.price(call, bot)
+            elif call.data == 'Поднять':
+                commands.up(call, bot)
     except Exception as error:
         answer = 'Произошла ошибка\!\nПопробуйте ещё раз\.\n\n[Сработало исключение в обработчике\.]'
         answer += str(error)

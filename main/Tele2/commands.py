@@ -6,7 +6,7 @@ from Tele2 import base
 from Tele2 import functions
 from Tele2 import menu
 from telebot import types
-
+import random
 base_u = base.update_users
 base_g = base.get_user
 
@@ -23,30 +23,43 @@ stop_timer = [False]
 def auth(call, bot):
     uid = call.from_user.id
     DB = base_g(uid)
-
-
+    data = call.data
+    
+    # При отсутствии аккаунта в БД, создаётся таблица
     if DB is None:
         log('Создание аккаунта!', 1)
         base.create_user(uid)
-
+    
+    # Если пользователь не авторизован, происходит авторизация
     if DB['stage_autorize'] < 3:
-        if call.data[0] == '8':
-            call.data = '7'.join(call.data.split('8'))
-        elif call.data[0] == '+' and call.data[1] == '7':
-            call.data = '7'.join(call.data.split('+7'))
+        # Форматирование номера телефона
+        if data[0] == '8':
+            data = '7'.join(data.split('8'))
+        elif data[0] == '+' and data[1] == '7':
+            data = '7'.join(data.split('+7'))
 
-        if len(str(call.data)) == 11 and (call.data[0] == '7') and call.data[1] == '9' and DB['stage_autorize'] == 0:
-            base_u({'id': uid, 'auth_login': call.data, 'stage_autorize': 1})
+        # 1 Этап - Добавление номера телефона (Номер успешно добавлен)
+        if len(str(data)) == 11 and (data[0] == '7') and data[1] == '9' and DB['stage_autorize'] == 0:
+            base_u({'id': uid, 'auth_login': data, 'stage_autorize': 1})
             answer = 'Введите ваш пароль:'
             menu.login_password(call, bot, answer)
+
+        # 1 Этап - Добавление номера телефона:
         elif DB['stage_autorize'] == 0:
             answer = 'Введите ваш номер телефона, \nв формате: [79000000000]'
             menu.login_number(call, bot, answer)
+
+        # 2 Этап - Проверка кода подтверждения:
         elif DB['stage_autorize'] == 1:
+            # Если включено подтверждение кодом:
             if DB['status_sms'] == 0:
-                if len(str(DB['auth_password'])) == 0 and DB['auth_password'] == None:
-                    base_u({'id': uid, 'auth_password': call.data, 'security_code': ''})
+                # Если пароль не указан:
+                if len(str(DB['auth_password'])) == 0 or DB['auth_password'] == None:
+                    base_u({'id': uid, 'auth_password': data, 'security_code': ''})
+
                 response = api.security_code(uid)
+
+                # При успешной отправке кода:
                 if response['status']:
                     base_u({'id': uid, 'stage_autorize': 2, 'auth_password': DB['auth_password'],
                             'security_code_token': response['response'].json()['security_code_token']})
@@ -55,9 +68,12 @@ def auth(call, bot):
             else:
                 base_u({'id': uid, 'stage_autorize': 2})
 
-        if DB['stage_autorize'] == 2:
+        # 3 Этап - Проведение и проверка авторизации:
+        elif DB['stage_autorize'] == 2:
             response = api.auth(uid)
-            if response['status']:  # УСПЕШНАЯ АВТОРИЗАЦИЯ
+
+            # При успешной авторизации:
+            if response['status']:
                 base_u(
                     {'id': uid, 'config_count': def_traffic[0]['volume']['value'], 'config_autotime': def_traffic[1][0],
                      'stage_autorize': 3, 'status_sms': 0, 'config_uom': def_traffic[0]['volume']['uom'],
@@ -67,6 +83,8 @@ def auth(call, bot):
 
                 update_def_traffic(call)
                 return DB
+
+            # При неудаче - возврат к 1 этапу:
             else:
                 base.delete_user(uid)
                 base.create_user(uid)
@@ -75,6 +93,7 @@ def auth(call, bot):
                 log('При авторизации, были введены неверные данные.', 3)
                 menu.login_number(call, bot, answer)
 
+    # Пользователь уже авторизован.
     else:
         answer = 'Вы уже авторизованы\!'
         log(answer, 3)
@@ -85,13 +104,18 @@ def admin_auth(call, bot):
     deauth(call, bot, False)
     uid = call.from_user.id
     DB = base_g(uid)
+    data = call.data
+    
     deauth(call, bot, False)
-    if base_g(uid) is None:
+
+    # Создание аккаунта:
+    if DB is None:
         log('Создание аккаунта')
         base.create_user(uid, lvl_autorize=2, lvl_setting=0)
 
-    if call.data == 'Войти1':
-        log('Вход в 79923415301', 1)
+    # Авторизация в +7 (992)022-88-48
+    if data == 'Войти1':
+        log('Вход в +7 (992)022-88-48', 1)
         base_u({'id': uid, 'stage_autorize': 1, 'auth_login': '79920228848', 'auth_password': '649UPY'})
         response = auth(call, bot)
         return response
@@ -126,6 +150,8 @@ def houme_menu(call, bot):
 def settings(call, bot):
     uid = call.from_user.id
     DB = base_g(uid)
+    data = call.data
+
     if DB['lvl_setting'] == 0:
         name = ("🌐 *Вид:* Гигабайты" if DB['config_uom'] == "gb" else "☎️ *Вид:* Минуты")
         name2 = ("ГБ" if DB['config_uom'] == "gb" else "МИН")
@@ -136,7 +162,7 @@ def settings(call, bot):
         menu.settings(call, bot, answer)
     elif DB['lvl_setting'] == 1:
         try:
-            int(str(call.data))
+            int(str(data))
             base_u({'id': uid, 'config_autotime': call.message.text})
             return True
         except:
@@ -147,8 +173,8 @@ def settings(call, bot):
         import math
         if DB['config_uom'] == 'gb':
             try:
-                int(str(call.data))
-                base_u({'id': uid, 'config_count': call.data, 'config_price': str(math.ceil(int(call.data) * 15))})
+                int(str(data))
+                base_u({'id': uid, 'config_count': data, 'config_price': str(math.ceil(int(data) * 15))})
                 return True
             except:
                 answer = '🛠️ *Настройки\.* \n\nНапишите количество гигабайт, \nпо сколько вы хотите продавать\. ' \
@@ -156,8 +182,8 @@ def settings(call, bot):
                 menu.settings(call, bot, answer)
         elif DB['config_uom'] == 'min':
             try:
-                int(str(call.data))
-                base_u({'id': uid, 'config_count': call.data, 'config_price': str(math.ceil(int(call.data) / 1.25))})
+                int(str(data))
+                base_u({'id': uid, 'config_count': data, 'config_price': str(math.ceil(int(data) / 1.25))})
                 return True
             except:
                 answer = '🛠️ *Настройки\.* \n\nНапишите количество минут, \nпо сколько вы хотите продавать\. ' \
@@ -165,7 +191,7 @@ def settings(call, bot):
                 menu.settings(call, bot, answer)
     elif DB['lvl_setting'] == 3:
         try:
-            int(str(call.data))
+            int(str(data))
             base_u({'id': uid, 'config_repit': call.message.text})
             return True
         except:
@@ -174,10 +200,10 @@ def settings(call, bot):
                      '\nИсключительно цифрами, например: 10'
             menu.settings(call, bot, answer)
     elif DB['lvl_setting'] == 4:
-        if call.data == 'Минуты':
+        if data == 'Минуты':
             base_u({'id': uid, 'config_type': 'voice', 'config_count': '62', 'config_price': '50', 'config_uom': 'min'})
             return True
-        elif call.data == 'Гигабайты':
+        elif data == 'Гигабайты':
             base_u({'id': uid, 'config_type': 'data', 'config_count': '6', 'config_price': '90', 'config_uom': 'gb'})
             return True
         else:
@@ -407,15 +433,7 @@ def autotop(call, bot):
                             seller_lot[0] = len(lots)
                         seller_lot[1] = len(lots)
 
-                        import random
-
-                        if len(lots) == 0:
-                            answer = f'Лотов нет\!\n\n'
-                            log(answer, 3)
-                            menu.bot_launch_on(call, bot, answer, False, False)
-                            stop(call, bot)
-                            break
-                        else:
+                        if len(lots) > 0:
                             rand_id = random.randint(0, len(lots) - 1)
                             lot_id = lots[f'{rand_id}']['id']
 
@@ -491,6 +509,12 @@ def autotop(call, bot):
                                 answer = f'Попался лот находящийся уже в топе\!'
                                 log(answer, 3)
                                 menu.bot_launch_on(call, bot, answer, False, False)
+                        else:
+                            answer = f'Лотов нет\!\n\n'
+                            log(answer, 3)
+                            menu.bot_launch_on(call, bot, answer, False, False)
+                            stop(call, bot)
+                            break
                 else:
                     answer = 'Ожидание после выставление не окончено\! cache[uid][\'status_lagg\'] = 1'
                     log(answer, 3)
@@ -682,15 +706,18 @@ def price(call, bot):
 
 def price_accept(call, bot):
     uid = call.from_user.id
+    data = call.data
+
     lid = cache[uid]['lid']
     lots = dict(json.loads(base_g(uid)['list_lots']))
     lot = {}
+
     for i in lots:
         lot[0] = i
         if lots[i]['id'] == lid:
             break
 
-    price = str(int(call.data))
+    price = str(int(data))
     emoji = lots[lot[0]]["emojis"]
     name = True if lots[lot[0]]['name'] != None else False
     data = (name, emoji, price)
@@ -708,3 +735,14 @@ def emoji(call, bot, lid):
 
 def save(call, bot, lid):
     pass
+
+
+def up(call, bot):
+    uid = call.from_user.id
+
+    lots = get_lots_refresh(call)
+    rand_id = random.randint(0, len(lots) - 1)
+    lot_id = lots[f'{rand_id}']['id']
+
+    api.top(uid, lot_id)
+    menu.up(call, bot)

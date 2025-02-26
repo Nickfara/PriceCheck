@@ -242,12 +242,13 @@ class Cart:
 
         def content():
             app = ToolsAJob()
+            CartMainApp = app.CartMainApp()
             for shop in ['Матушка', 'Алма', 'METRO']:
                 CartShop = app.CartShopApp()
                 items_list = []
 
                 cart_get = handler.get_cart()
-                for item in cart_get:  # Наполнение корзины товарами из
+                for item in cart_get:  # Наполнение списка товарами из кэша
                     CartItem = app.CartItemsApp()
                     if shop.lower() == item['seller'].lower():
                         if item in cart_get:
@@ -270,17 +271,18 @@ class Cart:
                         CartItem.ids.buttonItem.id = str(item) + 'cart'
                                 
                         
-                        CartItem.ids.textItem = str(item['name'])
+                        CartItem.ids.textItem.text = str(item['name'])
                         items_list.append(CartItem)
 
-                if len(items_list) > 0:
+                if len(items_list) > 0: # Наполнение корзины товарами
                     CartShop.ids.CartName.text = str(shop) + ':'
-                    
+
                     for i in items_list:
                         CartShop.ids.listItems.add_widget(i)
 
-                    app.CartMainApp.ids.listShops.add_widget(CartShop)
-            return app.CartMainApp
+
+                CartMainApp.ids.listShops.add_widget(CartShop)
+            return CartMainApp
 
         Main.dialog = content()
         Main.dialog.open()
@@ -330,8 +332,10 @@ class Cart:
             handler.remove_cart(dict(item))  # То обьект удаляется из корзины
 
         if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
-            Main.dialog.dismiss()
-            Main.dialog_cart_open(Main)
+            print(Main.dialog)
+            #Main.dialog.dismiss()
+            #Main.dialog = None
+            #Main.cart_open(Main)
 
     @staticmethod
     def add_to_cart_metro(Main, instance):
