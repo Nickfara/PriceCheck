@@ -1,24 +1,18 @@
-
-from kivy.core.window import Window
-from kivy.metrics import dp
-from kivymd.uix.snackbar import MDSnackbar, MDSnackbarSupportingText, MDSnackbarButtonContainer, MDSnackbarActionButton, \
-    MDSnackbarActionButtonText, MDSnackbarCloseButton
-from kivy.uix.scrollview import ScrollView
-from kivymd.uix.boxlayout import MDBoxLayout as BoxLayout
-from kivymd.uix.button import MDIconButton as IconButton
-from kivymd.uix.dialog import MDDialog, MDDialogHeadlineText, MDDialogContentContainer, MDDialogButtonContainer
-from kivymd.uix.label import MDLabel
-from kivymd.uix.selectioncontrol import MDCheckbox
-from kivymd.uix.textfield import MDTextField
-from kivy.uix.textinput import TextInput
-
-from log import log
 import asyncio
 import json
-import handler
-import parse_metro
 
 from kivy.app import App
+from kivy.core.window import Window
+from kivy.metrics import dp
+from kivy.uix.textinput import TextInput
+from kivymd.uix.selectioncontrol import MDCheckbox
+from kivymd.uix.snackbar import MDSnackbar, MDSnackbarSupportingText, MDSnackbarButtonContainer, MDSnackbarActionButton, \
+    MDSnackbarActionButtonText, MDSnackbarCloseButton
+
+import handler
+import parse_metro
+from log import log
+
 ToolsAJob = App.get_running_app
 
 
@@ -89,14 +83,15 @@ class Main:
             else:
                 cost = 'Цена: ' + item['cost'] + '₽'
 
-            ItemObj.ids.item_seller.text = item['seller']  # Здесь надо присвоить ячейкам с товарам значения и ниже в двух также
+            ItemObj.ids.item_seller.text = item[
+                'seller']  # Здесь надо присвоить ячейкам с товарам значения и ниже в двух также
             ItemObj.ids.item_name.text = text.capitalize()
             ItemObj.ids.item_cost.text = cost
 
             def btnForItem(icon, on_release, icon_color, id=str(item)):
                 ItemObj.ids.idItem.icon = icon
                 ItemObj.ids.idItem.bind(on_release=on_release)
-                #ItemObj.ids.item_object.bind(on_release=on_release)
+                # ItemObj.ids.item_object.bind(on_release=on_release)
                 ItemObj.ids.idItem.icon_color = icon_color
                 ItemObj.ids.idItem.id = id
 
@@ -145,6 +140,7 @@ class Settings:
         temp['findtext'] = TextInput(text=shop['findtext'], size_hint_y=None, height="30dp")
         temp['active'] = MDCheckbox(active=shop['active'], size_hint_x=None, width="25dp")
         return temp
+
     @staticmethod
     def open(add):
         Main = ToolsAJob().MainApp
@@ -169,7 +165,6 @@ class Settings:
                 print(shop)
                 preset_shop = Settings.preset_shop(shop)
                 SettingsMain.data['shops'].append(preset_shop)
-
 
             for shop in SettingsMain.data['shops']:
                 SettingShop = ToolsAJob().SettingShopApp()
@@ -269,17 +264,15 @@ class Cart:
                             else:
                                 CartItem.ids.buttonItem.on_release = Main.add_to_cart
                         CartItem.ids.buttonItem.id = str(item) + 'cart'
-                                
-                        
+
                         CartItem.ids.textItem.text = str(item['name'])
                         items_list.append(CartItem)
 
-                if len(items_list) > 0: # Наполнение корзины товарами
+                if len(items_list) > 0:  # Наполнение корзины товарами
                     CartShop.ids.CartName.text = str(shop) + ':'
 
                     for i in items_list:
                         CartShop.ids.listItems.add_widget(i)
-
 
                 CartMainApp.ids.listShops.add_widget(CartShop)
             return CartMainApp
@@ -303,7 +296,7 @@ class Cart:
 
     @staticmethod
     def add_to_cart(Main, instance):
-        #Main = MainApp().Main
+        # Main = MainApp().Main
         print(instance)
         print('Разделитель')
         print(instance.icon)
@@ -317,7 +310,6 @@ class Cart:
 
         if item not in handler.get_cart():  # Если обьекта нет в корзине
             handler.add_cart(dict(item))  # Отправка в корзину на сервер
-
 
     @staticmethod
     def remove_from_cart(Main, instance):
@@ -333,9 +325,9 @@ class Cart:
 
         if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
             print(Main.dialog)
-            #Main.dialog.dismiss()
-            #Main.dialog = None
-            #Main.cart_open(Main)
+            # Main.dialog.dismiss()
+            # Main.dialog = None
+            # Main.cart_open(Main)
 
     @staticmethod
     def add_to_cart_metro(Main, instance):
@@ -366,4 +358,3 @@ class Cart:
         if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
             Main.dialog.dismiss()
             Main.dialog_cart_open(Main)
-

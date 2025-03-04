@@ -4,6 +4,7 @@ from kivymd.uix.button import MDRectangleFlatButton
 from kivymd.uix.screen import Screen
 from log import log
 
+
 # creating Demo Class(base class)
 class Demo(MDApp):
     def build(self):

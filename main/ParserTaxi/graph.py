@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 
 from database import get
-from log import log
 
 
 def render(group='all', filter='all', week='all'):

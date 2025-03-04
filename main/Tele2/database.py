@@ -1,5 +1,4 @@
 import sqlite3
-from log import log
 
 # Устанавливаем соединение с базой данных
 connection = sqlite3.connect('data/t2.db')

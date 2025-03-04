@@ -7,7 +7,6 @@ from kivymd.uix.screen import MDScreen
 from kivymd.uix.textfield import MDTextField
 
 import graph
-from log import log
 
 
 class TaxiParser(MDApp):

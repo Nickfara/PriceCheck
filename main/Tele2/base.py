@@ -1,5 +1,4 @@
 import sqlite3
-from log import log
 
 
 # Функция для создания соединения с базой данных с row

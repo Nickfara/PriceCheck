@@ -1,6 +1,7 @@
 token = '7306002854:AAHIc35yMOXyho4bcYYeAS3W5PP0ey_1HXk'
 
 import telebot
+
 from log import log
 
 bot = telebot.TeleBot(token)

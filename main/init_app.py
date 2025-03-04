@@ -1,6 +1,7 @@
 import asyncio
 
 from kivy.app import App
+
 MainApp = App.get_running_app()
 
 from kivymd.app import MDApp
@@ -11,7 +12,6 @@ from kivymd.uix.tooltip import MDTooltip
 
 import functions
 import handler
-
 
 cart = []
 
@@ -44,9 +44,11 @@ class CartMain(MDDialog):
     def one(self):
         pass
 
+
 class CartShop(MDBoxLayout):
     def one(self):
         pass
+
 
 class CartItem(MDBoxLayout):
     def one(self):
@@ -61,7 +63,7 @@ class Plain(MDTooltip):
 class Main(MDBoxLayout):
     def __init__(self, **kwargs):
         super(Main, self).__init__()
-        self.base_price = [] # Кэш прайсов
+        self.base_price = []  # Кэш прайсов
         asyncio.ensure_future(handler.background_load(self))  # Прогрузка кэша
 
         self.theme_cls.bgColor = '#f0faff'
@@ -78,23 +80,37 @@ class Main(MDBoxLayout):
     def build(self):
         return Main()
 
-    def find(self, instance):functions.Main.find(self, ItemObj)
-    def add_to_cart(self, instance):functions.Cart.add_to_cart(self, instance)
-    def add_to_cart_metro(self, instance):functions.Cart.add_to_cart_metro(self, instance)
-    def remove_from_cart(self, instance):functions.Cart.remove_from_cart(self, instance)
-    def remove_from_cart_metro(self, instance):functions.Cart.remove_from_cart_metro(self, instance)
-    def cart_open(self, instance):functions.Cart.open()
-    def cart_edit(self, instance):functions.Cart.edit(self, instance)
-    def settings_open(self, instance=None, add=False):functions.Settings.open(add)
+    def find(self, instance): functions.Main.find(self, ItemObj)
 
-    def start_jobBot(self):functions.Main.start_jobBot(self)
-    def start_t2Market(self):functions.Main.start_t2Market(self)
-    def start_taxiParser(self):functions.Main.start_taxiParser(self)
-    def func_dialog_save_enter(self, window, key, i, r, x):functions.Base.func_dialog_save_enter(self, key)
-    def activate_enter_finder(self, instance):functions.Base.activate_enter_finder(self)
-    def on_focus_change(self, instance, text):functions.Base.on_focus_change(self, instance, text)
-    def notify(self, text):functions.Base.notify(self, text)
-    def refresh(self, instance):functions.Main.refresh(self)
+    def add_to_cart(self, instance): functions.Cart.add_to_cart(self, instance)
+
+    def add_to_cart_metro(self, instance): functions.Cart.add_to_cart_metro(self, instance)
+
+    def remove_from_cart(self, instance): functions.Cart.remove_from_cart(self, instance)
+
+    def remove_from_cart_metro(self, instance): functions.Cart.remove_from_cart_metro(self, instance)
+
+    def cart_open(self, instance): functions.Cart.open()
+
+    def cart_edit(self, instance): functions.Cart.edit(self, instance)
+
+    def settings_open(self, instance=None, add=False): functions.Settings.open(add)
+
+    def start_jobBot(self): functions.Main.start_jobBot(self)
+
+    def start_t2Market(self): functions.Main.start_t2Market(self)
+
+    def start_taxiParser(self): functions.Main.start_taxiParser(self)
+
+    def func_dialog_save_enter(self, window, key, i, r, x): functions.Base.func_dialog_save_enter(self, key)
+
+    def activate_enter_finder(self, instance): functions.Base.activate_enter_finder(self)
+
+    def on_focus_change(self, instance, text): functions.Base.on_focus_change(self, instance, text)
+
+    def notify(self, text): functions.Base.notify(self, text)
+
+    def refresh(self): functions.Main.refresh(self)
 
     def plaiN(self, instance):
         print('СОБАКА')
@@ -118,11 +134,9 @@ class ToolsAJob(MDApp):
 
         self.CartItemsApp = CartItem
 
-        #self.PlainApp = Plain()
+        # self.PlainApp = Plain()
 
         return self.MainApp
-
-
 
 
 def run_async():

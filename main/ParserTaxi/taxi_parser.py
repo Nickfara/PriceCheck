@@ -6,10 +6,10 @@ from json import loads
 from time import sleep
 
 import requests
+from log import log
 
 from .config import clid, apikey, point1, point2
 from .database import add
-from log import log
 
 active_bot_taxi = [False]
 

@@ -24,12 +24,14 @@ def call_class(message):
 
     return call()
 
+
 @bot.message_handler(commands=['start'])
 def start(message):
     uid = message.from_user.id
     DB = base_g(uid)
     call = call_class(message)
     commands.deauth(call, bot, True)
+
 
 @bot.message_handler(commands=['stop', 'exit'])
 def exit(message):
@@ -42,6 +44,7 @@ def exit(message):
         bot.send_message(message.chat.id, 'Бот выключен!')
     except:
         bot.send_message('828853360', 'Бот выключен!')
+
 
 def auth(call):
     menu.wait(call, bot)

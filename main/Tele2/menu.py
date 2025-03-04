@@ -2,8 +2,8 @@ import time
 
 from Tele2 import base
 from Tele2 import functions
-from telebot import types
 from log import log
+from telebot import types
 
 base_u = base.update_users
 base_g = base.get_user
@@ -334,4 +334,3 @@ def up(call, bot):
     reload(call, bot, answer, markup)
     time.sleep(3)
     home(call, bot)
-

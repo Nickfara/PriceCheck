@@ -205,9 +205,9 @@ class BotiIko(MDApp):
             # Структура лэйаутов
             switch_layouts = {BoxLayout(orientation='horizontal'): (switch_name_text, self.switch_name),
                               BoxLayout(orientation='horizontal'): (
-                              self.checkbox_type, switch_type_text, self.switch_type),
+                                  self.checkbox_type, switch_type_text, self.switch_type),
                               BoxLayout(orientation='horizontal'): (
-                              self.checkbox_header, switch_header_text, self.switch_header),
+                                  self.checkbox_header, switch_header_text, self.switch_header),
                               BoxLayout(orientation='horizontal'): (switch_count_text, self.switch_count),
                               BoxLayout(orientation='horizontal'): (switch_cost_text, self.switch_cost),
                               BoxLayout(orientation='horizontal'): (switch_version_text, self.switch_version)}

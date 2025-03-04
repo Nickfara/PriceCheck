@@ -1,5 +1,3 @@
-from log import log
-
 def text_lot(lots, i):
     emoji_cymbol = {'bomb': '💣', 'cat': '😸', 'cool': '😎', 'devil': '😈', 'rich': '🤑', 'scream': '😱', 'tongue': '😛',
                     'zipped': '🤐'}

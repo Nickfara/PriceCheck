@@ -18,26 +18,36 @@ h = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", 
 
 def read(filename):  # Чтение таблицы
     format = filename.split('.')[1]
-    if True:
+
+    try:
+        with open('doc/' + str(filename)):
+            pass
+    except FileNotFoundError as e:
+        response = False
+        log(f'Файл "{filename}" не найден!', 2)
+    else:
         if format == 'xls':  # Чтение xls
             workbook = open_xls('doc/' + str(filename))
+            log(f'Начало сканирования файла: {filename}')
             response = xls(workbook)
         elif format == 'xlsx':  # Чтение xlsx
             workbook = open_xlsx('doc/' + str(filename))
+            log(f'Начало сканирования файла: {filename}')
             response = xlsx(workbook)
         else:
             response = False  # Формат файла неверный
-            error_text = 'Формат файла неверный'
+            error_text = 'Неверный формат файла.'
             log(error_text, 3)
-    try:
-        pass
-    except Exception as e:
-        response = False
-        log(e, 2)
+
     return response
 
 
 def xls(workbook):
+    """
+
+    :param workbook:
+    :return:
+    """
     items = []
     sid = False
     seller = False
@@ -50,14 +60,24 @@ def xls(workbook):
                 seller = i['seller']
                 break
 
-    if sid:
+    if isinstance(sid, list):
         for i2 in workbook.sheets():
             worksheet = workbook.sheet_by_index(workbook.sheets().index(i2))
             for i in range(0, worksheet.utter_max_rows):  # Чтение строк
                 item = {}
                 try:
-                    item['seller'] = seller
+                    # Проверка наличия индексов
+                    str(worksheet.cell_value(i, sid[0]))
+                    str(worksheet.cell_value(i, sid[1]))
+                    str(worksheet.cell_value(i, sid[2]))
+                except IndexError as e:
+                    if end_time == 5:
+                        log(f'Конец документа. Страница: {i2}', 1)
+                        break
+                    end_time += 1
+                else:
                     item['name'] = str(worksheet.cell_value(i, sid[0]))
+                    item['seller'] = seller
                     if item['name'] != 'None':
                         end_time = 0
                     item['name'] = ''.join(item['name'].split(','))  # Удаление запятых из названия
@@ -71,10 +91,6 @@ def xls(workbook):
                         item['cost'] = 'категория'
                     else:
                         items.append(item)
-                except:
-                    if end_time == 5:
-                        break
-                    end_time += 1
     else:
         items = False
         error_text = 'Не найдено имя поставщика в таблице!'
@@ -98,15 +114,26 @@ def xlsx(workbook):
                     seller = i['seller']
                     type_n = (i['sid'][2])
                     break
-            except Exception as e:
+            except IndexError as e:
                 log(e, 2)
                 log(i, 2)
-    if sid:
+
+    if isinstance(sid, list):
         for i2 in sheetnames:
             worksheet = workbook[i2]
             for i in range(0, 1000):  # Чтение строк
                 item = {}
                 try:
+                    # Проверка наличия индексов
+                    str(worksheet[f'{sid[0]}'][i].value)
+                    str(worksheet[f'{sid[1]}'][i].value)
+                    str(worksheet[f'{sid[2]}'][i].value)
+                except IndexError:
+                    if end_time == 5:
+                        item['seller'] = seller
+                        break
+                    end_time += 1
+                else:
                     if 'мороженое' in str(worksheet[f'{sid[0]}'][i].value).lower():
                         break
                     item['seller'] = seller
@@ -129,10 +156,6 @@ def xlsx(workbook):
                     if item['cost'] == '':
                         item['cost'] = 'категория'
                     items.append(item)
-                except:
-                    if end_time == 5:
-                        break
-                    end_time += 1
     else:
         items = False
         error_text = '\033[31m\033[1mНе найдено имя поставщика в таблице!'

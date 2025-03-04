@@ -165,7 +165,7 @@ def new_auth():
     }))
     r_url = bs(date_get_url.text, 'html.parser').find('script')
     r_url = \
-    str(r_url).split("var locationUrl = '")[1].split('window.location = htmlDecode(locationUrl);')[0].split("';")[0]
+        str(r_url).split("var locationUrl = '")[1].split('window.location = htmlDecode(locationUrl);')[0].split("';")[0]
     r_data = r_url.split(';')
     temp = 0
     for i in r_data:
@@ -281,8 +281,9 @@ def auth_check():
                     profile['fsdAddressId'] = getProfile['addresses'][i]['hash']
                     profile['storeId'] = getProfile['addresses'][i]['deliveryStore']
                     profile['t_time'] = \
-                    s.get(url='https://mshop.metro-cc.ru/ordercapture/uidispatcher/rest/min-stable-ui-version').json()[
-                        "timestampUtc"]
+                        s.get(
+                            url='https://mshop.metro-cc.ru/ordercapture/uidispatcher/rest/min-stable-ui-version').json()[
+                            "timestampUtc"]
                     break
 
             url_info = s.get(
@@ -346,8 +347,9 @@ def search(text):
                 name = objects[object]['variantSelector']['0032']
                 data = objects[object]['variants']['0032']['bundles']['0021']
                 price = \
-                data['stores']['00030']['possibleDeliveryModes']['METRO_DELIVERY']['possibleFulfillmentTypes']['FSD'][
-                    'sellingPriceInfo']['finalPrice']
+                    data['stores']['00030']['possibleDeliveryModes']['METRO_DELIVERY']['possibleFulfillmentTypes'][
+                        'FSD'][
+                        'sellingPriceInfo']['finalPrice']
                 bundleId = data['bundleId']['bettyBundleId']
 
                 if 'minOrderQuantity' in data:
@@ -393,7 +395,6 @@ def add_cart(object, count=0):
             'quantity': 1,  # Количество товара
             'requestId': profile['requestId']  # Непонятный айди запроса,хз что это
         }
-
 
         s.headers.update({'Content-Type': 'application/json'})
 

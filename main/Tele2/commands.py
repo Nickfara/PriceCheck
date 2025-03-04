@@ -1,4 +1,5 @@
 import json
+import random
 import time
 
 from Tele2 import api
@@ -6,7 +7,8 @@ from Tele2 import base
 from Tele2 import functions
 from Tele2 import menu
 from telebot import types
-import random
+import math
+
 base_u = base.update_users
 base_g = base.get_user
 
@@ -21,15 +23,21 @@ stop_timer = [False]
 
 
 def auth(call, bot):
+    """
+    Функция авторизации.
+    :param call:
+    :param bot:
+    :return:
+    """
     uid = call.from_user.id
     DB = base_g(uid)
     data = call.data
-    
+
     # При отсутствии аккаунта в БД, создаётся таблица
     if DB is None:
         log('Создание аккаунта!', 1)
         base.create_user(uid)
-    
+
     # Если пользователь не авторизован, происходит авторизация
     if DB['stage_autorize'] < 3:
         # Форматирование номера телефона
@@ -101,11 +109,18 @@ def auth(call, bot):
 
 
 def admin_auth(call, bot):
+    """
+    Функция предназначена для авторизации админа.
+
+    :param call:
+    :param bot:
+    :return:
+    """
     deauth(call, bot, False)
     uid = call.from_user.id
     DB = base_g(uid)
     data = call.data
-    
+
     deauth(call, bot, False)
 
     # Создание аккаунта:
@@ -122,6 +137,13 @@ def admin_auth(call, bot):
 
 
 def deauth(call, bot, lobby):
+    """
+    Функция деавторизации.
+    :param call:
+    :param bot:
+    :param lobby:
+    :return:
+    """
     try:
         uid = call.from_user.id
         DB = base_g(uid)
@@ -141,6 +163,11 @@ def deauth(call, bot, lobby):
 
 
 def houme_menu(call, bot):
+    """
+    Функция открытия главного экрана.
+    :param call:
+    :param bot:
+    """
     uid = call.from_user.id
     cache[uid] = {'status_autosell': 0, 'status_autotop': 0, 'status_lagg': 0}
     menu.home(call, bot)
@@ -148,10 +175,17 @@ def houme_menu(call, bot):
 
 # Меню настроек
 def settings(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    :return:
+    """
     uid = call.from_user.id
     DB = base_g(uid)
     data = call.data
 
+    config_uom = DB['config_uom']
     if DB['lvl_setting'] == 0:
         name = ("🌐 *Вид:* Гигабайты" if DB['config_uom'] == "gb" else "☎️ *Вид:* Минуты")
         name2 = ("ГБ" if DB['config_uom'] == "gb" else "МИН")
@@ -170,25 +204,20 @@ def settings(call, bot):
                      '\nИсключительно цифрами, например: 5'
             menu.settings(call, bot, answer)
     elif DB['lvl_setting'] == 2:
-        import math
-        if DB['config_uom'] == 'gb':
-            try:
-                int(str(data))
-                base_u({'id': uid, 'config_count': data, 'config_price': str(math.ceil(int(data) * 15))})
-                return True
-            except:
-                answer = '🛠️ *Настройки\.* \n\nНапишите количество гигабайт, \nпо сколько вы хотите продавать\. ' \
-                         '\nИсключительно цифрами, например: 5'
-                menu.settings(call, bot, answer)
-        elif DB['config_uom'] == 'min':
-            try:
-                int(str(data))
-                base_u({'id': uid, 'config_count': data, 'config_price': str(math.ceil(int(data) / 1.25))})
-                return True
-            except:
-                answer = '🛠️ *Настройки\.* \n\nНапишите количество минут, \nпо сколько вы хотите продавать\. ' \
-                         '\nИсключительно цифрами, например: 50 \nМинимум: 50 минут\!'
-                menu.settings(call, bot, answer)
+
+        try:
+            config_price = int(str(data))
+        except:
+            answer = '🛠️ *Настройки\.* \n\nПринимаются исключительно цифры.'
+            menu.settings(call, bot, answer)
+            return False
+
+        if config_uom == 'gb':
+            base_u({'id': uid, 'config_count': data, 'config_price': str(math.ceil(config_price * 15))})
+        elif config_uom == 'min':
+            base_u({'id': uid, 'config_count': data, 'config_price': str(math.ceil(int(data) / 1.25))})
+        return True
+
     elif DB['lvl_setting'] == 3:
         try:
             int(str(data))
@@ -199,6 +228,7 @@ def settings(call, bot):
                      'выставление\. Указав 0, повторения будут бесконечны\. ' \
                      '\nИсключительно цифрами, например: 10'
             menu.settings(call, bot, answer)
+            return False
     elif DB['lvl_setting'] == 4:
         if data == 'Минуты':
             base_u({'id': uid, 'config_type': 'voice', 'config_count': '62', 'config_price': '50', 'config_uom': 'min'})
@@ -212,6 +242,12 @@ def settings(call, bot):
 
 
 def profile(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    :return:
+    """
     global allow_voice, allow_data, incom
 
     uid = call.from_user.id
@@ -308,6 +344,11 @@ def profile(call, bot):
 
 # Авто-продажа
 def autosell(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    """
     global answer
     print('\033[32m\n\033[1m\033[44mКоманда: autosell\033[0m')
     uid = call.from_user.id
@@ -412,6 +453,11 @@ def autosell(call, bot):
 
 # Авто-поднятие
 def autotop(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    """
     uid = call.from_user.id
     DB = base_g(uid)
     if uid not in cache:  # Добавление аккаунта в кэш, если его нет
@@ -533,6 +579,11 @@ def autotop(call, bot):
 
 # Остановка бота
 def stop(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    """
     uid = call.from_user.id
     DB = base_g(uid)
     if uid in cache:
@@ -550,11 +601,21 @@ def stop(call, bot):
 
 
 def remove_minutes_lots_confrim(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    """
     answer = 'Вы уверены, что хотите отозвать все активные лоты с минутами\?\nОтменить это действие не получится\!'
     menu.remove_minutes_lots_confrim(call, bot, answer)
 
 
 def remove_minutes_lots(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    """
     uid = call.from_user.id
     minutes = get_lots_refresh(call, delete_minutes=True)
     filtered_minutes = []
@@ -574,7 +635,10 @@ def remove_minutes_lots(call, bot):
 
 
 def update_def_traffic(call):
+    """
 
+    :param call:
+    """
     uid = call.from_user.id
     DB = base_g(uid)
     def_traffic[0]['volume']['value'] = DB["config_count"]
@@ -585,7 +649,12 @@ def update_def_traffic(call):
 
 # Получение списка активных лотов
 def get_lots_refresh(call, delete_minutes=False):
+    """
 
+    :param call:
+    :param delete_minutes:
+    :return:
+    """
     uid = call.from_user.id
     response = api.get_lots(uid)
     if response['status']:
@@ -619,6 +688,13 @@ def get_lots_refresh(call, delete_minutes=False):
 
 # Проверка на продажу лота
 def check_sell(call, bot, uid, lots):
+    """
+
+    :param call:
+    :param bot:
+    :param uid:
+    :param lots:
+    """
     if uid in cache_lot:
         if len(lots) < len(cache_lot[uid]):
             answer = f'Лот продан\!'
@@ -629,12 +705,22 @@ def check_sell(call, bot, uid, lots):
 
 
 def send_sms(call):
+    """
+
+    :param call:
+    """
     uid = call.from_user.id
     base_u({'id': uid, 'status_sms': 1, 'lvl_autorize': 1})
     api.send_sms(uid)
 
 
 def delete_confrim(call, bot, lid):
+    """
+
+    :param call:
+    :param bot:
+    :param lid:
+    """
     uid = call.from_user.id
     DB = base_g(uid)
     lots = json.loads(DB['list_lots'])
@@ -642,6 +728,12 @@ def delete_confrim(call, bot, lid):
 
 
 def delete_yes(call, bot, lid):
+    """
+
+    :param call:
+    :param bot:
+    :param lid:
+    """
     uid = call.from_user.id
     api.delete(uid, lid)
     answer = 'Лот успешно удалён\!'
@@ -652,6 +744,11 @@ def delete_yes(call, bot, lid):
 
 
 def edit_lots(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    """
     uid = call.from_user.id
     response = api.get_lots(uid)
     if response['status']:
@@ -662,6 +759,12 @@ def edit_lots(call, bot):
 
 
 def redactor_lot(call, bot, lid):
+    """
+
+    :param call:
+    :param bot:
+    :param lid:
+    """
     uid = call.from_user.id
     if uid not in cache:
         cache[uid] = {'status_lagg': 0, 'status_autosell': 0, 'status_autotop': 0}
@@ -676,6 +779,12 @@ def redactor_lot(call, bot, lid):
 
 
 def top(call, bot, lid):
+    """
+
+    :param call:
+    :param bot:
+    :param lid:
+    """
     uid = call.from_user.id
     DB = base_g(uid)
     lots = dict(json.loads(DB['list_lots']))
@@ -698,13 +807,24 @@ def top(call, bot, lid):
 def name(call, bot, lid):
     pass
 
+
 def price(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    """
     menu.price(call, bot)
     uid = call.from_user.id
     base_u({'id': uid, 'lvl_redactor': 1})
 
 
 def price_accept(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    """
     uid = call.from_user.id
     data = call.data
 
@@ -728,16 +848,33 @@ def price_accept(call, bot):
 
 
 def emoji(call, bot, lid):
+    """
+
+    :param call:
+    :param bot:
+    :param lid:
+    """
     menu.emoji(call, bot, lid)
     uid = call.from_user.id
     base_u({'id': uid, 'lvl_redactor': 2})
 
 
 def save(call, bot, lid):
+    """
+
+    :param call:
+    :param bot:
+    :param lid:
+    """
     pass
 
 
 def up(call, bot):
+    """
+
+    :param call:
+    :param bot:
+    """
     uid = call.from_user.id
 
     lots = get_lots_refresh(call)

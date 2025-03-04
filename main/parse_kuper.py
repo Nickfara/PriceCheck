@@ -6,7 +6,6 @@ from selenium.webdriver import Chrome as Firefox
 
 from log import log
 
-
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
 cookies = {}
@@ -112,9 +111,11 @@ def find(s):
     except:
         log(f'JSON - не конвертируется! Ошибка поиска!:\n{response.text}', 3)
 
+
 session = auth_check()
 
 responses = find(session)
+
 
 def test():
     credentials = {

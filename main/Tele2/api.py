@@ -5,6 +5,9 @@ import requests
 from Tele2 import base
 from log import log
 
+s = requests.Session()  # Создание сессии
+s.headers.update({'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
+
 base_u = base.update_users
 base_g = base.get_user
 
@@ -25,37 +28,63 @@ SECURE_API = site_auth + '/credential-management/security-codes'
 
 
 def errors(response):
+    """
+    Данная функция реализует проверку успешности выполнения запроса по API.
+    В случае неудачи, проводится анализ и выдаётся удобный ответ.
+    При помощи удобного ответа, можно напрямую передать информацию о причине ошибки.
+
+    :param response: Ответ от сервера T2
+    :return: JSON со статусом, отредактированным текстом и самим 'response'
+    """
+    status = False
+    text = 'Успешно'
+    res = str(response)
+
     if response.status_code == 200:
-        return {'status': True, 'text': 'Успешно', 'response': response}
+        status = True
     elif response.status_code == 404:
-        return {'status': False, 'text': 'Ошибка в ссылке api', 'response': response}
+        text = 'Ошибка в ссылке api'
     elif response.status_code == 403:
-        return {'status': False, 'text': 'Ошибка запроса', 'response': response}
+        text = 'Ошибка запроса'
     elif response.status_code == 401:
-        return {'status': False, 'text': 'Ошибка авторизации', 'response': response}
+        text = 'Ошибка авторизации'
     elif response.text == 'Password authorization unavailable':
-        return {'status': False, 'text': 'Почта не подтверждена, в качестве двухфакторной аутентификации.', 'response': response}
+        text = 'Почта не подтверждена, в качестве двух-факторной аутентификации.'
     else:
         try:
-            log(str(response.reason), 3)
+            res = str(response.reason)
+            try:
+                res = str(response.json())
+
+                try:
+                    status_error = res['meta']['status']
+
+                    if status_error == 'bp_err_noTraffic':
+                        text = 'Недостаточно трафика'
+                    elif 'error_description' in response.json():
+                        text = response.json()['error_description']
+                except:
+                    text = 'Неизвестная ошибка!'
+
+            except ValueError as e:
+                res = f'Ошибка преобразования JSON: {str(e)}'
+            finally:
+                log(res, 3)
         except:
-            log(str(response), 3)
-        try:
-            log(str(response.json()), 3)
-        except:
-            log('JSON - не конвертирутся', 3)
-        if 'meta' in response.json():
-            if 'status' in response.json()['meta']:
-                if response.json()['meta']['status'] == 'bp_err_noTraffic':
-                    return {'status': False, 'text': 'Недостаточно трафика', 'response': response}
-        elif 'error_description' in response.json():
-            return {'status': False, 'text': response.json()['error_description'], 'response': response}
+            res = str(response)
+        finally:
+            log(res, 3)
+
+    return {'status': status, 'text': text, 'response': response}
 
 
 def auth(uid):
-    DB = base_g(uid)
+    """
 
-    s = requests.Session()  # Создание сессии
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :return: Ответ сервера
+    """
+    DB = base_g(uid)
 
     data = {"client_id": "digital-suite-web-app", "grant_type": "password", "username": DB["auth_login"],
             "password": DB["auth_password"],
@@ -63,8 +92,7 @@ def auth(uid):
     if DB["status_sms"] == 0:
         data['security_code_token'] = DB['security_code_token']
         data['security_code'] = DB['security_code']
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
+
     response = s.post(TOKEN_API, data=data)
     response = errors(response)
     if not response['status']:
@@ -76,55 +104,62 @@ def auth(uid):
 
             # Сохранение токена в базе данных
             base_u({'id': uid, 'token': token})
+
             return response
         except:
             return response
 
 
 def security_code(uid):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :return: Ответ сервера.
+    """
     DB = base_g(uid)
-    s = requests.Session()  # Создание сессии
 
     data = {"client_id": "digital-suite-web-app", "grant_type": "password",
             "username": DB["auth_login"], "password": DB["auth_password"],
             "password_type": "password"}  # Данные для авторизации
 
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
     response = s.post(SECURE_API, json=data)
     response = errors(response)
     return response
 
 
 def send_sms(uid):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :return: Ответ сервера.
+    """
     DB = base_g(uid)
     sms_post_url = SMS_VALIDATION_API + DB["auth_login"]
-    s = requests.Session()  # Создание сессии
-    s.headers.update({'Authorization': 'Bearer {}'.format(DB["token"])})
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
+
     response = s.post(sms_post_url, json={'sender': 'Tele2'})
     response = errors(response)
     return response
 
 
 def sell_lot(uid, lot_for_sell):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :param lot_for_sell: Данные о том, какой лот необходимо создать.
+    :return: Ответ сервера.
+    """
     DB = base_g(uid)
     lot = lot_for_sell
 
-    s = requests.Session()  # Создание сессии
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
-    s.headers.update({'Authorization': 'Bearer {}'.format(DB["token"])})
     base_api = MAIN_API + DB["auth_login"]
     response = s.put(f'{base_api}/exchange/lots/created', json=lot)
     response = errors(response)
     try:
-        price = str(int(lot_for_sell['price']))
+        price = str(int(lot['price']))
     except:
-        price = str(int(lot_for_sell['cost']['amount']))
-    emoji = lot_for_sell['emojis']
-    name = lot_for_sell['name']
+        price = str(int(lot['cost']['amount']))
+    emoji = lot['emojis']
+    name = lot['name']
     data = (name, emoji, price)
     if response['status']:
         lot_id = response['response'].json()['data']['id']
@@ -134,11 +169,14 @@ def sell_lot(uid, lot_for_sell):
 
 
 def delete(uid, lot_id):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :param lot_id: ID выставленного лота.
+    :return: Ответ сервера.
+    """
     DB = base_g(uid)
-    s = requests.Session()  # Создание сессии
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
-    s.headers.update({'Authorization': 'Bearer {}'.format(DB["token"])})
+
     base_api = MAIN_API + DB["auth_login"]
     response = s.delete(f'{base_api}/exchange/lots/created/{str(lot_id)}')
     response = errors(response)
@@ -147,12 +185,15 @@ def delete(uid, lot_id):
 
 
 def top(uid, lot_id):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :param lot_id: ID выставленного лота.
+    :return: Ответ сервера.
+    """
+    response = None
     DB = base_g(uid)
 
-    s = requests.Session()  # Создание сессии
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
-    s.headers.update({'Authorization': 'Bearer {}'.format(DB["token"])})
     base_api = MAIN_API + DB["auth_login"]
     data = {"lotId": lot_id}
     data = json.dumps(data)
@@ -174,11 +215,13 @@ def top(uid, lot_id):
 
 
 def get_lots(uid):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :return: Ответ сервера.
+    """
     DB = base_g(uid)
-    s = requests.Session()  # Создание сессии
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
-    s.headers.update({'Authorization': 'Bearer {}'.format(DB["token"])})
+
     base_api = MAIN_API + DB["auth_login"]
     # Запрос к странице со списком лотов
     response = s.get(f'{base_api}/exchange/lots/created')
@@ -212,11 +255,14 @@ def get_lots(uid):
 
 
 def get_name(uid):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :return: Ответ сервера.
+    """
     DB = base_g(uid)
     token = DB["token"]
-    s = requests.Session()  # Создание сессии
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
+
     s.headers.update({'Authorization': 'Bearer {}'.format(token)})
     base_api = MAIN_API + DB["auth_login"]
     response = s.get(f'{base_api}/exchange/seller/name')
@@ -225,12 +271,15 @@ def get_name(uid):
 
 
 def get_rests(uid, i=0):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :param i: Переменная содержит в себе номер попытки выполнить запрос. (Увеличивается в случае неудач)
+    :return: Ответ сервера.
+    """
     DB = base_g(uid)
     try:
-        s = requests.Session()  # Создание сессии
-        s.headers.update(
-            {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
-        s.headers.update({'Authorization': 'Bearer {}'.format(DB["token"])})
+
         base_api = MAIN_API + DB["auth_login"]
         response = s.get(f'{base_api}/rests')
         response = errors(response)
@@ -257,11 +306,13 @@ def get_rests(uid, i=0):
 
 
 def get_balance(uid):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :return: Ответ сервера. Содержит баланс номера телефона.
+    """
     DB = base_g(uid)
-    s = requests.Session()  # Создание сессии
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
-    s.headers.update({'Authorization': 'Bearer {}'.format(DB["token"])})
+
     base_api = MAIN_API + DB["auth_login"]
     response = s.get(f'{base_api}/balance')
     response = errors(response)
@@ -269,11 +320,13 @@ def get_balance(uid):
 
 
 def get_statistics(uid):
+    """
+
+    :param uid: ID выставленного лота.
+    :return: Ответ сервера.
+    """
     DB = base_g(uid)
-    s = requests.Session()  # Создание сессии
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
-    s.headers.update({'Authorization': 'Bearer {}'.format(DB["token"])})
+
     base_api = MAIN_API + DB["auth_login"]
     response = s.get(f'{base_api}/exchange/statistics')
     response = errors(response)
@@ -281,6 +334,13 @@ def get_statistics(uid):
 
 
 def rename(uid, lot_id, data_imp):
+    """
+
+    :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
+    :param lot_id: ID выставленного лота.
+    :param data_imp: # Данные лота (Теоретически)
+    :return: Ответ сервера.
+    """
     DB = base_g(uid)
     data = {
         "showSellerName": data_imp[0],
@@ -291,10 +351,7 @@ def rename(uid, lot_id, data_imp):
         }
     }
     data = json.dumps(data)
-    s = requests.Session()  # Создание сессии
-    s.headers.update(
-        {'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
-    s.headers.update({'Authorization': 'Bearer {}'.format(DB["token"])})
+
     base_api = MAIN_API + DB["auth_login"]
     response = s.patch(f'{base_api}/exchange/lots/created/{lot_id}', data)
     response = errors(response)

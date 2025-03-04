@@ -1,8 +1,11 @@
 import asyncio
 import json
-from log import log
+
 import telebot_jobBot
 from Tele2 import telebot_t2Market
+from log import log
+
+
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
 def str_to_dict1(str_):
@@ -107,8 +110,6 @@ async def start_taxiParser(self):
             active_bot[1] = False
             self.btn_start_taxiParser.icon = 'car'
 
-
-
     await async_start(start)
 
 
@@ -127,8 +128,6 @@ async def start_t2Market(self):
         else:
             telebot_t2Market.exit('Выход')
             active_bot[2] = False
-
-
 
     await async_start(start)
 
