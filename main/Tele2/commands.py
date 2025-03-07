@@ -3,14 +3,12 @@ import random
 import time
 
 from Tele2 import api
-from Tele2 import base
 from Tele2 import functions
 from Tele2 import menu
 from telebot import types
 import math
 
-base_u = base.update_users
-base_g = base.get_user
+from handler import t2b
 
 from Tele2 import config
 from log import log
@@ -30,13 +28,8 @@ def auth(call, bot):
     :return:
     """
     uid = call.from_user.id
-    DB = base_g(uid)
+    DB = t2b(uid)
     data = call.data
-
-    # При отсутствии аккаунта в БД, создаётся таблица
-    if DB is None:
-        log('Создание аккаунта!', 1)
-        base.create_user(uid)
 
     # Если пользователь не авторизован, происходит авторизация
     if DB['stage_autorize'] < 3:
@@ -48,7 +41,8 @@ def auth(call, bot):
 
         # 1 Этап - Добавление номера телефона (Номер успешно добавлен)
         if len(str(data)) == 11 and (data[0] == '7') and data[1] == '9' and DB['stage_autorize'] == 0:
-            base_u({'id': uid, 'auth_login': data, 'stage_autorize': 1})
+            updata = {'id': uid, 'auth_login': data, 'stage_autorize': 1}
+            t2b(uid, updata, 'u')
             answer = 'Введите ваш пароль:'
             menu.login_password(call, bot, answer)
 
@@ -63,18 +57,21 @@ def auth(call, bot):
             if DB['status_sms'] == 0:
                 # Если пароль не указан:
                 if len(str(DB['auth_password'])) == 0 or DB['auth_password'] == None:
-                    base_u({'id': uid, 'auth_password': data, 'security_code': ''})
+                    updata = {'id': uid, 'auth_password': data, 'security_code': ''}
+                    t2b(uid, updata, 'u')
 
                 response = api.security_code(uid)
 
                 # При успешной отправке кода:
                 if response['status']:
-                    base_u({'id': uid, 'stage_autorize': 2, 'auth_password': DB['auth_password'],
-                            'security_code_token': response['response'].json()['security_code_token']})
+                    updata = {'id': uid, 'stage_autorize': 2, 'auth_password': DB['auth_password'],
+                            'security_code_token': response['response'].json()['security_code_token']}
+                    t2b(uid, updata, 'u')
                     answer = 'На почту был отправлен проверочный код\! Пришлите его сюда:'
                     menu.security_code(call, bot, answer)
             else:
-                base_u({'id': uid, 'stage_autorize': 2})
+                updata = {'id': uid, 'stage_autorize': 2}
+                t2b(uid, updata, 'u')
 
         # 3 Этап - Проведение и проверка авторизации:
         elif DB['stage_autorize'] == 2:
@@ -82,20 +79,20 @@ def auth(call, bot):
 
             # При успешной авторизации:
             if response['status']:
-                base_u(
-                    {'id': uid, 'config_count': def_traffic[0]['volume']['value'], 'config_autotime': def_traffic[1][0],
+                updata = {'id': uid, 'config_count': def_traffic[0]['volume']['value'], 'config_autotime': def_traffic[1][0],
                      'stage_autorize': 3, 'status_sms': 0, 'config_uom': def_traffic[0]['volume']['uom'],
                      'config_repit': def_traffic[1][1], 'config_price': def_traffic[0]['cost']['amount'],
-                     'config_type': def_traffic[0]['trafficType']})
-                cache[uid] = {'status_autosell': 0, 'status_autotop': 0, 'status_lagg': 0}
-
+                     'config_type': def_traffic[0]['trafficType']}
+                
+                cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
+                t2b(uid, updata, 'u')
                 update_def_traffic(call)
                 return DB
 
             # При неудаче - возврат к 1 этапу:
             else:
-                base.delete_user(uid)
-                base.create_user(uid)
+                t2b(uid, type_='d')
+                t2b(uid)
                 answer = 'Неверные данные, попробуйте сначала\!' \
                          '\nВведите ваш номер телефона, в формате: [79000000000]'
                 log('При авторизации, были введены неверные данные.', 3)
@@ -118,7 +115,7 @@ def admin_auth(call, bot):
     """
     deauth(call, bot, False)
     uid = call.from_user.id
-    DB = base_g(uid)
+    DB = t2b(uid)
     data = call.data
 
     deauth(call, bot, False)
@@ -131,7 +128,8 @@ def admin_auth(call, bot):
     # Авторизация в +7 (992)022-88-48
     if data == 'Войти1':
         log('Вход в +7 (992)022-88-48', 1)
-        base_u({'id': uid, 'stage_autorize': 1, 'auth_login': '79920228848', 'auth_password': '649UPY'})
+        updata = {'id': uid, 'stage_autorize': 1, 'auth_login': '79920228848', 'auth_password': '649UPY'}
+        t2b(uid, updata, 'u')
         response = auth(call, bot)
         return response
 
@@ -146,7 +144,7 @@ def deauth(call, bot, lobby):
     """
     try:
         uid = call.from_user.id
-        DB = base_g(uid)
+        DB = t2b(uid)
 
         if DB:
             base.delete_user(uid)
@@ -169,7 +167,7 @@ def houme_menu(call, bot):
     :param bot:
     """
     uid = call.from_user.id
-    cache[uid] = {'status_autosell': 0, 'status_autotop': 0, 'status_lagg': 0}
+    cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
     menu.home(call, bot)
 
 
@@ -182,7 +180,7 @@ def settings(call, bot):
     :return:
     """
     uid = call.from_user.id
-    DB = base_g(uid)
+    DB = t2b(uid)
     data = call.data
 
     config_uom = DB['config_uom']
@@ -197,7 +195,8 @@ def settings(call, bot):
     elif DB['lvl_setting'] == 1:
         try:
             int(str(data))
-            base_u({'id': uid, 'config_autotime': call.message.text})
+            updata = {'id': uid, 'config_autotime': call.message.text}
+            t2b(uid, updata, 'u')
             return True
         except:
             answer = '🛠️ *Настройки\.* \n\nНапишите количество секунд, \nчерез которое будут повторяться \nподнятие и выставление\. ' \
@@ -213,15 +212,17 @@ def settings(call, bot):
             return False
 
         if config_uom == 'gb':
-            base_u({'id': uid, 'config_count': data, 'config_price': str(math.ceil(config_price * 15))})
+            updata = {'id': uid, 'config_count': data, 'config_price': str(math.ceil(config_price * 15))}
+            t2b(uid, updata, 'u')
         elif config_uom == 'min':
-            base_u({'id': uid, 'config_count': data, 'config_price': str(math.ceil(int(data) / 1.25))})
+            updata = {'id': uid, 'config_count': data, 'config_price': str(math.ceil(int(data) / 1.25))}
+            t2b(uid, updata, 'u')
         return True
 
     elif DB['lvl_setting'] == 3:
         try:
             int(str(data))
-            base_u({'id': uid, 'config_repit': call.message.text})
+            updata = {'id': uid, 'config_repit': call.message.text})
             return True
         except:
             answer = '🛠️ *Настройки\.* \n\nНапишите количество повторов, \nчерез которое бот закончит \nподнятие или ' \
@@ -231,10 +232,10 @@ def settings(call, bot):
             return False
     elif DB['lvl_setting'] == 4:
         if data == 'Минуты':
-            base_u({'id': uid, 'config_type': 'voice', 'config_count': '62', 'config_price': '50', 'config_uom': 'min'})
+            updata = {'id': uid, 'config_type': 'voice', 'config_count': '62', 'config_price': '50', 'config_uom': 'min'})
             return True
         elif data == 'Гигабайты':
-            base_u({'id': uid, 'config_type': 'data', 'config_count': '6', 'config_price': '90', 'config_uom': 'gb'})
+            updata = {'id': uid, 'config_type': 'data', 'config_count': '6', 'config_price': '90', 'config_uom': 'gb'})
             return True
         else:
             answer = '🛠️ *Настройки\.* \n\nВыберите нужный для вас тип трафика:'
@@ -306,7 +307,7 @@ def profile(call, bot):
 
         return False
 
-    DB = base_g(uid)  # Оно здесь, потому что сначала обновляются данные, потом копируются
+    DB = t2b(uid)  # Оно здесь, потому что сначала обновляются данные, потом копируются
 
     if check:
         balance = str(balance).split('.')
@@ -342,193 +343,103 @@ def profile(call, bot):
     menu.profile(call, bot, answer)
 
 
-# Авто-продажа
-def autosell(call, bot):
-    """
+def timer(answer, at, count, uid, call, bot, DB):
+    if int(DB['config_repit']) > 0:
+        answer += '\n*Осталось:* ' + str(
+            int(DB['config_repit']) - count) + ' раз\(а\)'
+    second_text = ' секунд' if (str(at)[len(at) - 1] in ('5', '6', '7', '8', '9', '0')
+                                or (str(at)[0] == '1' if len(str(at)) > 1 else False)) \
+        else (' секунды' if str(at)[len(at) - 1] in ('2', '3', '4') else ' секунда')
 
-    :param call:
-    :param bot:
-    """
-    global answer
-    print('\033[32m\n\033[1m\033[44mКоманда: autosell\033[0m')
-    uid = call.from_user.id
-    DB = base_g(uid)
+    answer3 = answer + '\n*Ожидание:* ' + str(
+        at) + second_text  # Первоначальное добавление таймера
+    menu.bot_launch_on(call, bot, answer3, True, False)
 
-    if uid not in cache:  # Добавление аккаунта в кэш, если его нет
-        cache[uid] = {'status_lagg': 0, 'status_autosell': 0, 'status_autotop': 0}
-
-    if DB:
-        if DB['stage_autorize'] == 3:
-            if cache[uid]['status_autosell'] == 0:
-                if cache[uid]['status_lagg'] == 0:
-                    count = 0
-                    cache[uid]['status_autosell'] = 1
-                    seller_lot = [0, 0]
-                    while cache[uid]['status_autosell'] == 1:
-                        if DB['config_repit'] != 0:
-                            count += 1
-
-                        lots = get_lots_refresh(call)
-                        if count == 0:
-                            seller_lot[0] = len(lots)
-                        seller_lot[1] = len(lots)
-
-                        check_sell(call, bot, uid, lots)  # Проверка (Продался ли лот)
-
-                        if count <= int(DB['config_repit']):
-                            response = api.sell_lot(uid, def_traffic[0])
-                            # Проверка на успешное выполнение
-                            if response['status']:
-                                answer = 'Лот успешно выставлен\!'
-                                menu.bot_launch_on(call, bot, answer, False, False)
-                                time.sleep(2)
-                                at = DB['config_autotime']
-                                answer = 'Авто\-продажа работает\!\n'
-
-                                if int(DB['config_repit']) > 0:
-                                    answer += '\n*Осталось:* ' + str(
-                                        int(DB['config_repit']) - count) + ' раз\(а\)'
-                                second_text = ' секунд' if (str(at)[len(at) - 1] in ('5', '6', '7', '8', '9', '0') or (
-                                    str(at)[0] == '1' if len(str(at)) > 1 else False)) else (
-                                    ' секунды' if str(at)[len(at) - 1] in ('2', '3', '4') else ' секунда')
-
-                                answer3 = answer + '\n*Ожидание:* ' + str(
-                                    at) + second_text  # Первоначальное добавление таймера
-                                menu.bot_launch_on(call, bot, answer3, True, False)
-
-                                cache[uid]['status_lagg'] = 1
-                                cache[uid]['timer'] = 0
-                                stop_timer[0] = False
-                                while cache[uid]['timer'] < int(at):
-                                    if stop_timer[0]:
-                                        cache[uid]['timer'] = int(at)
-                                    else:
-                                        at = DB['config_autotime']
-                                        time.sleep(0.85)
-                                        cache[uid]['timer'] += 1
-                                        ct = str(int(at) - int(cache[uid]['timer']))
-                                        second_text2 = ' секунд' if (str(ct)[len(ct) - 1] in (
-                                            '5', '6', '7', '8', '9', '0') or (
-                                                                         (True if str(at)[0] == '1' else False) if len(
-                                                                             str(ct)) > 1 else False)) else (
-                                            ' секунды' if str(ct)[len(ct) - 1] in (
-                                                '2', '3', '4') else ' секунда')
-                                        answer2 = answer + '\n*Ожидание:* ' + ct + second_text2  # Изменение таймера
-                                        menu.bot_launch_on(call, bot, answer2, True, False)
-                                cache[uid]['status_lagg'] = 0
-                            else:
-                                if 'Недостаточно трафика' == response['text']:
-                                    answer = 'Недостаточно трафика\!'
-                                    menu.bot_launch_on(call, bot, answer, False, False)
-                                    time.sleep(2)
-                                    stop(call, bot)
-                                elif 'Ошибка авторизации' == response['text']:
-                                    answer = 'Ошибка авторизации\! \nВойдите в аккаунт заново\.'
-                                    menu.error(call, bot, answer)
-                                else:
-                                    menu.error(call, bot)
-                                break
-
-                        else:
-                            answer = f'Авто\-продажа завершена\!'
-                            answer += f'\nПродано: {seller_lot[0] - seller_lot[1]} лотов за сеанс\.'
-                            menu.bot_launch_on(call, bot, answer, False, False)
-                            stop(call, bot)
-                            break
-                else:
-                    answer = 'Ожидание после выставления не окончено\! cache[uid][\'status_lagg\'] = 1'
-                    log(answer, 3)
-            else:
-                answer = 'Цикл автопродажи уже запущен\! cache[uid][\'status_autosell\'] = 1'
-                log(answer, 3)
+    cache[uid]['status_lagg'] = 1
+    cache[uid]['timer'] = 0
+    stop_timer[0] = False
+    while cache[uid]['timer'] < int(at):
+        if stop_timer[0]:
+            cache[uid]['timer'] = int(at)
         else:
-            answer = 'Вы не закончили авторизацию\! Авторизуйтесь, используя команду: /start'
-            log('autosell', '\033[31m' + answer + '\033[0m')
-            deauth(call, bot, True)
-    else:
-        answer = 'Вы не авторизованы\! Авторизуйтесь, используя команду: /start'
-        log(answer, 3)
-        deauth(call, bot, True)
+            at = DB['config_autotime']
+            time.sleep(0.85)
+            cache[uid]['timer'] += 1
+            ct = str(int(at) - int(cache[uid]['timer']))
+            second_text2 = ' секунд' if (str(ct)[len(ct) - 1] in ('5', '6', '7', '8', '9', '0')
+                                         or ((True if str(at)[0] == '1' else False) if len(str(ct)) > 1 else False)) \
+                else (' секунды' if str(ct)[len(ct) - 1] in ('2', '3', '4') else ' секунда')
+            answer2 = answer + '\n*Ожидание:* ' + ct + second_text2  # Изменение таймера
+            menu.bot_launch_on(call, bot, answer2, True, False)
+    cache[uid]['timer'] = 0
+    cache[uid]['status_lagg'] = 0
 
 
-# Авто-поднятие
-def autotop(call, bot):
-    """
-
-    :param call:
-    :param bot:
-    """
+def run_auto(call, bot, type_=''):
+    global answer
     uid = call.from_user.id
-    DB = base_g(uid)
+    DB = t2b(uid)
+
     if uid not in cache:  # Добавление аккаунта в кэш, если его нет
-        cache[uid] = {'status_lagg': 0, 'status_autosell': 0, 'status_autotop': 0}
-    if DB:
-        if DB['stage_autorize'] == 3:
-            if cache[uid]['status_autotop'] == 0:
-                if cache[uid]['status_lagg'] == 0:
-                    cache[uid]['status_autotop'] = 1
-                    count = 0
-                    seller_lot = [0, 0]
+        cache[uid] = {'status_lagg': 0, 'status_run_auto': 0}
 
-                    while cache[uid]['status_autotop'] == 1:
-                        lots = get_lots_refresh(call)
+    if DB and DB['stage_autorize'] == 3 and cache[uid]['status_run_auto'] == 0 and cache[uid]['status_lagg'] == 0:
+        count = 0
+        cache[uid]['status_run_auto'] = 1
+        seller_lot = [0, 0]
+        while cache[uid]['status_run_auto'] == 1:
+            lots = get_lots_refresh(call)
 
-                        check_sell(call, bot, uid, lots)  # Проверка (Продался ли лот)
+            check_sell(call, bot, uid, lots)  # Проверка (Продался ли лот)
 
-                        if count == 0:
-                            seller_lot[0] = len(lots)
-                        seller_lot[1] = len(lots)
+            if count == 0:
+                seller_lot[0] = len(lots)
 
-                        if len(lots) > 0:
-                            rand_id = random.randint(0, len(lots) - 1)
-                            lot_id = lots[f'{rand_id}']['id']
+            seller_lot[1] = len(lots)
+            if count <= int(DB['config_repit']):
+                if type_ == 'sell':
+                    response = api.sell_lot(uid, def_traffic[0])
+                    if response['status']:
+                        answer = 'Лот успешно выставлен\!'
+                        menu.bot_launch_on(call, bot, answer)
+                        time.sleep(2)
+                        at = DB['config_autotime']
+                        answer = 'Авто\-продажа работает\!\n'
+                        timer(answer, at, count, uid, call, bot, DB)
+                    else:
+                        if 'Недостаточно трафика' == response['text']:
+                            answer = 'Недостаточно трафика\!'
+                            menu.bot_launch_on(call, bot, answer)
+                            time.sleep(2)
+                            stop(call, bot)
+                        elif 'Ошибка авторизации' == response['text']:
+                            answer = 'Ошибка авторизации\! \nВойдите в аккаунт заново\.'
+                            menu.error(call, bot, answer)
+                        else:
+                            menu.error(call, bot)
+                        break
+                elif type_ == 'top':
+                    if len(lots) > 0:
+                        rand_id = random.randint(0, len(lots) - 1)
+                        lot_id = lots[f'{rand_id}']['id']
+                        if not lots[str(rand_id)]['status']:
+                            if lots[str(rand_id)]['status'] != 'revoked':
 
-                            if not lots[str(rand_id)]['status']:
-                                if lots[str(rand_id)]['status'] != 'revoked':
-                                    if DB['config_repit'] != 0:
-                                        count += 1
-                                    if count <= int(DB['config_repit']):
-                                        response = api.top(uid, lot_id)
+                                if DB['config_repit'] != 0:
+                                    count += 1
+                                if count <= int(DB['config_repit']):
+                                    response = api.top(uid, lot_id)
+                                    if response:
                                         if response['status']:
                                             answer_lot = functions.text_lot(lots, f'{rand_id}')
-
                                             answer = f'Лот успешно поднят в топ\:\n\n{answer_lot}'
                                             log('Лот поднят в топ!', 1)
-                                            menu.bot_launch_on(call, bot, answer, False, False)
+                                            menu.bot_launch_on(call, bot, answer)
                                             time.sleep(2)
 
                                             at = DB['config_autotime']
                                             answer = 'Авто\-поднятие работает\!\n'
-                                            if int(DB['config_repit']) > 0:
-                                                answer += '\n*Осталось:* ' + str(
-                                                    int(DB['config_repit']) - count) + ' раз\(а\)'
-                                            second_text = ' секунд' if (
-                                                    str(at)[len(at) - 1] in ('5', '6', '7', '8', '9', '0') or (
-                                                str(at)[0] == '1' if len(str(at)) > 1 else False)) else (
-                                                ' секунды' if str(at)[len(at) - 1] in ('2', '3', '4') else ' секунда')
-                                            answer3 = answer + '\n*Ожидание:* ' + str(
-                                                at) + second_text  # Первоначальное добавление таймера
-                                            menu.bot_launch_on(call, bot, answer3, True, False)
-                                            cache[uid]['status_lagg'] = 1
-                                            cache[uid]['timer'] = 0
-                                            stop_timer[0] = False
-                                            while cache[uid]['timer'] < int(at):
-                                                if stop_timer[0]:
-                                                    cache[uid]['timer'] = int(at)
-                                                else:
-                                                    time.sleep(0.85)
-                                                    cache[uid]['timer'] += 1
-                                                    ct = str(int(at) - int(cache[uid]['timer']))
-                                                    second_text2 = ' секунд' if (str(ct)[len(ct) - 1] in (
-                                                        '5', '6', '7', '8', '9', '0') or ((True if str(at)[
-                                                                                                       0] == '1' else False) if len(
-                                                        str(ct)) > 1 else False)) else (
-                                                        ' секунды' if str(ct)[len(ct) - 1] in (
-                                                            '2', '3', '4') else ' секунда')
-                                                    answer2 = answer + '\n*Ожидание:* ' + ct + second_text2  # Изменение таймера
-                                                    menu.bot_launch_on(call, bot, answer2, True, False)
-                                            cache[uid]['timer'] = 0
-                                            cache[uid]['status_lagg'] = 0
+                                            timer(answer, at, count, uid, call, bot, DB)
                                         else:
                                             if 'Ошибка авторизации' == response['text']:
                                                 answer = 'Ошибка авторизации\! \nВойдите в аккаунт заново\.'
@@ -538,43 +449,45 @@ def autotop(call, bot):
                                                 answer = 'Данный лот уже продан\!' if 'is not in ACTIVE status.' in str(
                                                     response['text']) else str(response['text'])
                                                 log(answer, 3)
-                                                menu.bot_launch_on(call, bot, answer, False, False)
+                                                menu.bot_launch_on(call, bot, answer)
                                                 time.sleep(2)
-                                    else:
-                                        answer = f'Авто\-поднятие завершено\!'
-                                        answer += f'\nПродано: {seller_lot[0] - seller_lot[1]} лотов за сеанс\.'
-                                        log(answer, 1)
-                                        menu.bot_launch_on(call, bot, answer, False, True)
-                                        stop(call, bot)
-                                        break
                                 else:
-                                    answer = f'Попался удалённый лот\!'
-                                    log(answer, 3)
-                                    menu.bot_launch_on(call, bot, answer, False, False)
+                                    answer = f'Авто\-поднятие завершено\!'
+                                    answer += f'\nПродано: {seller_lot[0] - seller_lot[1]} лотов за сеанс\.'
+                                    log(answer, 1)
+                                    menu.bot_launch_on(call, bot, answer, False, True)
+                                    stop(call, bot)
+                                    break
+
                             else:
-                                answer = f'Попался лот находящийся уже в топе\!'
+                                answer = f'Попался удалённый лот\!'
                                 log(answer, 3)
-                                menu.bot_launch_on(call, bot, answer, False, False)
+                                menu.bot_launch_on(call, bot, answer)
                         else:
-                            answer = f'Лотов нет\!\n\n'
+                            answer = f'Попался лот находящийся уже в топе\!'
                             log(answer, 3)
-                            menu.bot_launch_on(call, bot, answer, False, False)
-                            stop(call, bot)
-                            break
+                            menu.bot_launch_on(call, bot, answer)
+                    else:
+                        answer = f'Лотов нет\!\n\n'
+                        log(answer, 3)
+                        menu.bot_launch_on(call, bot, answer,)
+                        stop(call, bot)
+                        break
                 else:
-                    answer = 'Ожидание после выставление не окончено\! cache[uid][\'status_lagg\'] = 1'
+                    answer = 'Неверный тип запуска!'
                     log(answer, 3)
-            else:
-                answer = 'Цикл автотопа уже запущен\! cache[uid][\'status_autotop\'] = 1'
-                log(answer, 3)
-        else:
-            answer = 'Вы не закончили авторизацию\! Авторизуйтесь, используя команду: /auth'
-            log('Авторизация не завершена!', 3)
-            deauth(call, bot, False)
     else:
-        answer = 'Вы не авторизованы\! Авторизуйтесь, используя команду: /auth'
-        log('Авторизация не завершена!', 3)
-        deauth(call, bot, False)
+        if not DB or DB['stage_autorize'] != 3:
+            answer = 'Авторизуйтесь, используя команду: /auth'
+            deauth(call, bot, False)
+        elif cache[uid]['status_run_auto'] != 0:
+            answer = 'Цикл автопродажи уже запущен\! cache[uid][\'status_run_auto\'] = 1'
+        elif cache[uid]['status_lagg'] != 0:
+            answer = 'Ожидание после выставления не окончено\! cache[uid][\'status_lagg\'] = 1'
+        else:
+            answer = 'Неизвестная ошибка в run_auto!'
+
+        log(answer, 3)
 
 
 # Остановка бота
@@ -585,18 +498,22 @@ def stop(call, bot):
     :param bot:
     """
     uid = call.from_user.id
-    DB = base_g(uid)
+    DB = t2b(uid)
     if uid in cache:
-        cache[uid]['status_autotop'] = 0
-        cache[uid]['status_autosell'] = 0
+        cache[uid]['status_run_auto'] = 0
         stop_timer[0] = True
-        DB = base_g(uid)
+        DB = t2b(uid)
         time.sleep(1.5)  # Ожидание для безопасности
-        response = api.get_lots(uid)
+        get_lots = api.get_lots(uid)
+        response = get_lots[0]
+        active_traffic = get_lots[1]
+
         if response['status']:
-            base_u({'id': uid, 'list_lots': json.dumps(response['active_traffic'])})  # Обновление списка лотов
+            updata = {'id': uid, 'list_lots': json.dumps(active_traffic)})  # Обновление списка лотов
         else:
             log(response['text'], 3)
+            menu.bot_launch_on(call, bot, response['text'])
+
     menu.home(call, bot)
 
 
@@ -619,11 +536,13 @@ def remove_minutes_lots(call, bot):
     uid = call.from_user.id
     minutes = get_lots_refresh(call, delete_minutes=True)
     filtered_minutes = []
+
     for i in minutes:
         if minutes[i]['type'] == 'min':
             lid = minutes[i]['id']
             filtered_minutes.append(minutes[i]['id'])
             api.delete(uid, lid)
+
     if len(filtered_minutes) > 0:
         answer = 'Все лоты с минутами успешно отозваны\!'
     else:
@@ -640,7 +559,7 @@ def update_def_traffic(call):
     :param call:
     """
     uid = call.from_user.id
-    DB = base_g(uid)
+    DB = t2b(uid)
     def_traffic[0]['volume']['value'] = DB["config_count"]
     def_traffic[0]['volume']['uom'] = DB['config_uom']
     def_traffic[0]['cost']['amount'] = DB["config_price"]
@@ -656,30 +575,30 @@ def get_lots_refresh(call, delete_minutes=False):
     :return:
     """
     uid = call.from_user.id
-    response = api.get_lots(uid)
-    if response['status']:
-        base_u({'id': uid, 'list_lots': json.dumps(response['response'].json()['data'])})
-    base_u({'id': uid, 'list_lots': json.dumps(api.get_lots(uid)['active_traffic'])})
-    DB = base_g(uid)
-
-    all_lots = json.loads(DB['list_lots'])
+    get_lots = api.get_lots(uid)
+    response = get_lots[0]['response']
+    active_lots = get_lots[1]
     lots = {}
-    i = 0
-    if delete_minutes:
-        for obj in all_lots:
-            if all_lots[obj]['type'] == 'min':
-                lots[i] = all_lots[obj]
-                i += 1
-    else:
-        if DB['config_type'] == 'data':  # Отсеивание нужного типа трафика
+
+    if response.ok:
+        updata = {'id': uid, 'list_lots': json.dumps(response.json()['data'])})
+
+        updata = {'id': uid, 'list_lots': json.dumps(active_lots)})
+        DB = t2b(uid)
+
+        all_lots = json.loads(DB['list_lots'])
+
+        i = 0
+        type_ = DB['config_type']
+        type_ = 'gb' if type_ == 'data' else 'min' if type_ == 'volume' else False
+
+        # Отсеивание нужного типа трафика
+        if type_:
             for obj in all_lots:
-                if all_lots[obj]['type'] == 'gb':
+                if delete_minutes:
+                    type_ = 'min'
+                if all_lots[obj]['type'] == type_:
                     lots[str(i)] = all_lots[obj]
-                    i += 1
-        elif DB['config_type'] == 'volume':
-            for obj in all_lots:
-                if all_lots[obj]['type'] == 'min':
-                    lots[i] = all_lots[obj]
                     i += 1
         else:
             lots = all_lots
@@ -710,7 +629,7 @@ def send_sms(call):
     :param call:
     """
     uid = call.from_user.id
-    base_u({'id': uid, 'status_sms': 1, 'lvl_autorize': 1})
+    updata = {'id': uid, 'status_sms': 1, 'lvl_autorize': 1})
     api.send_sms(uid)
 
 
@@ -722,7 +641,7 @@ def delete_confrim(call, bot, lid):
     :param lid:
     """
     uid = call.from_user.id
-    DB = base_g(uid)
+    DB = t2b(uid)
     lots = json.loads(DB['list_lots'])
     menu.delete_confrim(call, bot, lid, lots)
 
@@ -750,10 +669,12 @@ def edit_lots(call, bot):
     :param bot:
     """
     uid = call.from_user.id
-    response = api.get_lots(uid)
+    get_lots = api.get_lots(uid)
+    response = get_lots['response']
+    active_traffic = get_lots['active_traffic']
     if response['status']:
-        base_u({'id': uid, 'list_lots': json.dumps(response['active_traffic'])})
-    DB = base_g(uid)
+        updata = {'id': uid, 'list_lots': json.dumps(['active_traffic'])})
+    DB = t2b(uid)
     lots = json.loads(DB['list_lots'])
     menu.edit_lots(call, bot, lots)
 
@@ -767,13 +688,13 @@ def redactor_lot(call, bot, lid):
     """
     uid = call.from_user.id
     if uid not in cache:
-        cache[uid] = {'status_lagg': 0, 'status_autosell': 0, 'status_autotop': 0}
+        cache[uid] = {'status_lagg': 0, 'status_run_auto': 0}
     cache[uid]['lid'] = lid
 
     response = api.get_lots(uid)
     if response['status']:
-        base_u({'id': uid, 'list_lots': json.dumps(response['active_traffic'])})
-    DB = base_g(uid)
+        updata = {'id': uid, 'list_lots': json.dumps(response['active_traffic'])})
+    DB = t2b(uid)
     lots = json.loads(DB['list_lots'])
     menu.redactor_lot(call, bot, lid, lots)
 
@@ -786,22 +707,23 @@ def top(call, bot, lid):
     :param lid:
     """
     uid = call.from_user.id
-    DB = base_g(uid)
+    DB = t2b(uid)
     lots = dict(json.loads(DB['list_lots']))
     response = api.top(uid, lid)
     lot = {}
-    if response['status']:
-        for i in lots:
-            lot[0] = i
-            if lots[i]['id'] == lid:
-                break
-        answer_lot = functions.text_lot(lots, lot[0])
+    if response:
+        if response['status']:
+            for i in lots:
+                lot[0] = i
+                if lots[i]['id'] == lid:
+                    break
+            answer_lot = functions.text_lot(lots, lot[0])
 
-        answer = f'Лот "{answer_lot}" \n\- успешно поднят в топ\!'
-        log(answer, 1)
-        bot.send_message(call.message.chat.id, answer, parse_mode='MarkdownV2')
-        time.sleep(2)
-        redactor_lot(call, bot, lid)
+            answer = f'Лот "{answer_lot}" \n\- успешно поднят в топ\!'
+            log(answer, 1)
+            bot.send_message(call.message.chat.id, answer, parse_mode='MarkdownV2')
+            time.sleep(2)
+            redactor_lot(call, bot, lid)
 
 
 def name(call, bot, lid):
@@ -816,7 +738,7 @@ def price(call, bot):
     """
     menu.price(call, bot)
     uid = call.from_user.id
-    base_u({'id': uid, 'lvl_redactor': 1})
+    updata = {'id': uid, 'lvl_redactor': 1})
 
 
 def price_accept(call, bot):
@@ -856,7 +778,7 @@ def emoji(call, bot, lid):
     """
     menu.emoji(call, bot, lid)
     uid = call.from_user.id
-    base_u({'id': uid, 'lvl_redactor': 2})
+    updata = {'id': uid, 'lvl_redactor': 2})
 
 
 def save(call, bot, lid):
@@ -878,8 +800,18 @@ def up(call, bot):
     uid = call.from_user.id
 
     lots = get_lots_refresh(call)
-    rand_id = random.randint(0, len(lots) - 1)
-    lot_id = lots[f'{rand_id}']['id']
 
-    api.top(uid, lot_id)
-    menu.up(call, bot)
+    print('lots')
+    print(lots)
+
+    if len(lots) > 0:
+        rand_id = random.randint(0, len(lots) - 1)
+        lot_id = lots[f'{rand_id}']['id']
+
+        api.top(uid, lot_id)
+        menu.up(call, bot)
+    else:
+        answer = f'Лотов нет\!\n\n'
+        log(answer, 3)
+        menu.bot_launch_on(call, bot, answer)
+        stop(call, bot)

@@ -20,18 +20,18 @@ def read(filename):  # Чтение таблицы
     format = filename.split('.')[1]
 
     try:
-        with open('doc/' + str(filename)):
+        with open('prices/' + str(filename)):
             pass
     except FileNotFoundError as e:
         response = False
         log(f'Файл "{filename}" не найден!', 2)
     else:
         if format == 'xls':  # Чтение xls
-            workbook = open_xls('doc/' + str(filename))
+            workbook = open_xls('prices/' + str(filename))
             log(f'Начало сканирования файла: {filename}')
             response = xls(workbook)
         elif format == 'xlsx':  # Чтение xlsx
-            workbook = open_xlsx('doc/' + str(filename))
+            workbook = open_xlsx('prices/' + str(filename))
             log(f'Начало сканирования файла: {filename}')
             response = xlsx(workbook)
         else:
@@ -206,7 +206,7 @@ def scanner(name):
     result = []
     import os
     for file in data['shops']:
-        if file['filename'] in os.listdir('doc'):
+        if file['filename'] in os.listdir('../data/prices'):
             table = read(file['filename'])
             if table:
                 for i in table:
@@ -227,7 +227,7 @@ def scanner(name):
 
     result.sort(key=key)
 
-    with open('data/cache_prices.json', 'w') as f:
+    with open('../data/cache_prices.json', 'w') as f:
         json.dump(result, f)
         log('Сохранение прайса в кэш.', 1)
     return result

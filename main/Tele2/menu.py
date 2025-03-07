@@ -5,8 +5,8 @@ from Tele2 import functions
 from log import log
 from telebot import types
 
-base_u = base.update_users
-base_g = base.get_user
+from handler import t2b
+
 cache_messages_ids = {}
 check_sell_lot_save = [0]  # Переменная, которая выключает изменение сообщений
 i = 0  # Переменная для нескольких попыток выдать ошибку функция error()
@@ -17,8 +17,10 @@ def reload(call, bot, answer, markup):
 
     if uid not in cache_messages_ids:
         cache_messages_ids[uid] = []
+
     if call.message.message_id not in cache_messages_ids[uid]:
         cache_messages_ids[uid].insert(0, call.message.message_id)
+
     if len(cache_messages_ids[uid]) > 5:
         cache_messages_ids[uid].pop(5)
 
@@ -38,6 +40,7 @@ def reload(call, bot, answer, markup):
             bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id - message_id))
         except:
             pass
+
     for message_id in range(1, 3):
         try:
             bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id + message_id))
@@ -51,18 +54,14 @@ def reload(call, bot, answer, markup):
                                   text=answer, reply_markup=markup, parse_mode='MarkdownV2')
         else:
             check_sell_lot_save[0] = 0
-            log('Лот якобы продан! Или не якобы!)', 3)
+            log('Лот якобы продан! Или не якобы!)', 2)
             a = 0 / 'asd'  # Вызыва исключение, что бы сработало создание нового меню! При успешной продаже лота.
     except Exception as e:
         try:
             bot.send_message(call.message.chat.id, answer, reply_markup=markup, parse_mode='MarkdownV2')
-            log('Создалось новое меню!', 1)
-            log('Причина:')
-            log(e, 2)
+            log(f'Создалось новое меню!\nПричина: {e}', 2)
         except Exception as e:
-            log('МЕНЮ ВООБЩЕ НЕ СОЗДАЛОСЬ!', 2)
-            log('Причина:')
-            log(e, 2)
+            log(f'МЕНЮ ВООБЩЕ НЕ СОЗДАЛОСЬ!\nПричина: {e}', 2)
             if i < 3:
                 error(call, bot)
                 i += 1
@@ -80,6 +79,7 @@ def wait(call, bot):
                               text=answer, reply_markup=markup, parse_mode='MarkdownV2')
     except:
         pass
+
 
 
 def error(call, bot, answer='Произошла ошибка\!\nПопробуйте ещё раз\.'):
@@ -171,13 +171,16 @@ def security_code(call, bot, answer):
     reload(call, bot, answer, markup)
 
 
-def bot_launch_on(call, bot, answer, check, sell_check):
+def bot_launch_on(call, bot, answer, check=False, sell_check=False):
     markup = types.InlineKeyboardMarkup()
     item1 = types.InlineKeyboardButton(text='❌ Остановить', callback_data='Остановить')
+
     if check:
         markup.add(item1)
+
     if sell_check:
         check_sell_lot_save[0] = 1
+
     reload(call, bot, answer, markup)
 
 
@@ -258,20 +261,22 @@ def redactor_lot(call, bot, lid, lots):
     markup = types.InlineKeyboardMarkup(row_width=2)
     lot_text = ''
     ind = {}
+
     for i in lots:
         lot_text = functions.text_lot(lots, i)
         if lots[i]['id'] == lid:
             ind[0] = i
             break
+
     answer = f'*Настройки лота:* \n\n{lot_text}'
-    item1 = types.InlineKeyboardButton(text='↩️ В топ', callback_data='top}')
-    item2 = types.InlineKeyboardButton(text='↩️ Смайлики', callback_data='emoji')
-    item3 = types.InlineKeyboardButton(text='↩️ Цена', callback_data='price')
-    item4 = types.InlineKeyboardButton(text='↩️ Имя', callback_data='name')
-    item5 = types.InlineKeyboardButton(text='🗑️ Удалить лот', callback_data='del')
-    item6 = types.InlineKeyboardButton(text='↩️ Сохранить', callback_data='save')
-    item7 = types.InlineKeyboardButton(text='↩️ Назад', callback_data='Редактировать лоты')
-    markup.add(item1, item2, item3, item4, item5, item6, item7)
+    btns = []
+    btns_data = (('↩️ В топ', 'top'), ('↩️ Смайлики', 'emoji'), ('↩️ Цена', 'price'), ('↩️ Имя', 'name'),
+                 ('🗑️ Удалить лот', 'del'), ('↩️ Сохранить', 'save'), ('↩️ Назад', 'Редактировать лоты'))
+
+    for i in btns_data:
+        btns.append(types.InlineKeyboardButton(text=i[0], callback_data=i[1]))
+
+    markup.add(*btns)
     reload(call, bot, answer, markup)
 
 

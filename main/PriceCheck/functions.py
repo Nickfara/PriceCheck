@@ -10,7 +10,7 @@ from kivymd.uix.snackbar import MDSnackbar, MDSnackbarSupportingText, MDSnackbar
     MDSnackbarActionButtonText, MDSnackbarCloseButton
 
 import handler
-import parse_metro
+from PriceCheck import parse_metro
 from log import log
 
 ToolsAJob = App.get_running_app
@@ -110,15 +110,6 @@ class Main:
 
     def refresh(self):
         asyncio.ensure_future(handler.refresh(self))
-
-    def start_jobBot(self):
-        asyncio.ensure_future(handler.start_telegram(self))
-
-    def start_t2Market(self):
-        asyncio.ensure_future(handler.start_t2Market(self))
-
-    def start_taxiParser(self):
-        asyncio.ensure_future(handler.start_taxiParser(self))
 
 
 class Settings:

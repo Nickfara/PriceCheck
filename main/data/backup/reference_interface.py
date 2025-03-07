@@ -18,7 +18,7 @@ from kivymd.uix.scrollview import ScrollView
 from kivymd.uix.selectioncontrol import MDSwitch, MDCheckbox
 from kivymd.uix.textfield import MDTextField
 
-from main.backup import Database_functions
+from main.data.backup import Database_functions
 
 items_warning = []
 dc.update_item('АВТОКЛИКЕР', '0')

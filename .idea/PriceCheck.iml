@@ -6,7 +6,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv2" />
     </content>
     <content url="file://$MODULE_DIR$/.venv2/Lib" />
-    <orderEntry type="jdk" jdkName="Python 3.12 virtualenv at C:\Users\Crack\GitHub\PriceCheck\.venv" jdkType="Python SDK" />
+    <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

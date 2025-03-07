@@ -29,10 +29,10 @@ profile = {
 }
 
 try:
-    with open('data/cookies_mshop.json') as f:
-        cookies = json.load(f)
+    with open('../data/cookies_mshop.json') as f:
+        cookies = json.load(f)['shops']
 except:
-    cookies = {}
+    cookies = {'shops': []}
 
 
 def cirkle(numb, lengue=0):
@@ -235,9 +235,9 @@ def auth():
             # browser.execute_script("document.body.style.zoom='15%'")
 
     log('Выбор адреса доставки выполнен!', 1)
-    cookies = browser.get_cookies()
+    cookies = {'shops': browser.get_cookies()}
 
-    with open('data/cookies_mshop.json', 'w') as f:
+    with open('../data/cookies_mshop.json', 'w') as f:
         json.dump(cookies, f)
         return True
 
@@ -249,10 +249,10 @@ def auth_check():
         data = {}
 
         try:
-            with open('data/cookies_mshop.json') as f:
-                cookies = json.load(f)
+            with open('../data/cookies_mshop.json') as f:
+                cookies = json.load(f)['shops']
         except:
-            cookies = {}
+            cookies = {'shops': []}
 
         for cookie in cookies:
             s.cookies.set(cookie['name'], cookie['value'])

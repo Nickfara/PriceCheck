@@ -8,8 +8,7 @@ from log import log
 s = requests.Session()  # Создание сессии
 s.headers.update({'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
 
-base_u = base.update_users
-base_g = base.get_user
+from handler import t2b
 
 SECURITY_BYPASS_HEADERS = {
     'Connection': 'keep-alive',
@@ -224,32 +223,39 @@ def get_lots(uid):
 
     base_api = MAIN_API + DB["auth_login"]
     # Запрос к странице со списком лотов
-    response = s.get(f'{base_api}/exchange/lots/created')
+    repeat = 0
+    while repeat < 3:
+        response = s.get(f'{base_api}/exchange/lots/created')
+
+        active_traffic = {}
+        if response:
+            all_traffic = response.json()['data']
+            # Фильтрация активных лотов
+
+            i = 0
+            for lot in all_traffic:
+                data_lot = {}
+                if lot['status'] == 'active':
+                    data_lot['id'] = lot['id']
+                    data_lot['value'] = lot['volume']['value']
+                    data_lot['type'] = lot['volume']['uom']
+                    data_lot['status'] = lot['isPremium']
+                    data_lot['name'] = lot['seller']['name']
+                    data_lot['emojis'] = lot['seller']['emojis']
+                    data_lot['creationDate'] = lot['creationDate']
+                    data_lot['price'] = lot['cost']['amount']
+
+                    active_traffic[str(i)] = data_lot
+                    i += 1
+
+            repeat = 3
+        else:
+            log('Ошибка получения лотов. Повторение попытки.', 3)
+            time.sleep(1)
+            repeat += 1
+
     response = errors(response)
-
-    all_traffic = response['response'].json()['data']
-    # Фильтрация активных лотов
-    active_traffic = {}
-    i = 0
-    for lot in all_traffic:
-        data_lot = {}
-        if lot['status'] == 'active':
-            data_lot['id'] = lot['id']
-            data_lot['value'] = lot['volume']['value']
-            data_lot['type'] = lot['volume']['uom']
-            data_lot['status'] = lot['isPremium']
-            data_lot['name'] = lot['seller']['name']
-            data_lot['emojis'] = lot['seller']['emojis']
-            data_lot['creationDate'] = lot['creationDate']
-            data_lot['price'] = lot['cost']['amount']
-
-            active_traffic[str(i)] = data_lot
-            i += 1
-
-    # Вывод на экран только активных лотов
-    response = dict(response)
-    response['active_traffic'] = active_traffic
-    return response
+    return (response, active_traffic)
 
     # Выставить лот
 

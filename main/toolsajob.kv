@@ -13,32 +13,7 @@
                 size_hint_y: None
                 height: "60dp"
                 md_bg_color: topBgClr
-                MDBoxLayout:
-                    orientation: 'horizontal'
-                    MDIconButton:
-                        id: btn_refresh
-                        on_release: root.refresh()
-                        icon: "refresh"
-                        icon_color: btn
-                        line_color: btn
-                    MDIconButton:
-                        id: btn_start_jobBot
-                        on_release: root.start_jobBot()
-                        icon: "download"
-                        icon_color: btn
-                        line_color: btn
-                    MDIconButton:
-                        id: btn_start_t2Market
-                        on_release: root.start_t2Market()
-                        icon: "store"
-                        icon_color: btn
-                        line_color: btn
-                    MDIconButton:
-                        id: btn_start_taxiParser
-                        on_release: root.start_taxiParser()
-                        icon: "car"
-                        icon_color: btn
-                        line_color: btn
+
                 MDBoxLayout:
                     orientation: 'vertical'
                     padding: (50, 0, 50, 0)
@@ -97,6 +72,15 @@
             size_hint_y: None
             height: '400dp'
             spacing: 12
+
+            MDBoxLayout:
+                orientation: 'horizontal'
+                MDIconButton:
+                    id: btn_refresh
+                    on_release: root.refresh()
+                    icon: "refresh"
+                    icon_color: btn
+                    line_color: btn
 
             MDBoxLayout:
                 size_hint_y: None

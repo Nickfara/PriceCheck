@@ -9,8 +9,8 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.uix.tooltip import MDTooltip
-
-import functions
+import check_files
+from PriceCheck import functions
 import handler
 
 cart = []
@@ -140,6 +140,8 @@ class ToolsAJob(MDApp):
 
 
 def run_async():
+    check_files.check_and_create()  # Проверка на наличие необходимых json файлов
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 

@@ -10,7 +10,7 @@ from log import log
 
 cookies = {}
 try:
-    with open('data/cookies_kuper.json') as f:
+    with open('../data/cookies_kuper.json') as f:
         cookies = json.load(f)
 except:
     cookies = {}
@@ -33,7 +33,7 @@ def auth():
 
     cookies = browser.get_cookies()
 
-    with open('data/cookies_kuper.json', 'w') as f:
+    with open('../data/cookies_kuper.json', 'w') as f:
         json.dump(cookies, f)
         return True
 
@@ -43,7 +43,7 @@ def auth_check():
         s = requests.Session()  # Создание сессии
 
         try:
-            with open('data/cookies_mshop.json') as f:
+            with open('../data/cookies_mshop.json') as f:
                 cookies = json.load(f)
         except:
             cookies = {}

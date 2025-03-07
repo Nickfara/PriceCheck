@@ -1,10 +1,11 @@
 import asyncio
+
 import json
 
-import telebot_jobBot
-from Tele2 import telebot_t2Market
+import ParserTaxi.taxi_parser as tp
 from log import log
-
+import tg_bot
+from PriceCheck.read_doc import scanner
 
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
@@ -62,74 +63,11 @@ def finder(text, items):
     return finded_items
 
 
-active_bot = [False, False, False]
-
-
 async def async_start(start):
     loop = asyncio.get_event_loop()
     from concurrent.futures import ThreadPoolExecutor
     executor = ThreadPoolExecutor()
     await loop.run_in_executor(executor, start)
-
-
-async def start_telegram(self):
-    def start():
-        if active_bot[0] == False:
-            self.ids.btn_start_jobBot.icon = 'stop-circle-outline'
-            active_bot[0] = True
-            log('Бот "Работа" запущен!', 1)
-            telebot_jobBot.start()
-
-            self.ids.btn_start_jobBot.icon = 'download'
-            active_bot[0] = False
-            log('Бот "Работа" закончил свою работу!', 1)
-        else:
-            telebot_jobBot.exit('Выход')
-            active_bot[0] = False
-
-    await async_start(start)
-
-
-async def start_taxiParser(self):
-    def start():
-        import ParserTaxi.taxi_parser as tp
-        if active_bot[1] == False:
-            active_bot[1] = True
-
-            self.ids.btn_start_taxiParser.icon = 'stop-circle-outline'
-            tp.active_bot_taxi[0] = True
-            log('Парсер такси включен!', 1)
-            tp.run()
-
-            self.ids.btn_start_taxiParser.icon = 'car'
-            tp.active_bot_taxi[0] = False
-            active_bot[1] = False
-            log('Парсер такси выключен!', 1)
-        else:
-            tp.active_bot_taxi[0] = False
-            active_bot[1] = False
-            self.btn_start_taxiParser.icon = 'car'
-
-    await async_start(start)
-
-
-async def start_t2Market(self):
-    def start():
-        if active_bot[2] == False:
-            active_bot[2] = True
-
-            self.ids.btn_start_t2Market.icon = 'stop-circle-outline'
-            log('Т2 Маркет включен', 1)
-            telebot_t2Market.start()
-
-            self.ids.btn_start_t2Market.icon = 'store'
-            active_bot[2] = False
-            log('Т2 Маркет выключен', 1)
-        else:
-            telebot_t2Market.exit('Выход')
-            active_bot[2] = False
-
-    await async_start(start)
 
 
 def filter_shops(items):
@@ -142,13 +80,19 @@ def filter_shops(items):
                 shops.append(shop['seller'])
 
     for item in items:
-        if item['seller'] in shops:
+        if item in shops:
             items_filtered.append(item)
     return items_filtered
 
 
 async def background_load(self):
     def start():
+        tg_bot.start()
+        log('TG бот включен!', 1)
+
+        tp.run()
+        log('Парсер такси включен!', 1)
+
         with open('data/cache_prices.json') as f:
             result = json.load(f)
             result_filtered = filter_shops(result)
@@ -161,6 +105,7 @@ async def background_load(self):
         except:
             with open('data/cache_cart.json', 'w') as f:
                 json.dump({'cart': []}, f)
+
         self.activate_enter_finder(self)
         log('Поиск по нажатию "enter" включен!', 1)
 
@@ -169,7 +114,8 @@ async def background_load(self):
 
 async def refresh(self):
     def start():
-        from read_doc import scanner
+        imports()
+
         scanner('')
         log('Сканирование прайсов запущено!', 1)
         with open('data/cache_prices.json') as f:
@@ -227,7 +173,7 @@ def send_cart(self):
                               'Екатерина' if shop.lower() == 'матушка' else 'Ульяна' if shop.lower() == 'алма' else '') + ', добрый день!\nЗаявка на завтра:') if shop.lower() not in (
                 'metro', 'купер') else 'METRO:') + '\n' + self.send_text[shop]
 
-            telebot_jobBot.send(text_cart)
+            tg_bot.send(text_cart)
 
 
 def remove_cart(item):
@@ -282,3 +228,31 @@ def filter_names(name):
                 break
 
     return name_
+
+
+def t2b(uid, data:dict, type_='g'):
+    if type_ == 'u':
+        with open(f'data/t2b.json', 'w+') as f:
+            file = json.load(f)
+            for i in data:
+                file[uid][i] = data[i]
+            json.dump(file, f)
+    elif type_ == 'g':
+        with open('data/t2b.json') as f:
+            if uid in json.load(f):
+                return json.load(f)[uid]
+            else:
+                with open(f'data/t2b.json', 'w') as f:
+                    file = json.load(f)
+                    file[uid] = {'auth_login': '', 'auth_password': '', 'status_run_auto': 0, 'status_lagg': 0,
+                                 'status_sms': 0, 'stage_autorize': 0, 'lvl_setting': 0, 'lvl_redactor': 0,
+                                 'security_code': '',
+                                 'security_code_token': ''}
+                    json.dump(file, f)
+                    return file[uid]
+    elif type_ == 'd':
+        with open(f'data/t2b.json', 'w+') as f:
+            file = json.load(f)
+            if data in file:
+                del file[data]
+                json.dump(file, f)

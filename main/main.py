@@ -3,7 +3,7 @@ import os
 
 from log import log
 
-dir = os.listdir('doc')
+dir = os.listdir('data/prices')
 
 for i in dir:
     log(i)

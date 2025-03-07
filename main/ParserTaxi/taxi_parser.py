@@ -14,7 +14,7 @@ from .database import add
 active_bot_taxi = [False]
 
 
-def get_price(latlon1, latlon2):
+def get_price(latlon1, latlon2, type_=1):
     """
     Запрос данных о поездке в яндекс такси.
 
@@ -22,8 +22,12 @@ def get_price(latlon1, latlon2):
     :param latlon2: Координаты местоположения точки прибытия.
     :return: Возвращается список с ценой, временем ожидания и длительностью поездки.
     """
+
+    type_ = 'econom' if type_ == 1 else 'together' if type_ == 2 else 'error'
+    if type_ == 'error':
+        return type_
     response = requests.get(
-        f'https://taxi-routeinfo.taxi.yandex.net/taxi_info?clid={clid}&apikey={apikey}&rll={latlon1}~{latlon2}&class=econom')
+        f'https://taxi-routeinfo.taxi.yandex.net/taxi_info?clid={clid}&apikey={apikey}&rll={latlon1}~{latlon2}&class={type_}')
 
     data = loads(response.text)
     result = {
@@ -34,7 +38,7 @@ def get_price(latlon1, latlon2):
     return result
 
 
-def create():
+def create(type_=1):
     """
     Создание списка с данными о поездке в обе стороны.
     [ts] - Настоящие дата и время.
@@ -48,8 +52,16 @@ def create():
     :return: Возвращается список с данными выше о поездке в обе стороны.
     """
 
-    data_to = get_price(point1, point2)
-    data_from = get_price(point2, point1)
+    data_to = get_price(point1, point2, type_)
+
+    if data_to == 'error':
+        return data_to
+
+    data_from = get_price(point2, point1, type_)
+
+    if data_from == 'error':
+        return data_from
+
     res_item = {
         "ts": datetime.now().strftime("%d.%m.%Y %H:%M:%S %A"),
         "to_price": data_to.get('price'),
@@ -73,5 +85,32 @@ def run():
             price = create()
             add(price)
             sleep(60)
+        except Exception as e:
+            log(e, 2)
+
+
+# Функция для отслеживания падений в цене тарифа вместе
+def find_lowmoney(direction=0):
+    cost = []
+    direction = 'to_price' if direction == 1 else 'from_price' if direction == 2 else 'error'
+
+    if direction == 'error': return 'Неверное направление'
+
+    while active_bot_taxi[0]:
+        try:
+            price = create(2)[direction]
+            cost.insert(0, price)
+
+            if len(cost) > 0:
+                if price - cost[0] > 15:
+                    text = f'Цена упала и стала: {price}'
+
+                if len(cost) > 5:
+                    del cost[-1]  # Удаление последнего обьекта, при превышении длинны
+            else:
+                text = f'Поиск падения цены активирован! Текущая цена: {price}'
+
+            sleep(15)
+
         except Exception as e:
             log(e, 2)
