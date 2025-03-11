@@ -18,6 +18,7 @@ def get_price(latlon1, latlon2, type_=1):
     """
     Запрос данных о поездке в яндекс такси.
 
+    :param type_:
     :param latlon1: Координаты местоположения точки отправления.
     :param latlon2: Координаты местоположения точки прибытия.
     :return: Возвращается список с ценой, временем ожидания и длительностью поездки.
@@ -89,8 +90,13 @@ def run():
             log(e, 2)
 
 
-# Функция для отслеживания падений в цене тарифа вместе
-def find_lowmoney(direction=0):
+def find_low_money(direction=0):
+    """
+        Функция для отслеживания падений в цене тарифа вместе
+
+    :param direction:
+    :return:
+    """
     cost = []
     direction = 'to_price' if direction == 1 else 'from_price' if direction == 2 else 'error'
 
@@ -104,11 +110,13 @@ def find_lowmoney(direction=0):
             if len(cost) > 0:
                 if price - cost[0] > 15:
                     text = f'Цена упала и стала: {price}'
+                    return text
 
                 if len(cost) > 5:
-                    del cost[-1]  # Удаление последнего обьекта, при превышении длинны
+                    del cost[-1]  # Удаление последнего объекта, при превышении длинны
             else:
                 text = f'Поиск падения цены активирован! Текущая цена: {price}'
+                return text
 
             sleep(15)
 

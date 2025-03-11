@@ -1,3 +1,7 @@
+"""
+Временный конфиг для парсинга цен в такси.
+"""
+
 clid = "ak241111"
 apikey = "YwgMXudjrASZaLAXpMqoNjTJjlDjrVKaMlrgBPN"
 point1 = "60.65829040252862,56.86060471272871"

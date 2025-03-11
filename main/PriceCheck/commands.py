@@ -1,3 +1,7 @@
+"""
+    Команды для парсинга цен
+"""
+
 import asyncio
 import json
 
@@ -17,23 +21,48 @@ ToolsAJob = App.get_running_app
 
 
 class Base:
+    """
+        Базовый класс
+    """
+
     @staticmethod
     def func_dialog_save_enter(self, key):
+        """
+
+        :param self:
+        :param key:
+        """
         if len(self.ids.text_find.text) > 0:
             if key == 13:
                 self.find(key)
 
     @staticmethod
     def activate_enter_finder(self):
+        """
+
+        :param self:
+        """
         Window.bind(on_key_down=self.func_dialog_save_enter)
 
     @staticmethod
     def on_focus_change(self, instance, text):
+        """
+
+        :param self:
+        :param instance:
+        :param text:
+        """
         shop = str(instance.id)
         self.send_text[shop] = str(text)
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def notify(self, text):
+        """
+
+        :param self:
+        :param text:
+        """
         MDSnackbar(
             MDSnackbarSupportingText(text=text, ),
             MDSnackbarButtonContainer(
@@ -55,14 +84,23 @@ class Base:
 
 
 class Main:
-    @staticmethod
-    def find(Main, ItemObjs):
-        name = Main.ids.text_find.text
+    """
+        Приложение
+    """
 
-        Main.ids.list_items_obj.clear_widgets()
-        finder_items = handler.finder(name, Main.base_price)  # Поиск товара
+    @staticmethod
+    def find(Main_, ItemObjs):
+        """
+
+        :param Main_:
+        :param ItemObjs:
+        """
+        name = Main_.ids.text_find.text
+
+        Main_.ids.list_items_obj.clear_widgets()
+        finder_items = handler.finder(name, Main_.base_price)  # Поиск товара
         result_metro = []
-        if Main.checkbox_parser_metro.active:
+        if Main_.checkbox_parser_metro.active:
             result_metro = parse_metro.search(name)
 
         if type(result_metro) is list:
@@ -84,64 +122,91 @@ class Main:
                 cost = 'Цена: ' + item['cost'] + '₽'
 
             ItemObj.ids.item_seller.text = item[
-                'seller']  # Здесь надо присвоить ячейкам с товарам значения и ниже в двух также
+                'seller']  # Здесь надо присвоить ячейкам с товарами значения и ниже в двух также
             ItemObj.ids.item_name.text = text.capitalize()
             ItemObj.ids.item_cost.text = cost
 
-            def btnForItem(icon, on_release, icon_color, id=str(item)):
+            def btn_for_item(icon, on_release, icon_color, oid=str(item)):
+                """
+
+                :param icon:
+                :param on_release:
+                :param icon_color:
+                :param oid:
+                """
                 ItemObj.ids.idItem.icon = icon
                 ItemObj.ids.idItem.bind(on_release=on_release)
                 # ItemObj.ids.item_object.bind(on_release=on_release)
                 ItemObj.ids.idItem.icon_color = icon_color
-                ItemObj.ids.idItem.id = id
+                ItemObj.ids.idItem.id = oid
 
             if item in handler.get_cart():
                 if item['seller'] == 'METRO':
-                    btnForItem('cart-remove', Main.remove_from_cart_metro, 'red')
+                    btn_for_item('cart-remove', Main_.remove_from_cart_metro, 'red')
                 else:
-                    btnForItem('cart-remove', Main.remove_from_cart, 'red')
+                    btn_for_item('cart-remove', Main_.remove_from_cart, 'red')
             else:
                 if item['seller'] == 'METRO':
-                    btnForItem('cart-plus', Main.add_to_cart_metro, 'blue')
+                    btn_for_item('cart-plus', Main_.add_to_cart_metro, 'blue')
                 else:
-                    btnForItem('cart-plus', Main.add_to_cart, 'blue')
+                    btn_for_item('cart-plus', Main_.add_to_cart, 'blue')
 
-            Main.ids.list_items_obj.add_widget(ItemObj)
+            Main_.ids.list_items_obj.add_widget(ItemObj)
 
     def refresh(self):
+        """
+            Обновление базы товаров
+        """
         asyncio.ensure_future(handler.refresh(self))
 
 
 class Settings:
+    """
+        Настройки
+    """
+
     @staticmethod
     def preset_shop(shop):
-        temp = {}
-        temp['filename'] = TextInput(text=str(shop['filename']), size_hint_y=None, height="30dp")
-        temp['sid_w'] = TextInput(text=str(shop['sid'][0]), size_hint_x=None, width="22dp", size_hint_y=None,
-                                  height="30dp")
-        temp['sid_h'] = TextInput(text=str(shop['sid'][1]), size_hint_x=None, width="22dp", size_hint_y=None,
-                                  height="30dp")
-        temp['sid_t'] = TextInput(text=str(shop['sid'][2]), size_hint_x=None, width="22dp", size_hint_y=None,
-                                  height="30dp")
-        temp['seller'] = TextInput(text=shop['seller'], size_hint_y=None, height="30dp")
-        temp['findname_w'] = TextInput(text=str(shop['findname'][0]), size_hint_x=None, width="22dp", size_hint_y=None,
-                                       height="30dp")
-        temp['findname_h'] = TextInput(text=str(shop['findname'][1]), size_hint_x=None, width="22dp", size_hint_y=None,
-                                       height="30dp")
-        temp['findtext'] = TextInput(text=shop['findtext'], size_hint_y=None, height="30dp")
-        temp['active'] = MDCheckbox(active=shop['active'], size_hint_x=None, width="25dp")
+        """
+
+        :param shop:
+        :return:
+        """
+        temp = {'filename': TextInput(text=str(shop['filename']), size_hint_y=None, height="30dp"),
+                'sid_w': TextInput(text=str(shop['sid'][0]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                   height="30dp"),
+                'sid_h': TextInput(text=str(shop['sid'][1]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                   height="30dp"),
+                'sid_t': TextInput(text=str(shop['sid'][2]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                   height="30dp"),
+                'seller': TextInput(text=shop['seller'], size_hint_y=None, height="30dp"),
+                'findname_w': TextInput(text=str(shop['findname'][0]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                        height="30dp"),
+                'findname_h': TextInput(text=str(shop['findname'][1]), size_hint_x=None, width="22dp", size_hint_y=None,
+                                        height="30dp"),
+                'findtext': TextInput(text=shop['findtext'], size_hint_y=None, height="30dp"),
+                'active': MDCheckbox(active=shop['active'], size_hint_x=None, width="25dp")}
         return temp
 
     @staticmethod
     def open(add):
-        Main = ToolsAJob().MainApp
-        if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
-            Main.dialog.clear_widgets()
-            Main.dialog.dismiss()
+        """
+
+        :param add:
+        :return:
+        """
+        Main_ = ToolsAJob().MainApp
+        if Main_.dialog:  # Закрыть диалоговое окно, если оно открыто
+            Main_.dialog.clear_widgets()
+            Main_.dialog.dismiss()
 
         SettingsMain = ToolsAJob().SettingsMainApp()
 
         def content():
+            """
+
+            :return:
+            """
             SettingsMain.data['shops'] = []
 
             with open('data/config.json') as f:
@@ -168,22 +233,32 @@ class Settings:
             SettingsMain.ids.checkbox_parser_metro.active = data['metro_active']
             return SettingsMain
 
-        Main.dialog = content()
+        Main_.dialog = content()
 
-        Main.dialog.open()
+        Main_.dialog.open()
+
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def add_shop(self, Main_):
+        """
+
+        :param self:
+        :param Main_:
+        """
+        Main_.settings_open(None, add=True)
 
     @staticmethod
-    def add_shop(self, Main):
-        Main.settings_open(None, add=True)
+    def save(self, Main_):
+        """
 
-    @staticmethod
-    def save(self, Main):
-
+        :param self:
+        :param Main_:
+        """
         with open('data/config.json') as f:
             data = json.load(f)
         with open('data/config.json', 'w') as f:
             data["shops"] = []
-            data['metro_active'] = Main.checkbox_parser_metro.active
+            data['metro_active'] = Main_.checkbox_parser_metro.active
 
             for shop in self.data['shops']:
                 sid_w = shop['sid_w'].text
@@ -200,33 +275,52 @@ class Settings:
                 data["shops"].append(
                     {'filename': filename, 'sid': (int(sid_w), int(sid_h), int(sid_t)), 'seller': seller,
                      'findname': (int(findname_w), int(findname_h)), 'findtext': findtext, 'active': active})
+            # noinspection PyTypeChecker
             json.dump(data, f)
 
         with open('data/cache_prices.json') as f:
             result = json.load(f)
             result_filtered = handler.filter_shops(result)
-            Main.base_price = result_filtered
-            log('Кэш прайса обновлён!', 1)
+            Main_.base_price = result_filtered
+            log('Кэш прайса обновлён!')
 
-        if Main.dialog:
-            Main.dialog.dismiss()
+        if Main_.dialog:
+            Main_.dialog.dismiss()
 
+    # noinspection PyUnusedLocal
     @staticmethod
-    def exit(self, Main):
-        if Main.dialog:
-            Main.dialog.dismiss()
+    def exit(self, Main_):
+        """
+
+        :param self:
+        :param Main_:
+        """
+        if Main_.dialog:
+            Main_.dialog.dismiss()
 
 
 class Cart:
+    """
+        Корзина
+    """
+
     @staticmethod
     def open():
-        Main = ToolsAJob().MainApp
+        """
+
+        :return:
+        """
+        Main_ = ToolsAJob().MainApp
         # Открытие корзины
 
-        if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
-            Main.dialog.dismiss()
+        if Main_.dialog:  # Закрыть диалоговое окно, если оно открыто
+            Main_.dialog.dismiss()
 
         def content():
+            """
+
+            :return:
+            """
             app = ToolsAJob()
             CartMainApp = app.CartMainApp()
             for shop in ['Матушка', 'Алма', 'METRO']:
@@ -242,18 +336,18 @@ class Cart:
                             CartItem.ids.buttonItem.icon_color = 'blue'
                             if item['seller'] == 'METRO':
                                 pass
-                                CartItem.ids.buttonItem.on_release = Main.remove_from_cart_metro
+                                CartItem.ids.buttonItem.on_release = Main_.remove_from_cart_metro
                             else:
                                 pass
-                                CartItem.ids.buttonItem.on_release = Main.remove_from_cart
+                                CartItem.ids.buttonItem.on_release = Main_.remove_from_cart
                         else:
                             CartItem.ids.buttonItem.icon = 'cart-plus'
                             CartItem.ids.buttonItem.icon_color = 'blue'
                             if item['seller'] == 'METRO':
                                 pass
-                                CartItem.ids.buttonItem.on_release = Main.add_to_cart_metro
+                                CartItem.ids.buttonItem.on_release = Main_.add_to_cart_metro
                             else:
-                                CartItem.ids.buttonItem.on_release = Main.add_to_cart
+                                CartItem.ids.buttonItem.on_release = Main_.add_to_cart
                         CartItem.ids.buttonItem.id = str(item) + 'cart'
 
                         CartItem.ids.textItem.text = str(item['name'])
@@ -268,25 +362,44 @@ class Cart:
                 CartMainApp.ids.listShops.add_widget(CartShop)
             return CartMainApp
 
-        Main.dialog = content()
-        Main.dialog.open()
+        Main_.dialog = content()
+        Main_.dialog.open()
 
+    # noinspection PyUnusedLocal
     @staticmethod
-    def edit(Main, instance):
+    def edit(Main_, instance):
+        """
+
+        :param Main_: 
+        :param instance: 
+        """
         print(instance)
 
     @staticmethod
-    def send(Main):
-        asyncio.ensure_future(handler.start_telegram(Main))
-        if Main.dialog:
-            Main.dialog.dismiss()
+    def send(Main_):
+        """
+
+        :param Main_: 
+        """
+        asyncio.ensure_future(handler.send_cart(Main_))
+        if Main_.dialog:
+            Main_.dialog.dismiss()
 
     @staticmethod
     def back(self):
+        """
+
+        :param self:
+        """
         pass
 
     @staticmethod
-    def add_to_cart(Main, instance):
+    def add_to_cart(Main_, instance):
+        """
+
+        :param Main_: 
+        :param instance: 
+        """
         # Main = MainApp().Main
         print(instance)
         print('Разделитель')
@@ -294,58 +407,73 @@ class Cart:
         print(instance.icon_color)
         instance.icon = 'cart-remove'
         instance.icon_color = 'red'
-        instance.unbind(on_release=Main.add_to_cart)
-        instance.bind(on_release=Main.remove_from_cart)
+        instance.unbind(on_release=Main_.add_to_cart)
+        instance.bind(on_release=Main_.remove_from_cart)
         item = instance.id
         item = handler.str_to_dict(item)  # Конвертация строки в словарь
 
-        if item not in handler.get_cart():  # Если обьекта нет в корзине
-            handler.add_cart(dict(item))  # Отправка в корзину на сервер
+        if item not in handler.get_cart():  # Если объекта нет в корзине
+            handler.add_cart(item)  # Отправка в корзину на сервер
 
     @staticmethod
-    def remove_from_cart(Main, instance):
+    def remove_from_cart(Main_, instance):
+        """
+
+        :param Main_: 
+        :param instance: 
+        """
         instance.icon = 'cart-plus'
         instance.icon_color = 'blue'
-        instance.unbind(on_release=Main.remove_from_cart)
-        instance.bind(on_release=Main.add_to_cart)
+        instance.unbind(on_release=Main_.remove_from_cart)
+        instance.bind(on_release=Main_.add_to_cart)
         item = instance.id
         item = handler.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
-        if item in handler.get_cart():  # Если обьект есть в корзине
-            handler.remove_cart(dict(item))  # То обьект удаляется из корзины
+        if item in handler.get_cart():  # Если объект есть в корзине
+            handler.remove_cart(dict(item))  # То объект удаляется из корзины
 
-        if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
-            print(Main.dialog)
+        if Main_.dialog:  # Закрыть диалоговое окно, если оно открыто
+            print(Main_.dialog)
             # Main.dialog.dismiss()
             # Main.dialog = None
             # Main.cart_open(Main)
 
     @staticmethod
-    def add_to_cart_metro(Main, instance):
+    def add_to_cart_metro(Main_, instance):
+        """
+
+        :param Main_: 
+        :param instance: 
+        """
         instance.icon = 'cart-remove'
         instance.icon_color = 'red'
-        instance.unbind(on_release=Main.add_to_cart_metro)
-        instance.bind(on_release=Main.remove_from_cart_metro)
+        instance.unbind(on_release=Main_.add_to_cart_metro)
+        instance.bind(on_release=Main_.remove_from_cart_metro)
         item = instance.id
         item = handler.str_to_dict1(item)  # Конвертация строки в словарь
 
-        if item not in handler.get_cart():  # Если обьекта нет в корзине
+        if item not in handler.get_cart():  # Если объекта нет в корзине
             asyncio.ensure_future(handler.send_to_cart(item, parse_metro))  # Отправка в корзину на сервер
-            handler.add_cart(dict(item))  # То обьект добавляется в корзину
+            handler.add_cart(dict(item))  # То объект добавляется в корзину
 
     @staticmethod
-    def remove_from_cart_metro(Main, instance):
+    def remove_from_cart_metro(Main_, instance):
+        """
+
+        :param Main_: 
+        :param instance: 
+        """
         instance.icon = 'cart-plus'
         instance.icon_color = 'blue'
-        instance.unbind(on_release=Main.remove_from_cart_metro)
-        instance.bind(on_release=Main.add_to_cart_metro)
+        instance.unbind(on_release=Main_.remove_from_cart_metro)
+        instance.bind(on_release=Main_.add_to_cart_metro)
         item = instance.id
         item = handler.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
-        if item in handler.get_cart():  # Если обьект есть в корзине
+        if item in handler.get_cart():  # Если объект есть в корзине
             asyncio.ensure_future(handler.remove_from_cart(item, parse_metro))  # Удаление из корзины на сервере
-            handler.remove_cart(dict(item))  # То обьект удаляется из корзины
+            handler.remove_cart(dict(item))  # То объект удаляется из корзины
 
-        if Main.dialog:  # Закрыть диалоговое окно, если оно открыто
-            Main.dialog.dismiss()
-            Main.dialog_cart_open(Main)
+        if Main_.dialog:  # Закрыть диалоговое окно, если оно открыто
+            Main_.dialog.dismiss()
+            Main_.dialog_cart_open(Main_)

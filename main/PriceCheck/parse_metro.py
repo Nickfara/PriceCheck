@@ -1,8 +1,12 @@
+"""
+    Парсинг сайта Metro SHOP
+"""
+
 import json
 import time
-
 import requests
-from bs4 import BeautifulSoup as bs
+
+from bs4 import BeautifulSoup as Bs
 from fake_useragent import UserAgent
 from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
@@ -15,6 +19,7 @@ random_ua = ua.random
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
 cookies = {}
+# noinspection SpellCheckingInspection
 profile = {
     'customerId': "6431100029141862",  # Настроен при авторизации
     't_time': "1732197309446",  # Настроен при авторизации
@@ -27,7 +32,7 @@ profile = {
     'cartId': "f039c83f-8484-4cc9-bf2f-a63e96b6e864",
     'sessionid': ''
 }
-
+# noinspection PyBroadException
 try:
     with open('../data/cookies_mshop.json') as f:
         cookies = json.load(f)['shops']
@@ -35,10 +40,17 @@ except:
     cookies = {'shops': []}
 
 
+# noinspection SpellCheckingInspection
 def cirkle(numb, lengue=0):
+    """
+
+    :param numb:
+    :param lengue:
+    :return:
+    """
     try:
         float(numb)
-    except:
+    except TypeError:
         log('Число не является дробным', 3)
         return None
 
@@ -57,9 +69,8 @@ def cirkle(numb, lengue=0):
             right_numb = right_numb[:-1]
             new_last_numb = str(int(right_numb[-1]) + add)
             right_numb = right_numb[:-1]
-            right_numb = right_numb + new_last_numb
+            right_numb += new_last_numb
         else:
-            right_numb = ''
             new = int(left_numb) + add
             return new
 
@@ -67,7 +78,13 @@ def cirkle(numb, lengue=0):
     return float(new)
 
 
+# noinspection SpellCheckingInspection
 def create_link(data):
+    """
+
+    :param data:
+    :return:
+    """
     fullname = data['scheme'] + '://' + data['host'] + data['filename']
     fulldata = []
     for i in data["query"]:
@@ -78,11 +95,15 @@ def create_link(data):
     return fulllink
 
 
+# noinspection SpellCheckingInspection
 def new_auth():
+    """
+        Возможно новая функция авторизации
+    """
     s = requests.Session()
     k = s.get(url='https://idam.metro-cc.ru/web/captchaConfig?clientId=BTEX&realmId=SSO_CUST_RU').json()['siteKey']
-    c1 = s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/reload?k={k}')
-    c2 = s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/clr?k={k}')
+    s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/reload?k={k}')
+    s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/clr?k={k}')
     c4 = s.get(url=create_link({
         "scheme": "https",
         "host": "www.recaptcha.net",
@@ -97,13 +118,12 @@ def new_auth():
             "cb": "2a9awybl7uln"
         }
     }))
-    rc_token = bs(c4.text, 'html.parser').find(id='recaptcha-token')['value']
+    rc_token = Bs(c4.text, 'html.parser').find(id='recaptcha-token')['value']
 
-    c5 = s.get(url='https://www.google.com/js/bg/W8CPGdzYmlcjn--3_xeFmudIk8Wv0vupGU9Bdr5QE-g.js')
-    c6 = s.get(url='https://www.recaptcha.net/recaptcha/enterprise/webworker.js?hl=en&v=pPK749sccDmVW_9DSeTMVvh2')
-    c7 = s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/reload?k={k}')
-    c8 = s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/clr?k={k}')
-    i = 1
+    s.get(url='https://www.google.com/js/bg/W8CPGdzYmlcjn--3_xeFmudIk8Wv0vupGU9Bdr5QE-g.js')
+    s.get(url='https://www.recaptcha.net/recaptcha/enterprise/webworker.js?hl=en&v=pPK749sccDmVW_9DSeTMVvh2')
+    s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/reload?k={k}')
+    s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/clr?k={k}')
 
     '''for url_numb in (c1, c2, c3, c4, c5, c6, c7, c8):
         log(f'c{i}:')
@@ -141,8 +161,10 @@ def new_auth():
     }
     authenticate = s.post(url='https://idam.metro-cc.ru/web/authc/authenticate', data=data_auth)
     try:
-        url_redirect = authenticate.json()['url']
-    except:
+        authenticate.json()['url']
+    except EncodingWarning:
+        pass
+    except KeyError:
         pass
 
     date_get_url = s.get(url=create_link({
@@ -163,16 +185,15 @@ def new_auth():
             "locale_id": "ru-RU"
         }
     }))
-    r_url = bs(date_get_url.text, 'html.parser').find('script')
+    r_url = Bs(date_get_url.text, 'html.parser').find('script')
     r_url = \
         str(r_url).split("var locationUrl = '")[1].split('window.location = htmlDecode(locationUrl);')[0].split("';")[0]
     r_data = r_url.split(';')
-    temp = 0
+
     for i in r_data:
         item = i.split('=')
         if item[0] == 'state':
             profile['state'] = item[1]
-            temp = item[1]
 
     data_access_token = {
         "grant_type": "authorization_code",
@@ -181,17 +202,22 @@ def new_auth():
         "code_verifier": "fb200a7bf7f4492e8a28d0919a8fd815f31f383b5fba4e29ba6f96caa32c7a2402faee2bfb324cf8ac2c58f83e5dd22d",
         "client_id": "BTEX"
     }
-    access_token = s.post(url='https://idam.metro-cc.ru/authorize/api/oauth2/access_token', data=data_access_token)
-    loginWithIdamAcessToken = s.post(
+    s.post(url='https://idam.metro-cc.ru/authorize/api/oauth2/access_token', data=data_access_token)
+    s.post(
         url='https://mshop.metro-cc.ru/explore.login.v1/auth/loginWithIdamAccessToken?country=RU')
     singleSignOn = s.post(url='https://mshop.metro-cc.ru/explore.login.v1/auth/singleSignOn')
     try:
         singleSignOn.json()
-    except:
+    except EncodingWarning:
         log(singleSignOn.text, 3)
 
 
+# noinspection SpellCheckingInspection,PyBroadException
 def auth():
+    """
+
+    :return:
+    """
     browser = Firefox()  # Загрузка браузера
 
     url = "https://idam.metro-cc.ru/web/Signin?state=a22fc20c7a8f4cc29527582a9b69f480&scope=openid+clnt%3DBTEX&locale_id=ru-RU&redirect_uri=https%3A%2F%2Fmshop.metro-cc.ru%2Fshop%2Fportal%2Fmy-orders%2Fall%3FidamRedirect%3D1&client_id=BTEX&country_code=RU&realm_id=SSO_CUST_RU&user_type=CUST&DR-Trace-ID=idam-trace-id&code_challenge=X24I_T1kLXCRhV-o24wLBVRODgj9AULUni3HeJ_21G4&code_challenge_method=S256&response_type=code"
@@ -220,7 +246,7 @@ def auth():
         except:
             time.sleep(1)
 
-    log('Успешная авторизация!', 1)
+    log('Успешная авторизация!')
     repeat = 0
     while True:
         try:
@@ -234,27 +260,33 @@ def auth():
                 break
             # browser.execute_script("document.body.style.zoom='15%'")
 
-    log('Выбор адреса доставки выполнен!', 1)
-    cookies = {'shops': browser.get_cookies()}
+    log('Выбор адреса доставки выполнен!')
+    cookies_ = {'shops': browser.get_cookies()}
 
-    with open('../data/cookies_mshop.json', 'w') as f:
-        json.dump(cookies, f)
+    with open('../data/cookies_mshop.json', 'w') as f_:
+        # noinspection PyTypeChecker
+        json.dump(cookies_, f_)
         return True
 
 
+# noinspection SpellCheckingInspection, PyBroadException
 def auth_check():
+    """
+
+    :return:
+    """
     for i in range(1, 2):
         s = requests.Session()  # Создание сессии
         url = f'https://mshop.metro-cc.ru/explore.border.v1/orderlist/country/RU/customerid/{profile["customerId"]}?rows=10&locale=ru-RU&selectedCustomerStore={profile["storeId"]}'
-        data = {}
 
         try:
-            with open('../data/cookies_mshop.json') as f:
-                cookies = json.load(f)['shops']
+            with open('../data/cookies_mshop.json') as f_:
+                cookies_ = json.load(f_)['shops']
         except:
-            cookies = {'shops': []}
+            cookies_ = {'shops': []}
 
-        for cookie in cookies:
+        for cookie in cookies_:
+            # noinspection PyTypeChecker
             s.cookies.set(cookie['name'], cookie['value'])
 
         response = s.get(url=url)
@@ -276,10 +308,10 @@ def auth_check():
             getProfile = getProfile.json()["data"]
             profile['customerId'] = getProfile['customerId']
             profile['fsdAddressId'] = getProfile['addresses']
-            for i in getProfile['addresses']:
-                if getProfile['addresses'][i]['buildingName'] == "БУФЕТ":
-                    profile['fsdAddressId'] = getProfile['addresses'][i]['hash']
-                    profile['storeId'] = getProfile['addresses'][i]['deliveryStore']
+            for i2 in getProfile['addresses']:
+                if getProfile['addresses'][i2]['buildingName'] == "БУФЕТ":
+                    profile['fsdAddressId'] = getProfile['addresses'][i2]['hash']
+                    profile['storeId'] = getProfile['addresses'][i2]['deliveryStore']
                     profile['t_time'] = \
                         s.get(
                             url='https://mshop.metro-cc.ru/ordercapture/uidispatcher/rest/min-stable-ui-version').json()[
@@ -289,7 +321,6 @@ def auth_check():
             url_info = s.get(
                 url=f'https://mshop.metro-cc.ru/ordercapture/customercart/carts/alias/current?customerId={profile["customerId"]}&cardholderNumber=1&storeId={profile["storeId"]}&country=RU&locale=ru-RU&fsdAddressId={profile["fsdAddressId"]}&__t={profile["t_time"]}')
             profile['cartId'] = url_info.json()['data']['cartId']
-            url_info = url_info.json()['data']
             return s
         else:
             if response.status_code in (400, 401, 403):
@@ -304,7 +335,13 @@ def auth_check():
                 return False
 
 
+# noinspection SpellCheckingInspection
 def search(text):
+    """
+
+    :param text:
+    :return:
+    """
     s = auth_check()
     # profile['sessionid'] = s.headers.items() # Попытка достать сессион айди
 
@@ -343,9 +380,9 @@ def search(text):
         try:
             objects = items.json()['result']
             result = []
-            for object in objects:
-                name = objects[object]['variantSelector']['0032']
-                data = objects[object]['variants']['0032']['bundles']['0021']
+            for object_ in objects:
+                name = objects[object_]['variantSelector']['0032']
+                data = objects[object_]['variants']['0032']['bundles']['0021']
                 price = \
                     data['stores']['00030']['possibleDeliveryModes']['METRO_DELIVERY']['possibleFulfillmentTypes'][
                         'FSD'][
@@ -356,8 +393,6 @@ def search(text):
                     minOrderQuantity = data['minOrderQuantity']
                 else:
                     minOrderQuantity = 1
-                quantity = 0  # Количество товара добавляемого в корзину
-                requestId = "BTEX-b4feec02-f281-11e5-1d1c-165a286dd641"  # Непонятный айди запроса,хз что это
 
                 result.append({'name': ''.join(name.split(',')), 'price': price, 'bundleId': bundleId,
                                'minOrderQuantity': minOrderQuantity})
@@ -368,11 +403,16 @@ def search(text):
         return result
 
 
-def add_cart(object, count=0):
+# noinspection SpellCheckingInspection
+def add_cart(obj):
+    """
+
+    :param obj:
+    :return:
+    """
     s = auth_check()
     if s:
-        if count == 0:
-            count = int(object['minOrderQuantity'])
+
         temp_url = {
             "scheme": "https",
             "host": "mshop.metro-cc.ru",
@@ -390,18 +430,15 @@ def add_cart(object, count=0):
         url = create_link(temp_url)
 
         data = {
-            'bundleId': object['bundleId'],
+            'bundleId': obj['bundleId'],
             'customerId': profile['customerId'],
             'quantity': 1,  # Количество товара
-            'requestId': profile['requestId']  # Непонятный айди запроса,хз что это
+            'requestId': profile['requestId']  # Непонятный айди запроса, неизвестно, что это
         }
 
         s.headers.update({'Content-Type': 'application/json'})
 
         result = s.post(url=url, json=data)
-        result2 = s.get(
-            url=f'https://mshop.metro-cc.ru/ordercapture/article/articles?country=RU&locale=ru-RU&'
-                f'customerId={profile["customerId"]}&storeId={profile["storeId"]}&addressId={profile["fsdAddressId"]}&bundleIds={object["bundleId"]}&__t={profile["t_time"]}')
 
         if result:
             return result
@@ -412,19 +449,19 @@ def add_cart(object, count=0):
     return result
 
 
+# noinspection SpellCheckingInspection
 def remove_cart(item):
+    """
+
+    :param item:
+    :return:
+    """
     s = auth_check()
     if s:
 
         url = (f'https://mshop.metro-cc.ru/ordercapture/customercart/carts/{profile["cartId"]}/items/'
                f'{item["bundleId"]}?customerId={profile["customerId"]}&cardholderNumber=1&storeId={profile["storeId"]}&country=RU&locale=ru-RU&'
                f'fsdAddressId={profile["fsdAddressId"]}&requestId={profile["requestId"]}')
-
-        data = {
-            'customerId': profile['customerId'],
-            'quantity': 12,  # Количество товара
-            'requestId': profile['requestId']  # Непонятный айди запроса,хз что это
-        }
 
         s.headers.update({'Content-Type': 'application/json', 'Priority': 'u=4'})
         result = s.delete(url=url)

@@ -1,7 +1,10 @@
+"""
+    Парсинг приложения купер
+"""
 import json
 import time
-
 import requests
+
 from selenium.webdriver import Chrome as Firefox
 
 from log import log
@@ -9,12 +12,15 @@ from log import log
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
 cookies = {}
+# noinspection PyBroadException
 try:
+    # noinspection SpellCheckingInspection
     with open('../data/cookies_kuper.json') as f:
         cookies = json.load(f)
 except:
     cookies = {}
 
+# noinspection SpellCheckingInspection
 token = {
     "csrf_param": "authenticity_token",
     "csrf_token": "8iIvoh9zROZxGzmM94tBbEa6SyRMrQLD23YCvyrm8KEQYNJEYsB4APKVRavB/d5+WQOrHUpWJjYES+ck6hyk1g=="
@@ -22,6 +28,10 @@ token = {
 
 
 def auth():
+    """
+
+    :return:
+    """
     browser = Firefox()  # Загрузка браузера
 
     url = "https://kuper.ru/"
@@ -31,30 +41,38 @@ def auth():
 
     time.sleep(60)
 
-    cookies = browser.get_cookies()
+    cookies_ = browser.get_cookies()
 
-    with open('../data/cookies_kuper.json', 'w') as f:
-        json.dump(cookies, f)
+    # noinspection SpellCheckingInspection
+    with open('../data/cookies_kuper.json', 'w') as f_:
+        # noinspection PyTypeChecker
+        json.dump(cookies_, f_)
         return True
 
 
+# noinspection PyBroadException
 def auth_check():
+    """
+
+    :return:
+    """
     for i in range(1, 2):
         s = requests.Session()  # Создание сессии
 
         try:
-            with open('../data/cookies_mshop.json') as f:
-                cookies = json.load(f)
+            # noinspection SpellCheckingInspection
+            with open('../data/cookies_mshop.json') as f_:
+                cookies_ = json.load(f_)
         except:
-            cookies = {}
+            cookies_ = {}
 
-        for cookie in cookies:
+        for cookie in cookies_:
             s.cookies.set(cookie['name'], cookie['value'])
 
         response = s.get(url='https://kuper.ru/api/next/page_part/browser_head')
 
         if response:
-            log('Проверка авторизации успешно завершена!', 1)
+            log('Проверка авторизации успешно завершена!')
             return s
         else:
             if response.status_code in (400, 401, 403, 200):
@@ -69,42 +87,13 @@ def auth_check():
                 return False
 
 
+# noinspection PyBroadException
 def find(s):
-    data = {
-        "store_id": "66",
-        "page": "1",
-        "per_page": "24",
-        "tenant_id": "sbermarket",
-        "filter": [
-            {
-                "key": "brand",
-                "values": []
-            },
-            {
-                "key": "permalinks",
-                "values": []
-            },
-            {
-                "key": "price",
-                "values": []
-            },
-            {
-                "key": "discounted",
-                "values": []
-            },
-            {
-                "key": "root_category",
-                "values": []
-            }
-        ],
-        "q": "Сметана",
-        "ads_identity": {
-            "ads_promo_identity": {
-                "placement_uid": "cg4tmrigsvdveog2p240",
-                "site_uid": "c9qep2jupf8ugo3scn10"
-            }
-        }
-    }
+    """
+
+    :param s:
+    """
+
     response = s.post('https://kuper.ru/api/web/v1/products')
     try:
         response.json()
@@ -114,13 +103,4 @@ def find(s):
 
 session = auth_check()
 
-responses = find(session)
-
-
-def test():
-    credentials = {
-        'email': 'asd@asd.asd',
-        'password': '123123123',
-        'latitude': '45.0001',
-        'longitude': '36.0001'
-    }
+find(session)

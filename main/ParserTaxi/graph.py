@@ -1,19 +1,23 @@
-import matplotlib.pyplot as plt
+"""
+    Интерфейс отображения цен на такси
+"""
+#import matplotlib.pyplot as plt
 
 from database import get
 
 
-def render(group='all', filter='all', week='all'):
+# noinspection SpellCheckingInspection
+def render(group='all', filter_='all', week='all'):
     """
     Рендеринг окна с графиком.
 
     :param group: Параметр группировки цен. (Если включен режим дня недели, работает только группировка по часам)
-    :param filter: Параметр фильтра.
+    :param filter_: Параметр фильтра.
     :param week: Фильтр по дню недели. Если он включен, включается группировка цен в этот день.
     :return:
     """
     if week != 'all':
-        filter = 'all'
+        filter_ = 'all'
         if group != 'hours':
             group = 'all'
 
@@ -26,8 +30,8 @@ def render(group='all', filter='all', week='all'):
     weeks = {}
     for price in base:
         datetime = price['ts']
-        if filter != 'all':
-            if filter != datetime.split[' '][0]:
+        if filter_ != 'all':
+            if filter_ != datetime.split[' '][0]:
                 continue
 
         cost_to = price['to_price']
@@ -115,9 +119,9 @@ def render(group='all', filter='all', week='all'):
             to_y.append(cost_to)
             from_y.append(cost_from)
 
-    plt.plot(x, to_y, color='red', marker='o', markersize=7)
-    plt.plot(x, from_y, color='green', marker='o', markersize=7)
-    plt.xlabel('Время')  # Подпись для оси х
-    plt.ylabel('Цена')  # Подпись для оси y
-    plt.title('Цены на такси')  # Название
-    plt.show()
+    #plt.plot(x, to_y, color='red', marker='o', markersize=7)
+    #plt.plot(x, from_y, color='green', marker='o', markersize=7)
+    #plt.xlabel('Время')  # Подпись для оси х
+    #plt.ylabel('Цена')  # Подпись для оси y
+    #plt.title('Цены на такси')  # Название
+    #plt.show()

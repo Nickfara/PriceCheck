@@ -1,3 +1,6 @@
+"""
+Временный конфиг для работы с Т2
+"""
 # 79923415301:868BNQ-gigabyte:1:90:bomb,bomb,bomb:Светлана=15:False
 # 79018555731:UKt842-gigabyte:1:90:bomb,bomb,bomb:Светлана=15:False
 
@@ -14,12 +17,20 @@ config.append(data3)
 
 
 def account():
+    """
+
+    :return:
+    """
     number = config[0][0]
     password = config[0][1]
     return {'number': number, 'password': password}
 
 
 def add_traffic():
+    """
+
+    :return:
+    """
     default = {
         "volume": {
             "value": config[1][1],

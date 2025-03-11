@@ -1,3 +1,6 @@
+"""
+    Чтение документов EXEL
+"""
 import json
 
 from openpyxl import load_workbook as open_xlsx
@@ -17,20 +20,25 @@ h = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", 
 
 
 def read(filename):  # Чтение таблицы
-    format = filename.split('.')[1]
+    """
+
+    :param filename:
+    :return:
+    """
+    file_formate = filename.split('.')[1]
 
     try:
         with open('prices/' + str(filename)):
             pass
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         response = False
         log(f'Файл "{filename}" не найден!', 2)
     else:
-        if format == 'xls':  # Чтение xls
+        if file_formate == 'xls':  # Чтение xls
             workbook = open_xls('prices/' + str(filename))
             log(f'Начало сканирования файла: {filename}')
             response = xls(workbook)
-        elif format == 'xlsx':  # Чтение xlsx
+        elif file_formate == 'xlsx':  # Чтение xlsx
             workbook = open_xlsx('prices/' + str(filename))
             log(f'Начало сканирования файла: {filename}')
             response = xlsx(workbook)
@@ -45,6 +53,7 @@ def read(filename):  # Чтение таблицы
 def xls(workbook):
     """
 
+    :return:
     :param workbook:
     :return:
     """
@@ -70,9 +79,9 @@ def xls(workbook):
                     str(worksheet.cell_value(i, sid[0]))
                     str(worksheet.cell_value(i, sid[1]))
                     str(worksheet.cell_value(i, sid[2]))
-                except IndexError as e:
+                except IndexError:
                     if end_time == 5:
-                        log(f'Конец документа. Страница: {i2}', 1)
+                        log(f'Конец документа. Страница: {i2}')
                         break
                     end_time += 1
                 else:
@@ -87,7 +96,7 @@ def xls(workbook):
                     else:
                         item['type'] = ''
 
-                    if item['cost'] == '' or item['cost'] == None:
+                    if item['cost'] == '' or item['cost'] is None:
                         item['cost'] = 'категория'
                     else:
                         items.append(item)
@@ -99,14 +108,22 @@ def xls(workbook):
     return items
 
 
+# noinspection PyBroadException
 def xlsx(workbook):
-    sheetnames = workbook.sheetnames
+    """
+
+    :param workbook:
+    :return:
+    """
+    sheet_names = workbook.sheetnames
     items = []
     sid = False
     seller = False
+    type_n = None
+
     end_time = 0
     for i in data['shops']:
-        for i2 in sheetnames:
+        for i2 in sheet_names:
             worksheet = workbook[i2]
             try:
                 if i['findtext'].lower() in str(worksheet[h[i['findname'][0]]][i['findname'][1]].value).lower():
@@ -119,7 +136,7 @@ def xlsx(workbook):
                 log(i, 2)
 
     if isinstance(sid, list):
-        for i2 in sheetnames:
+        for i2 in sheet_names:
             worksheet = workbook[i2]
             for i in range(0, 1000):  # Чтение строк
                 item = {}
@@ -136,11 +153,14 @@ def xlsx(workbook):
                 else:
                     if 'мороженое' in str(worksheet[f'{sid[0]}'][i].value).lower():
                         break
+
                     item['seller'] = seller
                     item['name'] = str(worksheet[f'{sid[0]}'][i].value)
+
                     if item['name'] != 'None':
                         end_time = 0
                     item['name'] = ''.join(item['name'].split(','))  # Удаление запятых из названия
+
                     try:
                         item['cost'] = str(worksheet[f'{sid[1]}'][i].value)
                     except:
@@ -153,8 +173,10 @@ def xlsx(workbook):
                             item['type'] = 'хз'
                     else:
                         item['type'] = ''
+
                     if item['cost'] == '':
                         item['cost'] = 'категория'
+
                     items.append(item)
     else:
         items = False
@@ -164,6 +186,11 @@ def xlsx(workbook):
 
 
 def filter_names(name):
+    """
+
+    :param name:
+    :return:
+    """
     name = name.lower()
     base = {
         'куриное': ('цб', 'цыпленка-бройлеров', 'цыпленка бройлера', 'цыпленка'),
@@ -201,6 +228,11 @@ def filter_names(name):
 
 
 def scanner(name):
+    """
+
+    :param name:
+    :return:
+    """
     name = str(name)
     items = []
     result = []
@@ -220,14 +252,22 @@ def scanner(name):
                 result.append(i)
 
     def key(price):
+        """
+
+        :param price:
+        :return:
+        """
         try:
             return float(price['cost'])
-        except:
+        except TypeError:
+            return 0
+        except KeyError:
             return 0
 
     result.sort(key=key)
 
-    with open('../data/cache_prices.json', 'w') as f:
-        json.dump(result, f)
-        log('Сохранение прайса в кэш.', 1)
+    with open('../data/cache_prices.json', 'w') as file:
+        # noinspection PyTypeChecker
+        json.dump(result, file)
+        log('Сохранение прайса в кэш.')
     return result

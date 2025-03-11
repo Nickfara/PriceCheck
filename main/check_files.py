@@ -1,8 +1,12 @@
+"""
+    Проверка на наличие обязательных файлов.
+"""
 import json
-from log import log
 import os
 
+from log import log
 
+# noinspection SpellCheckingInspection
 preset_config = {"shops": [
     {"filename": "\u041c\u0430\u0442\u0443\u0448\u043a\u0430.xlsx", "sid": [0, 12, -1],
      "seller": "\u041c\u0430\u0442\u0443\u0448\u043a\u0430", "findname": [0, 0],
@@ -67,50 +71,64 @@ preset_config = {"shops": [
     "point1": "60.65829040252862,56.86060471272871",
     "point2": "60.6116408898243,56.839601819813524",
     "token": "bd1f236eb2a72a8e3cd4e2c748d5c00b"
-  }
+}
 }
 
 apply = [0]
 
 
+# noinspection PyTypeChecker
 def check_and_create():
+    """
+        Функция проверки
+    """
     data_dir = os.listdir('data/')
 
+    # noinspection SpellCheckingInspection
     files = {'config': preset_config,
              'cache_cart': {"cart": []},
-             'cache_prices': {"cache":[]},
+             'cache_prices': {"cache": []},
              'db_taxi': {"price": []},
              'cookies_kuper': {"shops": {}},
-             'cookies_mshop': {"shops": []}
-    }
+             'cookies_mshop': {"shops": []},
+             't2b': {}
+             }
 
+    # noinspection SpellCheckingInspection
     temp = {'cache_prices': ('cache', list),
             'db_taxi': ('price', list),
             'cookies_kuper': ('shops', dict),
-            'cookies_mshop': ('shops', list)
+            'cookies_mshop': ('shops', list),
             }
 
     for name in files:
         if f'{name}.json' not in data_dir:
             with open(f'data/{name}.json', 'w') as f:
+                # noinspection PyTypeChecker
                 json.dump(files[name], f)
+                print('apply')
                 apply[0] = 1
         else:
-            with open(f'data/{name}.json', 'w+') as f:
-                try:
-                    obje = json.load(f)[temp[name]]
-
+            with open(f'data/{name}.json') as f:
+                print(name)
+                # noinspection SpellCheckingInspection
+                obje = json.load(f)
+                with open(f'data/{name}.json') as f2:
                     if name in temp:
-                        if type(obje[0]) != obje[1]:
-                            json.dump(files[name], f)
+                        if type(obje[temp[name][0]]) != temp[name][1]:
+                            # noinspection PyTypeChecker
+                            json.dump(files[name], f2)
                             apply[0] = 1
-                except:
-                    json.dump(files[name], f)
-                    apply[0] = 1
+
+                    if name == 't2b':
+                        if type(obje) != dict:
+                            # noinspection PyTypeChecker
+                            json.dump({'3714856134875': {}}, f2)
 
     if apply[0] == 0:
         log("Все необходимые файлы присутствуют!")
     elif apply[0] == 1:
+        # noinspection SpellCheckingInspection
         log("Найдены отсутствущие файлы, но были успешно созданы!")
     else:
         log("По каким то причинам, не удалось  проверить наличие файлов и создать их при отсутствии.", 3)
