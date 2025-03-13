@@ -182,7 +182,7 @@ class Main(MDBoxLayout):
         """
         commands.Settings.open(add)
 
-    def func_dialog_save_enter(self, key):
+    def func_dialog_save_enter(self, key, *args, **kwargs):
         """
 
         :param key:

@@ -27,6 +27,7 @@ def auth(call):
     :param call: Данные о команде или сообщении.
     :return: Данные о пользователе.
     """
+
     uid = call.from_user.id
     DB = t2b(uid)
     data = call.data
@@ -43,12 +44,14 @@ def auth(call):
         if len(str(data)) == 11 and (data[0] == '7') and data[1] == '9' and DB['stage_authorize'] == 0:
             data_upd = {'auth_login': data, 'stage_authorize': 1}
             t2b(uid, data_upd, 'u')
-            menu.login_password(call)
+            res = menu.login_password(call)
+            return res
 
         # 1 Этап - Добавление номера телефона:
         elif DB['stage_authorize'] == 0:
             answer = 'Введите ваш номер телефона, \nв формате: [79000000000]'
-            menu.login_number(call, answer)
+            res = menu.login_number(call, answer)
+            return res
 
         # 2 Этап - Проверка кода подтверждения:
         elif DB['stage_authorize'] == 1:
@@ -66,10 +69,12 @@ def auth(call):
                     data_upd = {'stage_authorize': 2, 'auth_password': DB['auth_password'],
                                 'security_code_token': response['response'].json()['security_code_token']}
                     t2b(uid, data_upd, 'u')
-                    menu.security_code(call)
+                    res = menu.security_code(call)
+                    return res
             else:
                 data_upd = {'stage_authorize': 2}
                 t2b(uid, data_upd, 'u')
+
 
         # 3 Этап - Проведение и проверка авторизации:
         elif DB['stage_authorize'] == 2:
@@ -82,7 +87,7 @@ def auth(call):
                 cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
                 t2b(uid, data_upd, 'u')
                 update_def_traffic(call)
-                return DB
+                return True
 
             # При неудаче - возврат к 1 этапу:
             else:
@@ -90,14 +95,15 @@ def auth(call):
                 t2b(uid)
                 answer = 'Неверные данные, попробуйте сначала\!' \
                          '\nВведите ваш номер телефона, в формате: [79000000000]'
-                log('При авторизации, были введены неверные данные.', 3)
+                log(f'При авторизации, были введены неверные данные. \n {response}', 3)
                 menu.login_number(call, answer)
+                return False
 
     # Пользователь уже авторизован.
     else:
         answer = 'Вы уже авторизованы\!'
         log(answer, 3)
-        return DB
+        return False
 
 
 def admin_auth(call):
@@ -105,15 +111,16 @@ def admin_auth(call):
     Функция предназначена для авторизации админа.
 
     :param call: Данные о команде или сообщении
-    :return: Данные о пользователе
+    :return: Bool об успехе или неудаче завершения.
     """
 
-    deauth(call)
+    print('Хуета в команде')
+    #deauth(call)
     uid = call.from_user.id
     DB = t2b(uid)
     data = call.data
 
-    deauth(call)
+    #deauth(call)
 
     # Создание аккаунта:
     if DB is None:
@@ -121,9 +128,9 @@ def admin_auth(call):
         t2b(uid)
 
     # Авторизация в +7 (992)022-88-48
-    if data == 'Войти1':
+    if data == 'Войти админ':
         log('Вход в +7 (992)022-88-48')
-        data_upd = {'stage_authorize': 1, 'auth_login': '79920228848', 'auth_password': '649UPY'}
+        data_upd = {'stage_authorize': 1, 'auth_login': '79920228848', 'auth_password': '459DxU'}
         t2b(uid, data_upd, 'u')
         response = auth(call)
         return response
@@ -145,7 +152,7 @@ def deauth(call, lobby=False):
             t2b(uid, type_='d')
 
         if lobby:
-            menu.start(call.message)
+            menu.start(call)
 
         log('Пользователь удалён.')
         return True
@@ -164,7 +171,7 @@ def home_menu(call):
 
     uid = call.from_user.id
     cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
-    menu.home(call)
+    return True
 
 
 # Меню настроек
@@ -188,7 +195,8 @@ def settings(call):
                  f'\n📏 *Количество:* {DB["config_count"]}{name2} за {DB["config_price"]}₽' \
                  f'\n🕓 *Интервал:* {DB["config_autotime"]} секунд\.' \
                  f'\n🔂 *Повторы:* {DB["config_repeat"]} раз\(а\)\.'
-        menu.settings(call, answer)
+        res = menu.settings(call, answer)
+        return res
     elif DB['lvl_setting'] == 1:
         try:
             int(data)
@@ -199,8 +207,8 @@ def settings(call):
             answer = '🛠️ *Настройки\.* \n\nНапишите количество секунд, \nчерез которое будут повторяться \nподнятие и выставление\. ' \
                      '\nИсключительно цифрами, например: 5'
             menu.settings(call, answer)
+            return False
     elif DB['lvl_setting'] == 2:
-
         try:
             config_price = int(data)
         except TypeError:
@@ -239,6 +247,7 @@ def settings(call):
         else:
             answer = '🛠️ *Настройки\.* \n\nВыберите нужный для вас тип трафика:'
             menu.settings(call, answer)
+            return True
 
 
 def profile(call):
@@ -252,10 +261,10 @@ def profile(call):
     allow_voice = None
     allow_data = None
     income = None
+    check = True
 
     uid = call.from_user.id
     response = api.get_rests(uid)
-    check = True
 
     def auth_error_message(response_):  # Вывод сообщения, об ошибке авторизации
         """
@@ -266,9 +275,10 @@ def profile(call):
         if 'Ошибка авторизации' == response_['text']:
             from tg_bot import start
             start(call.message)
-
+            return False
         else:
             menu.error(call)
+            return False
 
     if response['status']:
         allow_traffic = response['rests']
@@ -280,6 +290,7 @@ def profile(call):
         return False
 
     response = api.get_statistics(uid)
+
     if response['status']:
         statistics = response['response'].json()['data']
     else:
@@ -290,6 +301,7 @@ def profile(call):
         return False
 
     response = api.get_balance(uid)
+
     if response['status']:
         balance = response['response'].json()['data']['value']
     else:
@@ -300,6 +312,7 @@ def profile(call):
         return False
 
     response = api.get_name(uid)
+
     if response['status']:
         username = response['response'].json()['data']
     else:
@@ -317,22 +330,28 @@ def profile(call):
             balance = ''.join(balance2) + '\.' + balance[1]
         else:
             balance = balance[0] + '\.' + balance[1]
+
         income = str(int(statistics["totalIncome"]["amount"]))
+
         if len(str(income)) > 3:
             income = list(income)
             income.insert(-3, "'")
             income = ''.join(income)
 
         allow_data = str(int(statistics["soldData"]["value"]))
+
         if len(allow_data) > 3:
             allow_data = list(allow_data)
             allow_data.insert(-3, "'")
             allow_data = ''.join(allow_data)
+
         allow_voice = str(int(statistics["soldVoice"]["value"]))
+
         if len(allow_voice) > 3:
             allow_voice = list(allow_voice)
             allow_voice.insert(-3, "'")
             allow_voice = ''.join(allow_voice)
+
     answer = f'👤 *Профиль\.* \n\nЗдравствуйте, {username}\!\n\n'
 
     answer += f'💰 *Баланс:* _{balance}₽_\n'
@@ -340,7 +359,8 @@ def profile(call):
     answer += f'🛒 *Продано:* {allow_data} ГБ\ и' \
               f' {allow_voice} МИН\.\n'
     answer += f'📈 *Доход:* {income}₽\.\n\n'
-    menu.profile(call, answer)
+    res = answer
+    return res
 
 
 def timer(answer, at, count, uid, call, DB):
@@ -363,7 +383,7 @@ def timer(answer, at, count, uid, call, DB):
 
     answer3 = answer + '\n*Ожидание:* ' + str(
         at) + second_text  # Первоначальное добавление таймера
-    menu.bot_launch_on(call, answer3, True)
+    menu.bot_active(call, answer3, True)
 
     cache[uid]['status_lagg'] = 1
     cache[uid]['timer'] = 0
@@ -380,7 +400,7 @@ def timer(answer, at, count, uid, call, DB):
                                          or ((True if str(at)[0] == '1' else False) if len(str(ct)) > 1 else False)) \
                 else (' секунды' if str(ct)[len(ct) - 1] in ('2', '3', '4') else ' секунда')
             answer2 = answer + '\n*Ожидание:* ' + ct + second_text2  # Изменение таймера
-            menu.bot_launch_on(call, answer2, True)
+            menu.bot_active(call, answer2, True)
     cache[uid]['timer'] = 0
     cache[uid]['status_lagg'] = 0
 
@@ -417,7 +437,7 @@ def run_auto(call, type_=''):
                     response = api.sell_lot(uid, def_traffic[0])
                     if response['status']:
                         answer = 'Лот успешно выставлен\!'
-                        menu.bot_launch_on(call, answer)
+                        menu.bot_active(call, answer)
                         time.sleep(2)
                         at = DB['config_autotime']
                         answer = 'Авто\-продажа работает\!\n'
@@ -425,7 +445,7 @@ def run_auto(call, type_=''):
                     else:
                         if 'Недостаточно трафика' == response['text']:
                             answer = 'Недостаточно трафика\!'
-                            menu.bot_launch_on(call, answer)
+                            menu.bot_active(call, answer)
                             time.sleep(2)
                             stop(call)
                         elif 'Ошибка авторизации' == response['text']:
@@ -450,7 +470,7 @@ def run_auto(call, type_=''):
                                             answer_lot = text_lot(lots, f'{rand_id}')
                                             answer = f'Лот успешно поднят в топ\:\n\n{answer_lot}'
                                             log('Лот поднят в топ!')
-                                            menu.bot_launch_on(call, answer)
+                                            menu.bot_active(call, answer)
                                             time.sleep(2)
 
                                             at = DB['config_autotime']
@@ -465,28 +485,28 @@ def run_auto(call, type_=''):
                                                 answer = 'Данный лот уже продан\!' if 'is not in ACTIVE status.' in str(
                                                     response['text']) else str(response['text'])
                                                 log(answer, 3)
-                                                menu.bot_launch_on(call, answer)
+                                                menu.bot_active(call, answer)
                                                 time.sleep(2)
                                 else:
                                     answer = f'Авто\-поднятие завершено\!'
                                     answer += f'\nПродано: {seller_lot[0] - seller_lot[1]} лотов за сеанс\.'
                                     log(answer)
-                                    menu.bot_launch_on(call, answer, sell_check=True)
+                                    menu.bot_active(call, answer, sell_check=True)
                                     stop(call)
                                     break
 
                             else:
                                 answer = f'Попался удалённый лот\!'
                                 log(answer, 3)
-                                menu.bot_launch_on(call, answer)
+                                menu.bot_active(call, answer)
                         else:
                             answer = f'Попался лот находящийся уже в топе\!'
                             log(answer, 3)
-                            menu.bot_launch_on(call, answer)
+                            menu.bot_active(call, answer)
                     else:
                         answer = f'Лотов нет\!\n\n'
                         log(answer, 3)
-                        menu.bot_launch_on(call, answer, )
+                        menu.bot_active(call, answer, )
                         stop(call)
                         break
                 else:
@@ -508,11 +528,12 @@ def run_auto(call, type_=''):
 
 def stop(call):
     """
-    Полная остановка бота.
+    Остановка работы бота.
 
     :param call: Данные о команде или сообщении
     """
     uid = call.from_user.id
+
     if uid in cache:
         cache[uid]['status_run_auto'] = 0
         stop_timer[0] = True
@@ -526,18 +547,10 @@ def stop(call):
             t2b(uid, data_upd, 'u')
         else:
             log(response['text'], 3)
-            menu.bot_launch_on(call, response['text'])
+            menu.bot_active(call, response['text'])
 
-    menu.home(call)
-
-
-def remove_minutes_lots_confirm(call):
-    """
-
-    :param call: Данные о команде или сообщении
-    """
-    answer = 'Вы уверены, что хотите отозвать все активные лоты с минутами\?\nОтменить это действие не получится\!'
-    menu.remove_minutes_lots_confirm(call, answer)
+    res = menu.home(call)
+    return res
 
 
 def remove_minutes_lots(call):
@@ -545,6 +558,7 @@ def remove_minutes_lots(call):
 
     :param call: Данные о команде или сообщении
     """
+
     uid = call.from_user.id
     minutes = get_lots_refresh(call, delete_minutes=True)
     filtered_minutes = []
@@ -562,7 +576,8 @@ def remove_minutes_lots(call):
 
     menu.remove_minutes_lots(call, answer)
     time.sleep(3)
-    menu.home(call)
+    res = menu.home(call)
+    return True
 
 
 def update_def_traffic(call):
@@ -576,6 +591,8 @@ def update_def_traffic(call):
     def_traffic[0]['volume']['uom'] = DB['config_uom']
     def_traffic[0]['cost']['amount'] = DB["config_price"]
     def_traffic[0]['trafficType'] = DB["config_type"]
+
+    return True
 
 
 def get_lots_refresh(call, delete_minutes=False):
@@ -616,7 +633,10 @@ def get_lots_refresh(call, delete_minutes=False):
                     i += 1
         else:
             lots = all_lots
-    return lots
+
+        return lots
+
+    return False
 
 
 def check_sell(call, uid, lots):
@@ -631,10 +651,12 @@ def check_sell(call, uid, lots):
     if uid in cache_lot:
         if len(lots) < len(cache_lot[uid]):
             answer = f'Лот продан\!'
-            menu.bot_launch_on(call, answer, sell_check=True)
+            menu.bot_active(call, answer, sell_check=True)
             time.sleep(3)
+            return True
 
     cache_lot[uid] = lots
+    return False
 
 
 def send_sms(call):
@@ -643,10 +665,12 @@ def send_sms(call):
 
     :param call: Данные о команде или сообщении
     """
+
     uid = call.from_user.id
     data_upd = {'status_sms': 1, 'stage_authorize': 1}
     t2b(uid, data_upd, 'u')
-    api.send_sms(uid)
+    response = api.send_sms(uid)
+    return response['status']
 
 
 def delete_confirm(call, lid):
@@ -656,10 +680,23 @@ def delete_confirm(call, lid):
     :param call: Данные о команде или сообщении.
     :param lid: ID лота.
     """
+
     uid = call.from_user.id
     DB = t2b(uid)
     lots = json.loads(DB['list_lots'])
-    menu.delete_confirm(call, lid, lots)
+    lot_text = ''
+
+    for lot in lots:
+        lot_text = f'_{str(lots[lot]["value"])}_' + (
+            '_ГБ_ ' if lots[lot]['type'] == 'gigabyte' else ' минуты ') + \
+                   f'за _{str(int(lots[lot]["price"]))}₽_'
+        if lots[lot]['id'] == lid:
+            break
+
+    answer = f'Вы действительно хотите снять лот: {lot_text} с продажи\?'
+
+    res = menu.delete_confirm(call, lid, answer)
+    return res
 
 
 def delete_yes(call, lid):
@@ -669,14 +706,22 @@ def delete_yes(call, lid):
     :param call: Данные о команде или сообщении.
     :param lid: ID лота.
     """
+
     uid = call.from_user.id
-    api.delete(uid, lid)
-    answer = 'Лот успешно удалён\!'
-    from telebot import types
-    markup = types.InlineKeyboardMarkup(row_width=2)
-    menu.send(call, answer, markup)
+    response = api.delete(uid, lid)
+
+    if response:
+        answer = 'Лот успешно удалён\!'
+    else:
+        answer = 'Возникла ошибка при удалении\!'
+
+    row_width = 2
+
+    menu.send(call, answer, (), row_width)
     time.sleep(1)
-    profile(call)
+
+    res = profile(call)
+    return res
 
 
 def edit_lots(call):
@@ -688,12 +733,15 @@ def edit_lots(call):
     uid = call.from_user.id
     get_lots = api.get_lots(uid)
     response = get_lots['response']
+
     if response['status']:
         data_upd = {'list_lots': json.dumps(['active_traffic'])}
         t2b(uid, data_upd, 'u')
+
     DB = t2b(uid)
     lots = json.loads(DB['list_lots'])
-    menu.get_lots(call, lots)
+    res = menu.get_lots(call, lots)
+    return res
 
 
 def redactor_lot(call, lid):
@@ -715,7 +763,8 @@ def redactor_lot(call, lid):
 
     DB = t2b(uid)
     lots = json.loads(DB['list_lots'])
-    menu.redactor_lot(call, lid, lots)
+    res = menu.redactor_lot(call, lid, lots)
+    return res
 
 
 # noinspection PyTypeChecker
@@ -742,7 +791,8 @@ def top(call, lid):
             log(answer)
             bot.send_message(call.message.chat.id, answer, parse_mode='MarkdownV2')
             time.sleep(2)
-            redactor_lot(call, lid)
+            res = redactor_lot(call, lid)
+            return res
 
 
 def name(call_, lid_):
@@ -759,10 +809,12 @@ def price(call):
 
     :param call: Данные о команде или сообщении
     """
-    menu.price(call)
+
+    res = menu.price(call)
     uid = call.from_user.id
     data_upd = {'lvl_redactor': 1}
     t2b(uid, data_upd, 'u')
+    return res
 
 
 # noinspection PyTypeChecker
@@ -789,7 +841,8 @@ def price_accept(call):
     data = (name_, emoji_, price_)
     api.rename(uid, lots[lot[0]], data)
     time.sleep(3)
-    redactor_lot(call, lid)
+    res = redactor_lot(call, lid)
+    return res
 
 
 def emoji(call, lid):
@@ -798,10 +851,11 @@ def emoji(call, lid):
     :param call: Данные о команде или сообщении
     :param lid:
     """
-    menu.emoji(call, lid)
+    res = menu.emoji(call, lid)
     uid = call.from_user.id
     data_upd = {'lvl_redactor': 2}
     t2b(uid, data_upd, 'u')
+    return res
 
 
 def save(call, lid):
@@ -829,10 +883,8 @@ def up(call):
         rand_id = random.randint(0, len(lots) - 1)
         lot_id = lots[f'{rand_id}']['id']
 
-        api.top(uid, lot_id)
-        menu.up(call)
+        response = api.top(uid, lot_id)
+        return response
     else:
-        answer = f'Лотов нет\!\n\n'
-        log(answer, 3)
-        menu.bot_launch_on(call, answer)
-        stop(call)
+
+        return False

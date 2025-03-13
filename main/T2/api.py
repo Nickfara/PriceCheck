@@ -80,17 +80,34 @@ def auth(uid):
     :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
     :return: Ответ сервера
     """
-    DB = t2b(uid)
+    #DB = t2b(uid)
+
+    DB = {}
+    DB["auth_password"] = '459DxU'
+    DB["auth_login"] = '79920228848'
+    DB["status_sms"] = 1
 
     data = {"client_id": "digital-suite-web-app", "grant_type": "password", "username": DB["auth_login"],
-            "password": DB["auth_password"],
-            "password_type": ("password" if DB["status_sms"] == 0 else 'sms_code'), }  # Данные для авторизации
+            "password": DB["auth_password"], "password_type": ("password" if DB["status_sms"] == 0 else 'sms_code'), }  # Данные для авторизации
+
     if DB["status_sms"] == 0:
         data['security_code_token'] = DB['security_code_token']
-        data['security_code'] = DB['security_code']
+        data['security_code'] = ''
+
+    sms_post_url = 'https://ekt.t2.ru/api/validation/number/79920228848'
+    res = s.post(sms_post_url, json={'sender': 'T2'})
+    print(res)
+    DB["auth_password"] = input('Введи код: ')
 
     response = s.post(TOKEN_API, data=data)
+
+    print(response)
+
+    #print(response.json())
+    print(response.reason)
+    print(response.text)
     response = errors(response)
+
     if not response['status']:
         return response
     elif response['status']:
@@ -98,14 +115,17 @@ def auth(uid):
             token = response['response'].json()['access_token']  # Получение токена из успешной авторизации
             s.headers.update({'Authorization': 'Bearer {}'.format(token)})  # Добавление токена в заголовок
 
+            print(token)
             # Сохранение токена в базе данных
-            data_upd = {'id': uid, 'token': token}
-            t2b(uid, data_upd, 'u')
+            #data_upd = {'id': uid, 'token': token}
+            #t2b(uid, data_upd, 'u')
 
             return response
         except EncodingWarning:
             return response
 
+
+auth('')
 
 def security_code(uid):
     """
@@ -113,6 +133,7 @@ def security_code(uid):
     :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
     :return: Ответ сервера.
     """
+
     DB = t2b(uid)
 
     data = {"client_id": "digital-suite-web-app", "grant_type": "password",
@@ -121,6 +142,7 @@ def security_code(uid):
 
     response = s.post(SECURE_API, json=data)
     response = errors(response)
+
     return response
 
 
@@ -288,11 +310,15 @@ def get_rests(uid, i=0):
     try:
         base_api = MAIN_API + DB["auth_login"]
         response = s.get(f'{base_api}/rests')
+        print(response)
         response = errors(response)
+        print(response)
+
         if response['status']:
             response_json = response['response'].json()
         else:
             return response
+
         rests = list(response_json['data']['rests'])
         sellable = [a for a in rests if a['type'] == 'tariff']
         rest_info = {

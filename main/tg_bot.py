@@ -5,6 +5,8 @@
 # noinspection SpellCheckingInspection
 token = '7306002854:AAHIc35yMOXyho4bcYYeAS3W5PP0ey_1HXk'
 
+admin = (828853360, 6890309136)
+calling = {}
 import telebot
 
 from log import log
@@ -18,6 +20,11 @@ from T2 import commands, menu
 
 
 # !/usr/bin/env python # -* - coding: utf-8-* -
+
+def sender(fn):
+    def wrapper(call):
+        call = None
+        return fn(call)
 
 
 def just_send(text_: str):
@@ -61,20 +68,11 @@ def auth(call):
     :param call: Параметры команды или сообщения
     """
     response = commands.auth(call)
+
     if response:
         menu.home(call)
     else:
         run()
-
-
-def run_auto(call, type_):
-    """
-
-    :param call: Параметры команды или сообщения
-    :param type_: Тип запуска(send или top)
-    """
-    menu.wait(call)
-    commands.run_auto(call, type_)
 
 
 def stop(call):
@@ -134,7 +132,7 @@ def close(message):
     try:
         bot.send_message(message.chat.id, 'Бот выключен!')
     except:
-        bot.send_message('828853360', 'Бот выключен!')
+        bot.send_message(admin[0], 'Бот выключен!')
 
 
 @bot.message_handler(commands=['start', 'deauth', 'unauthorize'])
@@ -147,7 +145,12 @@ def start(message):
 
     call = create_call(message)
     menu.wait(call)
-    commands.deauth(call, True)
+    uid = call.from_user.id
+
+    if uid in admin:
+        menu.admin_menu(call)
+    else:
+        commands.deauth(call, True)
 
 
 # noinspection PyBroadException
@@ -185,10 +188,11 @@ def text(message):
     Обработчик текстовых сообщений
     :param message: Параметры команды или сообщения
     """
-    uid = message.from_user.id
-    DB = t2b(uid)
-
     call = create_call(message)
+
+    uid = message.from_user.id
+    calling[uid] = call
+    DB = t2b(uid)
 
     menu.wait(call)
 
@@ -223,8 +227,10 @@ def default(call):
     :param call: Параметры команды или сообщения
     """
 
+
     menu.wait(call)
     uid = call.from_user.id
+    calling[uid] = call
     cmd = call.data
     cmds = None
     cmdsd = None
@@ -235,40 +241,67 @@ def default(call):
         cmds = cmd.split('/')[0]
         cmdsd = cmd.split('/')[1]
 
+    if uid in admin:
+        if cmd == 'МТ2':
+            print('Хуета в боте')
+            menu.admin_login(call)
+            return
+        elif cmd == 'ОСТ':
+            return
+        elif cmd == 'ПТ':
+            return
+        elif cmd == 'ПРС':
+            return
+        elif cmd == 'Войти админ':
+            print('Хуета в боте чуть позже')
+            response = commands.admin_auth(call)
+            if response:
+                t2b(uid, data={'stage_authorize': 2}, type_='u')
+                #menu.home(call)
+            else:
+                log(response, 3)
+
     if DB['stage_authorize'] < 3:  # Если пользователь не авторизован
         if cmd == 'Войти':
             auth(call)
-        elif cmd == 'Войти1':
-            response = commands.admin_auth(call)
-            if response is not None:
-                t2b(uid, data={'stage_authorize': 2}, type_='u')
-                menu.home(call)
-            else:
-                log(response, 3)
         elif cmd == 'СМС':
             commands.send_sms(call)
             menu.sms(call)
         elif cmd == 'Отмена':
             start(call.message)
-        else:
-            auth(call)
-
     elif DB['stage_authorize'] == 3:  # Если пользователь авторизован
         if cmd == 'Главное меню':
-            commands.home_menu(call)
-        elif cmd == 'Отмена':
-            commands.home_menu(call)
-        elif cmd == 'Выйти из аккаунта':
-            start(call.message)
+            result = commands.home_menu(call)
+            if result:
+                menu.home(call)
+        elif cmd == 'Профиль':
+            result = commands.profile(call)
+            if result:
+                menu.profile(call, result)
         elif cmd == 'Запуск':
-            menu.bot_launch(call)
+            menu.bot_select(call)
         elif cmd in ('Настройки', 'Назад'):
             t2b(uid, data={'lvl_setting': 0}, type_='u')
             settings(call)
         elif cmd == 'Авто-продажа':
-            run_auto(call, 'sell')
+            commands.run_auto(call, 'sell')
         elif cmd == 'Авто-поднятие':
-            run_auto(call, 'top')
+            commands.run_auto(call, 'top')
+        elif cmd == 'Поднять':
+            response = commands.up(call)
+            if response['status']:
+                menu.up(call)
+            else:
+                answer = f'Лотов нет\!\n\n'
+                log(answer, 3)
+                menu.bot_active(call, answer)
+                stop(call)
+        elif cmd == 'Отмена':
+            result = commands.home_menu(call)
+            if result:
+                menu.home(call)
+        elif cmd == 'Выйти из аккаунта':
+            start(call.message)
         elif cmd == 'Интервал':
             t2b(uid, data={'lvl_setting': 1}, type_='u')
             settings(call)
@@ -286,10 +319,8 @@ def default(call):
             t2b(uid, data={'lvl_setting': 0}, type_='u')
         elif cmd == 'Остановить':
             stop(call)
-        elif cmd == 'Профиль':
-            commands.profile(call)
         elif cmd == 'Отозвать минуты':
-            commands.remove_minutes_lots_confirm(call)
+            menu.remove_minutes_lots_confirm(call)
         elif cmd == 'Подтверждение отзыва минут':
             commands.remove_minutes_lots(call)
         elif cmds == 'del':
@@ -317,8 +348,6 @@ def default(call):
             commands.save(call, lid)
         elif call.data == 'price':
             commands.price(call)
-        elif call.data == 'Поднять':
-            commands.up(call)
 
 
 def run():
