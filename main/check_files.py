@@ -65,7 +65,9 @@ preset_config = {"shops": [
         "active": False
     }
 
-], "taxi": {
+],
+    "metro_active": False,
+    "taxi": {
     "clid": "ak241111",
     "apikey": "YwgMXudjrASZaLAXpMqoNjTJjlDjrVKaMlrgBPN",
     "point1": "60.65829040252862,56.86060471272871",
@@ -102,28 +104,41 @@ def check_and_create():
             }
 
     for name in files:
+
         if f'{name}.json' not in data_dir:
             with open(f'data/{name}.json', 'w') as f:
                 # noinspection PyTypeChecker
                 json.dump(files[name], f)
-                print('apply')
+
                 apply[0] = 1
         else:
-            with open(f'data/{name}.json') as f:
-                print(name)
+            with open(f'data/{name}.json', 'r+') as f:
+
                 # noinspection SpellCheckingInspection
-                obje = json.load(f)
-                with open(f'data/{name}.json') as f2:
+                try:
+                    obje = json.load(f)
                     if name in temp:
-                        if type(obje[temp[name][0]]) != temp[name][1]:
+
+                        if temp[name][0] in obje:
+
+                            if type(obje[temp[name][0]]) != temp[name][1]:
+
+                                # noinspection PyTypeChecker
+                                json.dump(files[name], f)
+                                apply[0] = 1
+                        else:
+
                             # noinspection PyTypeChecker
-                            json.dump(files[name], f2)
+                            json.dump(files[name], f)
                             apply[0] = 1
 
                     if name == 't2b':
                         if type(obje) != dict:
                             # noinspection PyTypeChecker
-                            json.dump({'3714856134875': {}}, f2)
+                            json.dump({'3714856134875': {}}, f)
+                except ValueError:
+                    json.dump(files[name], f)
+                    apply[0] = 1
 
     if apply[0] == 0:
         log("Все необходимые файлы присутствуют!")

@@ -70,14 +70,16 @@
         MDBoxLayout:
             orientation: 'vertical'
             size_hint_y: None
-            height: '400dp'
-            spacing: 12
+            height: '300dp'
 
             MDBoxLayout:
+                size_hint_y: None
+                height: btn_refresh.height
                 orientation: 'horizontal'
+
                 MDIconButton:
                     id: btn_refresh
-                    on_release: root.refresh()
+                    on_release: root.refresh(root)
                     icon: "refresh"
                     icon_color: btn
                     line_color: btn
@@ -85,19 +87,24 @@
             MDBoxLayout:
                 size_hint_y: None
                 height: checkbox_parser_metro.height
+                orientation: 'horizontal'
 
                 MDLabel:
                     text: 'METRO: '
                     size_hint_y: None
+                    height: checkbox_parser_metro.height
+                    halign: 'right'
 
                 MDCheckbox:
                     id: checkbox_parser_metro
-                    size_hint_x: .1
+                    size_hint: None, None
+                    width: self.width
+                    height: self.height
 
             MDBoxLayout:
                 orientation: 'horizontal'
                 size_hint_y: None
-                height: 20
+                height: 45
 
                 MDLabel:
                     text: 'Имя файла'
@@ -157,7 +164,6 @@
         size_hint_y: None
         height: '80dp'
         spacing: 2
-        md_bg_color: 'white'
 
 
 <CartMain>

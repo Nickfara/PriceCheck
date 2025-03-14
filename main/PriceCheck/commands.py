@@ -95,10 +95,13 @@ class Main:
         :param Main_:
         :param ItemObjs:
         """
+
+
         name = Main_.ids.text_find.text
 
         Main_.ids.list_items_obj.clear_widgets()
         finder_items = handler.finder(name, Main_.base_price)  # Поиск товара
+
         result_metro = []
         if Main_.checkbox_parser_metro.active:
             result_metro = parse_metro.search(name)
@@ -110,6 +113,7 @@ class Main:
                      'minOrderQuantity': item['minOrderQuantity']})
 
         for item in finder_items:  # Добавление товаров в список на главный экран
+
             ItemObj = ItemObjs()
             text = item['name'] + '.'
 
@@ -152,12 +156,6 @@ class Main:
                     btn_for_item('cart-plus', Main_.add_to_cart, 'blue')
 
             Main_.ids.list_items_obj.add_widget(ItemObj)
-
-    def refresh(self):
-        """
-            Обновление базы товаров
-        """
-        asyncio.ensure_future(handler.refresh(self))
 
 
 class Settings:
@@ -218,7 +216,7 @@ class Settings:
                 data["shops"].append(new_shop)
 
             for shop in data["shops"]:
-                print(shop)
+
                 preset_shop = Settings.preset_shop(shop)
                 SettingsMain.data['shops'].append(preset_shop)
 
@@ -236,6 +234,8 @@ class Settings:
         Main_.dialog = content()
 
         Main_.dialog.open()
+
+
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -373,7 +373,7 @@ class Cart:
         :param Main_: 
         :param instance: 
         """
-        print(instance)
+
 
     @staticmethod
     def send(Main_):
@@ -401,10 +401,10 @@ class Cart:
         :param instance: 
         """
         # Main = MainApp().Main
-        print(instance)
-        print('Разделитель')
-        print(instance.icon)
-        print(instance.icon_color)
+
+
+
+
         instance.icon = 'cart-remove'
         instance.icon_color = 'red'
         instance.unbind(on_release=Main_.add_to_cart)
@@ -433,7 +433,7 @@ class Cart:
             handler.remove_cart(dict(item))  # То объект удаляется из корзины
 
         if Main_.dialog:  # Закрыть диалоговое окно, если оно открыто
-            print(Main_.dialog)
+            pass
             # Main.dialog.dismiss()
             # Main.dialog = None
             # Main.cart_open(Main)

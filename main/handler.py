@@ -33,18 +33,11 @@ async def background_load(self):
         """
             Функция запуска
         """
-        from tg_bot import run
-        run()
-
-        log('TG бот включен!')
-
-        import ParserTaxi.taxi_parser as tp
-        tp.run()
-        log('Парсер такси включен!')
 
         with open('data/cache_prices.json') as f:
             result = json.load(f)
-            result_filtered = filter_shops(result)
+            result_filtered = filter_shops(result['cache'])
+
             self.base_price = result_filtered
             log('Прайс загружен в кэш!')
 
@@ -57,7 +50,20 @@ async def background_load(self):
         self.activate_enter_finder()
         log('Поиск по нажатию "enter" включен!')
 
+    def start_tg():
+        from tg_bot import run
+        run()
+
+        log('TG бот включен!')
+
+    def start_taxi():
+        import ParserTaxi.taxi_parser as tp
+        tp.run()
+        log('Парсер такси включен!')
+
     await async_start(start)
+    await async_start(start_taxi)
+    await async_start(start_tg)
 
 
 async def refresh(self):
@@ -70,8 +76,10 @@ async def refresh(self):
         """
             Функция запуска
         """
+
         from PriceCheck.read_doc import scanner
         scanner('')
+
         log('Сканирование прайсов запущено!')
         with open('data/cache_prices.json') as f:
             result = json.load(f)
@@ -133,6 +141,7 @@ def filter_shops(items: list):
     """
     shops = []
     items_filtered = []
+
     with open('data/config.json') as f:
         config = json.load(f)
         for shop in config['shops']:
@@ -140,8 +149,9 @@ def filter_shops(items: list):
                 shops.append(shop['seller'])
 
     for item in items:
-        if item in shops:
+        if item['seller'] in shops:
             items_filtered.append(item)
+
     return items_filtered
 
 

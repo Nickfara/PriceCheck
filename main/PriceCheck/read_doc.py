@@ -28,18 +28,18 @@ def read(filename):  # Чтение таблицы
     file_formate = filename.split('.')[1]
 
     try:
-        with open('prices/' + str(filename)):
+        with open('data/prices/' + str(filename)):
             pass
     except FileNotFoundError:
         response = False
         log(f'Файл "{filename}" не найден!', 2)
     else:
         if file_formate == 'xls':  # Чтение xls
-            workbook = open_xls('prices/' + str(filename))
+            workbook = open_xls('data/prices/' + str(filename))
             log(f'Начало сканирования файла: {filename}')
             response = xls(workbook)
         elif file_formate == 'xlsx':  # Чтение xlsx
-            workbook = open_xlsx('prices/' + str(filename))
+            workbook = open_xlsx('data/prices/' + str(filename))
             log(f'Начало сканирования файла: {filename}')
             response = xlsx(workbook)
         else:
@@ -235,10 +235,10 @@ def scanner(name):
     """
     name = str(name)
     items = []
-    result = []
+    result = {'cache':[]}
     import os
     for file in data['shops']:
-        if file['filename'] in os.listdir('../data/prices'):
+        if file['filename'] in os.listdir('data/prices'):
             table = read(file['filename'])
             if table:
                 for i in table:
@@ -249,7 +249,7 @@ def scanner(name):
             i["name"] = filter_names(i["name"])
 
             if i['name']:
-                result.append(i)
+                result['cache'].append(i)
 
     def key(price):
         """
@@ -263,10 +263,12 @@ def scanner(name):
             return 0
         except KeyError:
             return 0
+        except ValueError:
+            return 0
 
-    result.sort(key=key)
+    result['cache'].sort(key=key)
 
-    with open('../data/cache_prices.json', 'w') as file:
+    with open('data/cache_prices.json', 'w') as file:
         # noinspection PyTypeChecker
         json.dump(result, file)
         log('Сохранение прайса в кэш.')

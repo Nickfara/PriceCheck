@@ -5,6 +5,8 @@ import asyncio
 
 from kivy.app import App
 
+import PriceCheck.commands
+
 MainApp = App.get_running_app()
 
 from kivymd.app import MDApp
@@ -50,6 +52,10 @@ class SettingsMain(MDDialog):
         :param temp_main:
         """
         commands.Settings.exit(self, temp_main)
+    @staticmethod
+    def refresh(main):
+
+        PriceCheck.commands.Settings.refresh(main)
 
 
 class SettingShop(MDBoxLayout):
@@ -129,6 +135,7 @@ class Main(MDBoxLayout):
         """
              Поиск среди продуктов
         """
+
         commands.Main.find(self, ItemObj)
 
     def add_to_cart(self, instance):
@@ -214,7 +221,8 @@ class Main(MDBoxLayout):
         """
             Обновить базу данных
         """
-        commands.Main.refresh(self)
+
+        asyncio.ensure_future(handler.refresh(self))
 
 
 class ToolsAJob(MDApp):
