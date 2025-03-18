@@ -155,10 +155,11 @@ def start(message):
 
 # noinspection PyBroadException
 @bot.message_handler(content_types=['document'])
-def files(message):
+def files(message: object) -> object:
     """
     Загрузка файлов из ТГ бота
-    
+
+    :type message: object
     :param message:  Параметры команды или сообщения
     """
     if cache['check_file'] == 'send_file':
@@ -227,7 +228,6 @@ def default(call):
     :param call: Параметры команды или сообщения
     """
 
-
     menu.wait(call)
     uid = call.from_user.id
     calling[uid] = call
@@ -257,7 +257,7 @@ def default(call):
             response = commands.admin_auth(call)
             if response:
                 t2b(uid, data={'stage_authorize': 2}, type_='u')
-                #menu.home(call)
+                # menu.home(call)
             else:
                 log(response, 3)
 

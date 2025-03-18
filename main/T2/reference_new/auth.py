@@ -9,14 +9,14 @@ def input_phone_number():
     while True:
         user_input = input(
             Fore.CYAN +
-            f'Input your Tele2 phone number (leave empty to cancel): '
+            f'Введите свой номер телефона Tele2 (оставьте пустое, чтобы отменить):'
         )
         if re.match(r'^7\d{10}?$', user_input):
             return user_input
         elif user_input == '':
             exit()
         else:
-            print(Fore.RED + 'Incorrect number format. Correct - 7xxxxxxxxxx')
+            print(Fore.RED + 'Неверный формат номера. Правильный - 7xxxxxxxxxx')
 
 
 async def get_tokens(api: Tele2Api, phone_number: str):
