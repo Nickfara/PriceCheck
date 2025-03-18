@@ -96,7 +96,6 @@ class Main:
         :param ItemObjs:
         """
 
-
         name = Main_.ids.text_find.text
 
         Main_.ids.list_items_obj.clear_widgets()
@@ -216,7 +215,6 @@ class Settings:
                 data["shops"].append(new_shop)
 
             for shop in data["shops"]:
-
                 preset_shop = Settings.preset_shop(shop)
                 SettingsMain.data['shops'].append(preset_shop)
 
@@ -234,8 +232,6 @@ class Settings:
         Main_.dialog = content()
 
         Main_.dialog.open()
-
-
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -374,7 +370,6 @@ class Cart:
         :param instance: 
         """
 
-
     @staticmethod
     def send(Main_):
         """
@@ -401,9 +396,6 @@ class Cart:
         :param instance: 
         """
         # Main = MainApp().Main
-
-
-
 
         instance.icon = 'cart-remove'
         instance.icon_color = 'red'
