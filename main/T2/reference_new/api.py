@@ -2,7 +2,7 @@ import time
 
 from aiohttp import ClientSession, ContentTypeError, ClientResponse
 
-from T2.constants import SECURITY_BYPASS_HEADERS, MAIN_API, SMS_VALIDATION_API, TOKEN_API
+from T2.constants import SECURITY_BYPASS_HEADERS, MAIN_API, SMS_VALIDATION_API, TOKEN_API, SECURE_VALIDATION_API
 
 
 async def _try_parse_to_json(response: ClientResponse):
@@ -32,6 +32,7 @@ class Tele2Api:
         self.balance_api = f'{base_api}/balance'
         self.statistics_api = f'{base_api}/exchange/statistics'
         self.sms_post_url = SMS_VALIDATION_API + phone_number
+        self.security_post_url = SECURE_VALIDATION_API
         self.auth_post_url = TOKEN_API
         self.access_token = access_token
         self.refresh_token = refresh_token
@@ -51,7 +52,11 @@ class Tele2Api:
         return _is_ok(response)
 
     async def send_sms_code(self):
-        await self.session.post(self.sms_post_url, json={'sender': 'Tele2'})
+        response = await self.session.post(self.sms_post_url, json={'sender': 'Tele2'})
+        print(response)
+        response_json = await _try_parse_to_json(response)
+        print(response_json)
+        return await response_json
 
     async def send_security_code(self, uid):
         """
@@ -62,14 +67,15 @@ class Tele2Api:
 
         DB = t2b(uid)
 
-        data = {"client_id": "digital-suite-web-app", "grant_type": "password",
-                "username": DB["auth_login"], "password": DB["auth_password"],
-                "password_type": "password"}  # Данные для авторизации
-
-        response = s.post(SECURE_API, json=data)
-        response = errors(response)
-
-        return response
+        response = await self.session.post(self.security_post_url, json={
+            "client_id": "digital-suite-web-app",
+            "grant_type": "password",
+            "username": DB["auth_login"],
+            "password": DB["auth_password"],
+            "password_type": "password"
+        })
+        response_json = await _try_parse_to_json(response)
+        return response_json
 
     async def auth_with_code(self, phone_number: str, sms_code: str):
         response = await self.session.post(self.auth_post_url, data={

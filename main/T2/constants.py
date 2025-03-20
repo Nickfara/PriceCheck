@@ -5,6 +5,10 @@ SECURITY_BYPASS_HEADERS = {
     'User-Agent': 'okhttp/4.2.0'
 }
 
-MAIN_API = 'https://ekt.t2.ru/api/subscribers/'
-SMS_VALIDATION_API = 'https://ekt.t2.ru/api/validation/number/'
-TOKEN_API = 'https://ekt.t2.ru/auth/realms/tele2-b2c/protocol/openid-connect/token/'
+site_api = 'https://ekt.t2.ru/api'
+site_auth = 'https://ekt.t2.ru/auth/realms/tele2-b2c'
+
+MAIN_API = site_api + '/subscribers/'
+SMS_VALIDATION_API = site_api + '/validation/number/'
+TOKEN_API = site_auth + '/protocol/openid-connect/token'
+SECURE_VALIDATION_API = site_auth + '/credential-management/security-codes'

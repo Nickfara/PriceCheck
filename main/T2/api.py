@@ -82,7 +82,7 @@ def auth(uid):
     """
     DB = t2b(uid)
 
-    #DB = {}
+    # DB = {}
     # DB["auth_password"] = '459DxU'
     # DB["auth_login"] = '79920228848'
     # DB["status_sms"] = 1
@@ -95,7 +95,7 @@ def auth(uid):
         data['security_code'] = ''
 
     sms_post_url = 'https://ekt.t2.ru/api/validation/number/79920228848'
-    res = s.post(sms_post_url, json={'sender': 'T2'})
+    res = s.post(sms_post_url, json={'sender': 'Tele2'})
 
     response = s.post(TOKEN_API, data=data)
 
@@ -144,6 +144,7 @@ def send_sms(uid):
     :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
     :return: Ответ сервера.
     """
+
     DB = t2b(uid)
     sms_post_url = SMS_VALIDATION_API + DB["auth_login"]
 
