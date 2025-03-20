@@ -17,7 +17,7 @@ cancel_btn = ('❌ Отмена', 'Отмена')
 
 
 # noinspection PyBroadException
-def send(call, answer:str, btns:tuple, row_width:int=3):
+def send(call, answer:str, btns:tuple, row_width:int=3, new_message=new_message):
     """
         Отправка или редактирование сообщения
 
@@ -27,7 +27,6 @@ def send(call, answer:str, btns:tuple, row_width:int=3):
         :param btns: Кортеж с кнопками(('Текст', 'Команда'), ('Текст', 'Команда')).
         """
 
-    global new_message
 
     returned = False
     uid = call.from_user.id
@@ -176,11 +175,11 @@ def admin_login(call):
     return response
 
 
-def admin_menu(call):
+def admin_menu(call, new_message_=new_message):
     row_width = 2
     answer = 'Выберите раздел:'
     btns = (('Маркет Т2', 'МТ2'), ('Ожидание снижения', 'ОСТ'), ('Парсинг такси', 'ПТ'), ('Прайсер', 'ПРС'))
-    response = send(call, answer, btns, row_width)
+    response = send(call, answer, btns, row_width, new_message=new_message_)
 
     return response
 

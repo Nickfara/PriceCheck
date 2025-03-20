@@ -1,6 +1,8 @@
 """
     Функции сопутствующие всему проекту
 """
+import time
+
 from log import log
 
 import asyncio
@@ -51,10 +53,29 @@ async def background_load(self):
         log('Поиск по нажатию "enter" включен!')
 
     def start_tg():
-        from tg_bot import run
+        from tg_bot import run, start
         run()
-
         log('TG бот включен!')
+
+    async def send_first():
+        time.sleep(1)
+        from T2.menu import admin_menu
+        class Call(object):
+            """
+                Класс 'call'
+            """
+            data = 'Первоначальный запуск'
+            class message: message_id = 0
+
+            class from_user: id = 828853360
+
+            def __init__(self):
+                self.data = 'Первоначальный запуск'
+                self.from_user.id = 828853360
+                self.message.message_id = 0
+
+        admin_menu(Call, 1)
+        log('Админу было отправлено меню!')
 
     def start_taxi():
         import ParserTaxi.taxi_parser as tp
@@ -63,7 +84,12 @@ async def background_load(self):
 
     await async_start(start)
     await async_start(start_taxi)
+    await send_first()
     await async_start(start_tg)
+
+
+
+
 
 
 async def refresh(self):

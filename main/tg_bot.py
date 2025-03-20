@@ -36,6 +36,7 @@ def just_send(text_: str):
     :return:
     """
 
+    print(text_)
     bot.send_message(chat_id=828853360, text=text_)
 
 
@@ -108,6 +109,14 @@ def help_command(call):
     menu.help_create(call)
 
 
+@bot.message_handler(commands=['to_job', 'from_job'])
+def active_wait(call, text=None):
+    from ParserTaxi.taxi_parser import wait_low_money
+    if text:
+        call.data = text
+    wait_low_money(call.data)
+
+
 @bot.message_handler(commands=['send_price'])
 def send_file(message):
     """
@@ -147,10 +156,13 @@ def start(message):
     menu.wait(call)
     uid = call.from_user.id
 
+    print('Типа запуск')
     if uid in admin:
         menu.admin_menu(call)
     else:
         commands.deauth(call, True)
+
+    print('Типа запуск')
 
 
 # noinspection PyBroadException
@@ -194,8 +206,17 @@ def text(message):
     uid = message.from_user.id
     calling[uid] = call
     DB = t2b(uid)
+    text = call.data
 
     menu.wait(call)
+
+    if 'работ' in text.lower() and len(text) < 11:
+        active_wait(call, text='to_job')  # Запуск ожидания такси до работы
+        return
+
+    if 'дом' in text.lower() and len(text) < 11:
+        active_wait(call, text='to_home')  # Запуск ожидания такси до дома
+        return
 
     if not DB['stage_authorize']:
         t2b(uid, data={'stage_authorize': 0}, type_='u')
@@ -211,13 +232,19 @@ def text(message):
         elif DB['stage_authorize'] == 0:
             t2b(uid, data={'auth_login': call.data, 'stage_authorize': 1}, type_='u')
         auth(call)
+        return
+
     if DB['lvl_setting']:
         if 4 > DB['lvl_setting'] > 0:
-            if call.data != 'Интервал' and call.data != 'Количество' and call.data != 'Повторы':
+            if text not in ('Интервал', 'Количество', 'Повторы'):
                 settings(call)
+                return
+
     if DB['lvl_redactor']:
         if DB['lvl_redactor'] == 1:
             commands.price_accept(call)
+            return
+
 
 
 @bot.callback_query_handler(func=lambda call: True)

@@ -10,7 +10,7 @@ from log import log
 
 from .config import clid, apikey, point1, point2
 from .database import add
-
+from tg_bot import just_send as send
 active_bot_taxi = [False]
 
 
@@ -24,18 +24,22 @@ def get_price(latlon1, latlon2, type_=1):
     :return: Возвращается список с ценой, временем ожидания и длительностью поездки.
     """
 
-    type_ = 'econom' if type_ == 1 else 'together' if type_ == 2 else 'error'
+    type_ = 'econom' if type_ == 1 else 'econom' if type_ == 2 else 'error'
+
     if type_ == 'error':
         return type_
+
     response = requests.get(
         f'https://taxi-routeinfo.taxi.yandex.net/taxi_info?clid={clid}&apikey={apikey}&rll={latlon1}~{latlon2}&class={type_}')
 
     data = loads(response.text)
+
     result = {
         'price': data['options'][0]['price'],
         'wait': data['options'][0]['waiting_time'],
         'duration': data['time'],
     }
+
     return result
 
 
@@ -81,6 +85,7 @@ def run():
 
     :return: Ничего
     """
+
     while active_bot_taxi[0]:
         try:
             price = create()
@@ -90,33 +95,42 @@ def run():
             log(e, 2)
 
 
-def find_low_money(direction=0):
+def wait_low_money(direction=0):
     """
         Функция для отслеживания падений в цене тарифа вместе
 
     :param direction:
+
     :return:
     """
+    active_bot_taxi[0] = True
     cost = []
-    direction = 'to_price' if direction == 1 else 'from_price' if direction == 2 else 'error'
+    direction = 'to_price' if direction == 'to_job' else 'from_price' if direction == 'to_home' else 'error'
 
-    if direction == 'error': return 'Неверное направление'
+    if direction == 'error': send('Неверное направление')
 
     while active_bot_taxi[0]:
         try:
             price = create(2)[direction]
             cost.insert(0, price)
 
-            if len(cost) > 0:
-                if price - cost[0] > 15:
+            print(f"""
+            direction: {direction}
+            price: {price}
+            cost: {cost}
+            """)
+
+            if len(cost) > 1:
+                if price - cost[0] > 15 or price < 200:
                     text = f'Цена упала и стала: {price}'
-                    return text
+                    send(text)
 
                 if len(cost) > 5:
                     del cost[-1]  # Удаление последнего объекта, при превышении длинны
             else:
                 text = f'Поиск падения цены активирован! Текущая цена: {price}'
-                return text
+                print('сука нахуй блядь')
+                send(text)
 
             sleep(15)
 

@@ -26,7 +26,7 @@ async def get_tokens(api: Tele2Api, phone_number: str):
             sms_code = input(Fore.LIGHTCYAN_EX + 'SMS code: ')
             return await api.auth_with_code(phone_number, sms_code)
         except KeyError:
-            print(Fore.RED + 'Invalid SMS-сode. Try again')
+            print(Fore.RED + 'Неверный SMS-Код. Попробуйте еще раз')
 
 
 def write_config_to_file(phone_number: str, access_token: str,
