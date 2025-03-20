@@ -118,6 +118,7 @@ def auth(uid):
         except EncodingWarning:
             return response
 
+
 def security_code(uid):
     """
 
@@ -220,8 +221,6 @@ def top(uid, lot_id):
 
     response = errors(response)
     return response
-
-    # Выведение активных лотов на экран!
 
 
 def get_lots(uid):
