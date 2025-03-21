@@ -209,7 +209,7 @@ def text(message):
     text = call.data
 
     menu.wait(call)
-
+    #print(text)
     if 'работ' in text.lower() and len(text) < 11:
         active_wait(call, text='to_job')  # Запуск ожидания такси до работы
         return
