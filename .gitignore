@@ -1,5 +1,3 @@
-.idea/misc.xml
-.idea/PriceCheck.iml
-.idea/misc.xml
-.idea/PriceCheck.iml
 /.idea
+/main/data
+/main/constants.py
