@@ -8,8 +8,9 @@ from log import log
 import asyncio
 import json
 
-
 # !/usr/bin/env python # -* - coding: utf-8-* -
+
+cache_cart = 'data/cache_cart.json'
 
 
 async def async_start(start):
@@ -46,10 +47,10 @@ async def background_load(self):
         try:
             with open('data/cache_cart.json', 'w') as f:
                 json.dump({'cart': []}, f)
-        except:
+        except FileNotFoundError:
             pass
 
-        self.activate_enter_finder()
+        self.activate_enter_finder(self)
         log('Поиск по нажатию "enter" включен!')
 
     def start_tg():
@@ -65,6 +66,7 @@ async def background_load(self):
                 Класс 'call'
             """
             data = 'Первоначальный запуск'
+
             class message: message_id = 0
 
             class from_user: id = 828853360
@@ -86,10 +88,6 @@ async def background_load(self):
     await async_start(start_taxi)
     await send_first()
     await async_start(start_tg)
-
-
-
-
 
 
 async def refresh(self):
@@ -118,7 +116,6 @@ async def refresh(self):
             if data['metro_active']:  # Если метро включено в настройках, запускает авторизацию
                 from PriceCheck import parse_metro
                 parse_metro.auth_check()
-                # self.checkbox_parser_metro.active = True
                 log('MShop авторизован!')
 
     await async_start(start)
@@ -186,21 +183,23 @@ def get_cart():
 
     :return:
     """
-    with open('data/cache_cart.json') as f:
+    with open(cache_cart) as f:
         cart = json.load(f)
         return cart['cart']
 
 
-def add_cart(item:dict):
+def add_cart(item: dict):
     """
 
     :param item:
     :return:
     """
+
     cart = get_cart()
     cart.append(item)
     cart = {'cart': cart}
-    with open('data/cache_cart.json', 'w') as f:
+
+    with open(cache_cart, 'w') as f:
         # noinspection PyTypeChecker
         json.dump(cart, f)
         return True
@@ -213,14 +212,17 @@ def send_cart(self):
     """
     for shop in self.send_text:
         if len(self.send_text[shop]) > 1:
-            text_cart = (((
-                              'Екатерина' if shop.lower() == 'матушка' else 'Ульяна' if shop.lower() == 'алма' else '') + ', добрый день!\nЗаявка на завтра:') if shop.lower() not in (
-                'metro', 'купер') else 'METRO:') + '\n' + self.send_text[shop]
+            name = ('Екатерина' if shop.lower() == 'матушка' else 'Ульяна' if shop.lower() == 'алма' else '')
+            header_text = (
+                (name + ', добрый день!\nЗаявка на завтра:') if shop.lower() not in ('metro', 'купер') else 'METRO:')
+            text_cart = header_text + '\n' + self.send_text[shop]
+
             from tg_bot import just_send
+
             just_send(text_cart)
 
 
-def remove_cart(item:dict):
+def remove_cart(item: dict):
     """
 
     :param item:
@@ -229,7 +231,7 @@ def remove_cart(item:dict):
     cart = get_cart()
     cart.remove(item)
     cart = {'cart': cart}
-    with open('data/cache_cart.json', 'w') as f:
+    with open(cache_cart, 'w') as f:
         # noinspection PyTypeChecker
         json.dump(cart, f)
         return True
@@ -292,7 +294,7 @@ def filter_names(name):
     return name_
 
 
-def str_to_dict1(str_:str):
+def str_to_dict1(str_: str):
     """
 
     :param str_:
@@ -308,7 +310,7 @@ def str_to_dict1(str_:str):
     return new
 
 
-def str_to_dict(text:str):
+def str_to_dict(text: str):
     """
 
     :param text:
@@ -329,7 +331,7 @@ def str_to_dict(text:str):
     return end
 
 
-def str_to_list(text:str):
+def str_to_list(text: str):
     """
 
     :param text:
@@ -346,7 +348,7 @@ def str_to_list(text:str):
     return end
 
 
-def finder(text:str, items:list):
+def finder(text: str, items: list):
     """
 
     :param text:

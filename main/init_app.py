@@ -37,7 +37,7 @@ class SettingsMain(MDDialog):
 
         :param temp_main:
         """
-        commands.Settings.add_shop(self, temp_main)
+        commands.Settings.add_shop(temp_main)
 
     def save_settings(self, temp_main):
         """
@@ -51,10 +51,10 @@ class SettingsMain(MDDialog):
 
         :param temp_main:
         """
-        commands.Settings.exit(self, temp_main)
+        commands.Settings.exit(temp_main)
+
     @staticmethod
     def refresh(main):
-
         PriceCheck.commands.Settings.refresh(main)
 
 
@@ -215,7 +215,7 @@ class Main(MDBoxLayout):
 
         :param text:
         """
-        commands.Base.notify(self, text)
+        commands.Base.notify(text)
 
     def refresh(self):
         """

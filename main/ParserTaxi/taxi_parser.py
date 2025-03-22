@@ -11,6 +11,7 @@ from log import log
 from .config import clid, apikey, point1, point2
 from .database import add
 from tg_bot import just_send as send
+
 active_bot_taxi = [False]
 
 
@@ -129,7 +130,6 @@ def wait_low_money(direction=0):
                     del cost[-1]  # Удаление последнего объекта, при превышении длинны
             else:
                 text = f'Поиск падения цены активирован! Текущая цена: {price}'
-                print('сука нахуй блядь')
                 send(text)
 
             sleep(15)

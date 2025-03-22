@@ -28,6 +28,7 @@ async def get_tokens(api: Tele2Api, phone_number: str):
         except KeyError:
             print(Fore.RED + 'Неверный SMS-Код. Попробуйте еще раз')
 
+
 async def get_tokens_s(api: Tele2Api, phone_number: str, password: str):
     await api.send_security_code()
     while True:

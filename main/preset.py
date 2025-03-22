@@ -42,7 +42,7 @@ def text_lot(lots, i):
 
 
 # noinspection PyTypeChecker
-def t2b(uid, data: dict = None, type_='g'):
+def t2b(uid, data: dict = True, type_='g'):
     """
     Обработчик базы пользователей
 

@@ -2,6 +2,7 @@
     Чтение документов EXEL
 """
 import json
+import os
 
 from openpyxl import load_workbook as open_xlsx
 from xlrd import open_workbook as open_xls
@@ -10,7 +11,7 @@ from log import log
 
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
-with open('data/config.json') as f:
+with open('data/config.json', encoding='utf-8') as f:
     data = json.load(f)
 
 h = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
@@ -26,20 +27,21 @@ def read(filename):  # Чтение таблицы
     :return:
     """
     file_formate = filename.split('.')[1]
+    path = 'data/prices/' + str(filename)
 
     try:
-        with open('data/prices/' + str(filename)):
+        with open(path, encoding='utf-8'):
             pass
     except FileNotFoundError:
         response = False
         log(f'Файл "{filename}" не найден!', 2)
     else:
         if file_formate == 'xls':  # Чтение xls
-            workbook = open_xls('data/prices/' + str(filename))
+            workbook = open_xls(path)
             log(f'Начало сканирования файла: {filename}')
             response = xls(workbook)
         elif file_formate == 'xlsx':  # Чтение xlsx
-            workbook = open_xlsx('data/prices/' + str(filename))
+            workbook = open_xlsx(path)
             log(f'Начало сканирования файла: {filename}')
             response = xlsx(workbook)
         else:
@@ -64,7 +66,8 @@ def xls(workbook):
     for i in data['shops']:
         for i2 in workbook.sheets():
             worksheet = workbook.sheet_by_index(workbook.sheets().index(i2))
-            if i['findtext'].lower() in str(worksheet.cell_value(i['findname'][0], i['findname'][1])).lower():
+            findname = str(worksheet.cell_value(i['findname'][0], i['findname'][1])).lower()
+            if i['findtext'].lower() in findname:
                 sid = i['sid']
                 seller = i['seller']
                 break
@@ -126,10 +129,11 @@ def xlsx(workbook):
         for i2 in sheet_names:
             worksheet = workbook[i2]
             try:
-                if i['findtext'].lower() in str(worksheet[h[i['findname'][0]]][i['findname'][1]].value).lower():
+                findname = str(worksheet[h[i['findname'][0]]][i['findname'][1]].value).lower()
+                if i['findtext'].lower() in findname:
                     sid = (h[i['sid'][0]], h[i['sid'][1]])
                     seller = i['seller']
-                    type_n = (i['sid'][2])
+                    type_n = i['sid'][2]
                     break
             except IndexError as e:
                 log(e, 2)
@@ -151,18 +155,22 @@ def xlsx(workbook):
                         break
                     end_time += 1
                 else:
-                    if 'мороженое' in str(worksheet[f'{sid[0]}'][i].value).lower():
+                    name = str(worksheet[f'{sid[0]}'][i].value)
+                    cost = str(worksheet[f'{sid[1]}'][i].value)
+
+                    if 'мороженое' in str(name).lower():
                         break
 
                     item['seller'] = seller
-                    item['name'] = str(worksheet[f'{sid[0]}'][i].value)
+                    item['name'] = str(name)
 
                     if item['name'] != 'None':
                         end_time = 0
+
                     item['name'] = ''.join(item['name'].split(','))  # Удаление запятых из названия
 
                     try:
-                        item['cost'] = str(worksheet[f'{sid[1]}'][i].value)
+                        item['cost'] = cost
                     except:
                         item['cost'] = ''
 
@@ -203,7 +211,7 @@ def filter_names(name):
     name_ = name
 
     for i in base:
-        for i2 in base[i]:
+        for i2 in base.items():
             all_check[i2] = i  # Наполнение всех вариантов замен
 
     for i in all_check:
@@ -235,8 +243,8 @@ def scanner(name):
     """
     name = str(name)
     items = []
-    result = {'cache':[]}
-    import os
+    result = {'cache': []}
+
     for file in data['shops']:
         if file['filename'] in os.listdir('data/prices'):
             table = read(file['filename'])
@@ -268,7 +276,7 @@ def scanner(name):
 
     result['cache'].sort(key=key)
 
-    with open('data/cache_prices.json', 'w') as file:
+    with open('data/cache_prices.json', 'w', encoding='utf-8') as file:
         # noinspection PyTypeChecker
         json.dump(result, file)
         log('Сохранение прайса в кэш.')

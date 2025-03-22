@@ -16,8 +16,6 @@ response = s.get('https://ekt.t2.ru/api/cart?siteId=siteEKT')
 
 print(response)
 
-response  = s.post('https://ekt.t2.ru/api/validation/number/79923415301', json={'sender': 'Tele2'})
+response = s.post('https://ekt.t2.ru/api/validation/number/79923415301', json={'sender': 'Tele2'})
 
 print(response)
-
-

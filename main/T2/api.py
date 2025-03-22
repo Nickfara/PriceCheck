@@ -88,14 +88,15 @@ def auth(uid):
     # DB["status_sms"] = 1
 
     data = {"client_id": "digital-suite-web-app", "grant_type": "password", "username": DB["auth_login"],
-            "password": DB["auth_password"], "password_type": ("password" if DB["status_sms"] == 0 else 'sms_code'), }  # Данные для авторизации
+            "password": DB["auth_password"],
+            "password_type": ("password" if DB["status_sms"] == 0 else 'sms_code'), }  # Данные для авторизации
 
     if DB["status_sms"] == 0:
         data['security_code_token'] = DB['security_code_token']
         data['security_code'] = ''
 
     sms_post_url = 'https://ekt.t2.ru/api/validation/number/79920228848'
-    res = s.post(sms_post_url, json={'sender': 'Tele2'})
+    s.post(sms_post_url, json={'sender': 'Tele2'})
 
     response = s.post(TOKEN_API, data=data)
 

@@ -2,8 +2,10 @@
 Временный конфиг для парсинга цен в такси.
 """
 
-clid = "ak241111"
-apikey = "YwgMXudjrASZaLAXpMqoNjTJjlDjrVKaMlrgBPN"
-point1 = "60.65829040252862,56.86060471272871"
-point2 = "60.6116408898243,56.839601819813524"
-token = 'bd1f236eb2a72a8e3cd4e2c748d5c00b'
+from constants import CLID, APIKEY, POINT1, POINT2, TOKEN_YA_GO
+
+clid = CLID
+apikey = APIKEY
+point1 = POINT1
+point2 = POINT2
+token = TOKEN_YA_GO

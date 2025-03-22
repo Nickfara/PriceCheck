@@ -44,5 +44,5 @@ def add_traffic():
         'emojis': ['bomb', 'bomb', 'bomb'],
         'name': True
     }
-    auto_check = [config[2][0], config[2][1], (True if config[2][2] == 'True' else False)]
+    auto_check = [config[2][0], config[2][1], (config[2][2] == 'True')]
     return default, auto_check
