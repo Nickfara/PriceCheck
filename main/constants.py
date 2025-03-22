@@ -1,5 +1,5 @@
 """
-Переменные среды
+Токены, пароли и переменные среды.
 """
 
 TOKEN_TG_BOT = '7306002854:AAHIc35yMOXyho4bcYYeAS3W5PP0ey_1HXk'
@@ -11,3 +11,4 @@ APIKEY = "YwgMXudjrASZaLAXpMqoNjTJjlDjrVKaMlrgBPN"
 POINT1 = "60.65829040252862,56.86060471272871"
 POINT2 = "60.6116408898243,56.839601819813524"
 TOKEN_YA_GO = 'bd1f236eb2a72a8e3cd4e2c748d5c00b'
+
