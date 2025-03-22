@@ -17,6 +17,7 @@ def _is_ok(response: ClientResponse):
     return response.status == 200
 
 
+# todo: Реализовать переезд на новый функционал.
 class Tele2Api:
     session: ClientSession
     access_token: str

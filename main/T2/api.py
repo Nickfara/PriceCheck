@@ -80,12 +80,14 @@ def auth(uid):
     :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
     :return: Ответ сервера
     """
+
     DB = t2b(uid)
 
-    # DB = {}
-    # DB["auth_password"] = '459DxU'
-    # DB["auth_login"] = '79920228848'
-    # DB["status_sms"] = 1
+    # FIXME: Восстановить работу авторизации Т2
+    #   DB = {}
+    #   DB["auth_password"] = '459DxU'
+    #   DB["auth_login"] = '79920228848'
+    #   DB["status_sms"] = 1
 
     data = {"client_id": "digital-suite-web-app", "grant_type": "password", "username": DB["auth_login"],
             "password": DB["auth_password"],

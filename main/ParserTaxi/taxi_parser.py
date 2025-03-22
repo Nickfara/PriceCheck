@@ -25,7 +25,7 @@ def get_price(latlon1, latlon2, type_=1):
     :return: Возвращается список с ценой, временем ожидания и длительностью поездки.
     """
 
-    type_ = 'econom' if type_ == 1 else 'econom' if type_ == 2 else 'error'
+    type_ = 'вместе' if type_ == 1 else 'econom' if type_ == 2 else 'error'  # todo: Найти название класса тарифа 'Вместе'
 
     if type_ == 'error':
         return type_
