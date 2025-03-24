@@ -135,7 +135,7 @@ class Tele2Api:
 
         return await _try_parse_to_json(response)
 
-    async def rename(uid, lot_id, data_imp):
+    async def rename(self, uid, lot_id, data_imp):
         """
 
         :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.

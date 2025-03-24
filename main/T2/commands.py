@@ -114,7 +114,6 @@ def admin_auth(call):
     :return: Bool об успехе или неудаче завершения.
     """
 
-    print('Хуета в команде')
     #deauth(call)
     uid = call.from_user.id
     DB = t2b(uid)

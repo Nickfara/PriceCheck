@@ -54,7 +54,8 @@ def add(cost):
     """
     Добавление строки с новыми данными о цене.
 
-    :param cost: Словарь содержащий в себе данные (Время, цена, ожидание водителя, длительность поездки) о поездке из дома до работы и обратно.
+    :param cost: Словарь содержащий в себе данные (Время, цена, ожидание водителя, длительность поездки)
+        о поездке из дома до работы и обратно.
     :return: Возвращение логического значения об исходе операции.
     """
     result = False
@@ -62,7 +63,8 @@ def add(cost):
 
     if isinstance(cost, dict) and len(cost) == 7:
         conn.execute(
-            'INSERT INTO Prices (ts, to_price, from_price, to_wait, from_wait, to_duration, from_duration) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO Prices (ts, to_price, from_price, to_wait, from_wait, to_duration, from_duration) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?)',
             ([*cost.values()]))
         conn.commit()
         conn.close()

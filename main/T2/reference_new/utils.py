@@ -1,6 +1,8 @@
+"""
+Функции какие-то
+"""
 import asyncio
 import os
-
 
 
 def _print_version():
@@ -8,6 +10,10 @@ def _print_version():
 
 
 def run_main(main):
+    """
+
+    :param main:
+    """
     try:
         _print_version()
         event_loop = asyncio.get_event_loop()

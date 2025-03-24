@@ -8,7 +8,7 @@ from app.api import Tele2Api
 
 def try_load_config():
     try:
-        with open('config.json', 'r') as f:
+        with open('config.json') as f:
             obj = json.load(f)
             phone_number = obj['x-p']
             access_token = obj['x-at']
