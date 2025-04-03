@@ -1,3 +1,3 @@
 ..\.venv\scripts\activate 
-python interface.py
+python init_app.py
 pause

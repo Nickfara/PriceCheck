@@ -3,3 +3,7 @@ data
 constants.py
 main/constants.py
 main/constants
+/main/__pycache__
+/main/ParserTaxi/__pycache__
+/main/PriceCheck/__pycache__
+/main/T2/__pycache__

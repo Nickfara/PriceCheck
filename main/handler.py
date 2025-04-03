@@ -50,7 +50,7 @@ async def background_load(self):
         except FileNotFoundError:
             pass
 
-        self.activate_enter_finder(self)
+        self.activate_enter_finder
         log('Поиск по нажатию "enter" включен!')
 
     def start_tg():
