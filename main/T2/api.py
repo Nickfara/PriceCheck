@@ -9,6 +9,7 @@ import requests
 
 from log import log
 from preset import t2b
+from constants import NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2
 
 s = requests.Session()  # Создание сессии
 s.headers.update({'T2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
@@ -81,11 +82,11 @@ def auth(uid):
     :return: Ответ сервера
     """
     DB = t2b(uid)
-
-    # DB = {}
-    # DB["auth_password"] = '459DxU'
-    # DB["auth_login"] = '79920228848'
-    # DB["status_sms"] = 1
+    # fixme: Починить авторизацию T2
+    #   DB = {}
+    #   DB["auth_password"] = PASSWORD_T2
+    #   DB["auth_login"] = NUMBER_T2
+    #   DB["status_sms"] = 1
 
     data = {"client_id": "digital-suite-web-app", "grant_type": "password", "username": DB["auth_login"],
             "password": DB["auth_password"],

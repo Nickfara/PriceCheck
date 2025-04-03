@@ -9,12 +9,13 @@ from telebot import types
 from tg_bot import bot
 from preset import t2b
 from log import log
-
+from constants import ADMIN_IDS
 ids_messages = {}  # Список ID сообщений
 new_message = 0  # Блокирует изменение сообщений
 i = 0  # Несколько попыток выдать ошибку, функция error()
 cancel_btn = ('❌ Отмена', 'Отмена')
 
+admin_ids = ADMIN_IDS
 
 # noinspection PyBroadException
 def send(call, answer: str, btns: tuple, row_width: int = 3, new_message=new_message):
@@ -103,7 +104,7 @@ def start(call):
 
     row_width = 2
 
-    if call.from_user.id in (828853360, 6890309136):
+    if call.from_user.id in admin_ids:
         admin_menu(call)
         return
     else:

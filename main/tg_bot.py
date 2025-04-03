@@ -8,7 +8,6 @@ from log import log
 from preset import t2b
 from constants import TOKEN_TG_BOT, ADMIN_IDS
 
-admin_ids = ADMIN_IDS
 bot = telebot.TeleBot(TOKEN_TG_BOT)
 cache = {'check_file': ''}
 
@@ -28,7 +27,7 @@ def just_send(text_: str):
     """
 
     print(text_)
-    bot.send_message(chat_id=828853360, text=text_)
+    bot.send_message(chat_id=ADMIN_IDS[0], text=text_)
 
 
 def create_call(message):
@@ -137,7 +136,7 @@ def close(message):
     try:
         bot.send_message(message.chat.id, 'Бот выключен!')
     except:
-        bot.send_message(admin_ids[0], 'Бот выключен!')
+        bot.send_message(ADMIN_IDS[0], 'Бот выключен!')
 
 
 @bot.message_handler(commands=['start', 'deauth', 'unauthorize'])
@@ -153,7 +152,7 @@ def start(message):
     uid = call.from_user.id
 
     print('Типа запуск')
-    if uid in admin_ids:
+    if uid in ADMIN_IDS:
         menu.admin_menu(call)
     else:
         commands.deauth(call, True)
@@ -261,7 +260,7 @@ def default(call):
         cmds = cmd.split('/')[0]
         cmdsd = cmd.split('/')[1]
 
-    if uid in admin_ids:
+    if uid in ADMIN_IDS:
         if cmd == 'МТ2':
             menu.admin_login(call)
             return

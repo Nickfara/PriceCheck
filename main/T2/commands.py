@@ -12,6 +12,8 @@ from T2 import api, config, menu
 
 from preset import t2b, text_lot
 from log import log
+from constants import NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2
+
 
 def_account = config.account
 def_traffic = config.add_traffic()
@@ -126,10 +128,11 @@ def admin_auth(call):
         log('Создание аккаунта')
         t2b(uid)
 
-    # Авторизация в +7 (992)022-88-48
+    # Авторизация в SECRET_FORMAT_NUMBER_T2
     if data == 'Войти админ':
-        log('Вход в +7 (992)022-88-48')
-        data_upd = {'stage_authorize': 1, 'auth_login': '79920228848', 'auth_password': '459DxU'}
+        log(f'Вход в {SECRET_FORMAT_NUMBER_T2}')
+        NT2 =
+        data_upd = {'stage_authorize': 1, 'auth_login': NUMBER_T2, 'auth_password': PASSWORD_T2}
         t2b(uid, data_upd, 'u')
         response = auth(call)
         return response
