@@ -193,13 +193,13 @@ def xlsx(workbook):
     return items
 
 
-def filter_names(name):
+def filter_names(name:str = ''):
     """
 
     :param name:
     :return:
     """
-    name = name.lower()
+    name = str(name).lower()
     base = {
         'куриное': ('цб', 'цыпленка-бройлеров', 'цыпленка бройлера', 'цыпленка'),
         'филе грудки': ('филе  грудки',),
@@ -211,7 +211,7 @@ def filter_names(name):
     name_ = name
 
     for i in base:
-        for i2 in base.items():
+        for i2 in base.keys():
             all_check[i2] = i  # Наполнение всех вариантов замен
 
     for i in all_check:
@@ -235,7 +235,7 @@ def filter_names(name):
     return name_
 
 
-def scanner(name):
+def scanner(name: str = ''):
     """
 
     :param name:
@@ -248,6 +248,8 @@ def scanner(name):
     for file in data['shops']:
         if file['filename'] in os.listdir('data/prices'):
             table = read(file['filename'])
+            from PriceCheck.create_csv import converting
+            converting(table)
             if table:
                 for i in table:
                     items.append(i)
@@ -280,4 +282,7 @@ def scanner(name):
         # noinspection PyTypeChecker
         json.dump(result, file)
         log('Сохранение прайса в кэш.')
+
     return result
+
+scanner()
