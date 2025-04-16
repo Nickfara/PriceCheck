@@ -12,6 +12,8 @@ from T2 import api, config, menu
 
 from preset import t2b, text_lot
 from log import log
+from constants import NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2
+
 
 def_account = config.account
 def_traffic = config.add_traffic()
@@ -32,6 +34,9 @@ def auth(call):
     DB = t2b(uid)
     data = call.data
 
+    print(DB['stage_authorize'])
+    print(DB['status_sms'])
+
     # Если пользователь не авторизован, происходит авторизация
     if DB['stage_authorize'] < 3:
         # Форматирование номера телефона
@@ -45,13 +50,13 @@ def auth(call):
             data_upd = {'auth_login': data, 'stage_authorize': 1}
             t2b(uid, data_upd, 'u')
             res = menu.login_password(call)
-            return res
+            return 1
 
         # 1 Этап - Добавление номера телефона:
         elif DB['stage_authorize'] == 0:
             answer = 'Введите ваш номер телефона, \nв формате: [79000000000]'
             res = menu.login_number(call, answer)
-            return res
+            return 1
 
         # 2 Этап - Проверка кода подтверждения:
         elif DB['stage_authorize'] == 1:
@@ -63,6 +68,8 @@ def auth(call):
                     t2b(uid, data_upd, 'u')
 
                 response = api.security_code(uid)
+                print('хуй')
+                print(response)
 
                 # При успешной отправке кода:
                 if response['status']:
@@ -70,8 +77,11 @@ def auth(call):
                                 'security_code_token': response['response'].json()['security_code_token']}
                     t2b(uid, data_upd, 'u')
                     res = menu.security_code(call)
-                    return res
+                    return 1
             else:
+                response = api.send_sms(uid)
+                print('ОТПРАВЛОЕНО СМС')
+                print(response)
                 data_upd = {'stage_authorize': 2}
                 t2b(uid, data_upd, 'u')
 
@@ -87,7 +97,7 @@ def auth(call):
                 cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
                 t2b(uid, data_upd, 'u')
                 update_def_traffic(call)
-                return True
+                return 2
 
             # При неудаче - возврат к 1 этапу:
             else:
@@ -97,13 +107,13 @@ def auth(call):
                          '\nВведите ваш номер телефона, в формате: [79000000000]'
                 log(f'При авторизации, были введены неверные данные. \n {response}', 3)
                 menu.login_number(call, answer)
-                return False
+                return 0
 
     # Пользователь уже авторизован.
     else:
         answer = 'Вы уже авторизованы\!'
         log(answer, 3)
-        return False
+        return 2
 
 
 def admin_auth(call):
@@ -126,10 +136,10 @@ def admin_auth(call):
         log('Создание аккаунта')
         t2b(uid)
 
-    # Авторизация в +7 (992)022-88-48
+    # Авторизация в SECRET_FORMAT_NUMBER_T2
     if data == 'Войти админ':
-        log('Вход в +7 (992)022-88-48')
-        data_upd = {'stage_authorize': 1, 'auth_login': '79920228848', 'auth_password': '459DxU'}
+        log(f'Вход в {SECRET_FORMAT_NUMBER_T2}')
+        data_upd = {'stage_authorize': 1, 'auth_login': NUMBER_T2, 'auth_password': PASSWORD_T2}
         t2b(uid, data_upd, 'u')
         response = auth(call)
         return response
@@ -151,7 +161,7 @@ def deauth(call, lobby=False):
             t2b(uid, type_='d')
 
         if lobby:
-            menu.start(call)
+            menu.start(call.message)
 
         log('Пользователь удалён.')
         return True
@@ -376,9 +386,9 @@ def timer(answer, at, count, uid, call, DB):
     if DB['config_repeat'] > 0:
         answer += '\n*Осталось:* ' + str(
             DB['config_repeat'] - count) + ' раз\(а\)'
-    second_text = ' секунд' if (str(at)[len(at) - 1] in ('5', '6', '7', '8', '9', '0')
+    second_text = ' секунд' if (str(at)[len(str(at)) - 1] in ('5', '6', '7', '8', '9', '0')
                                 or (str(at)[0] == '1' if len(str(at)) > 1 else False)) \
-        else (' секунды' if str(at)[len(at) - 1] in ('2', '3', '4') else ' секунда')
+        else (' секунды' if str(at)[len(str(at)) - 1] in ('2', '3', '4') else ' секунда')
 
     answer3 = answer + '\n*Ожидание:* ' + str(
         at) + second_text  # Первоначальное добавление таймера
@@ -418,11 +428,13 @@ def run_auto(call, type_=''):
     if uid not in cache:  # Добавление аккаунта в кэш, если его нет
         cache[uid] = {'status_lagg': 0, 'status_run_auto': 0}
 
+
     if DB and DB['stage_authorize'] == 3 and cache[uid]['status_run_auto'] == 0 and cache[uid]['status_lagg'] == 0:
         count = 0
         cache[uid]['status_run_auto'] = 1
         seller_lot = [0, 0]
         while cache[uid]['status_run_auto'] == 1:
+
             lots = get_lots_refresh(call)
 
             check_sell(call, uid, lots)  # Проверка (Продался ли лот)
@@ -431,9 +443,12 @@ def run_auto(call, type_=''):
                 seller_lot[0] = len(lots)
 
             seller_lot[1] = len(lots)
+
             if count <= DB['config_repeat']:
+
                 if type_ == 'sell':
                     response = api.sell_lot(uid, def_traffic[0])
+                    print(response)
                     if response['status']:
                         answer = 'Лот успешно выставлен\!'
                         menu.bot_active(call, answer)
@@ -635,7 +650,7 @@ def get_lots_refresh(call, delete_minutes=False):
 
         return lots
 
-    return False
+    return lots
 
 
 def check_sell(call, uid, lots):
@@ -883,7 +898,10 @@ def up(call):
         lot_id = lots[f'{rand_id}']['id']
 
         response = api.top(uid, lot_id)
-        return response
+        if response:
+            return True
+        else:
+            return False
     else:
 
         return False

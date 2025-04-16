@@ -1,8 +1,8 @@
 .idea
-data
 constants.py
 main/constants.py
 main/constants
+__pycache__
 /main/__pycache__
 /main/ParserTaxi/__pycache__
 /main/PriceCheck/__pycache__

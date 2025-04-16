@@ -1,30 +1,20 @@
 """
  Телеграм бот
 """
-
-# noinspection SpellCheckingInspection
-token = '7306002854:AAHIc35yMOXyho4bcYYeAS3W5PP0ey_1HXk'
-
-admin = (828853360, 6890309136)
-calling = {}
 import telebot
 
 from log import log
 
 from preset import t2b
+from constants import TOKEN_TG_BOT, ADMIN_IDS
 
-bot = telebot.TeleBot(token)
+bot = telebot.TeleBot(TOKEN_TG_BOT)
 cache = {'check_file': ''}
 
 from T2 import commands, menu
 
 
 # !/usr/bin/env python # -* - coding: utf-8-* -
-
-def sender(fn):
-    def wrapper(call):
-        call = None
-        return fn(call)
 
 
 def just_send(text_: str):
@@ -37,7 +27,7 @@ def just_send(text_: str):
     """
 
     print(text_)
-    bot.send_message(chat_id=828853360, text=text_)
+    bot.send_message(chat_id=ADMIN_IDS[0], text=text_)
 
 
 def create_call(message):
@@ -70,10 +60,10 @@ def auth(call):
     """
     response = commands.auth(call)
 
-    if response:
+    if response == 2:
         menu.home(call)
-    else:
-        run()
+    elif response == 0:
+        start()
 
 
 def stop(call):
@@ -110,10 +100,15 @@ def help_command(call):
 
 
 @bot.message_handler(commands=['to_job', 'from_job'])
-def active_wait(call, text=None):
+def active_wait(call, text_=None):
+    """
+
+    :param call:
+    :param text_:
+    """
     from ParserTaxi.taxi_parser import wait_low_money
-    if text:
-        call.data = text
+    if text_:
+        call.data = text_
     wait_low_money(call.data)
 
 
@@ -141,7 +136,7 @@ def close(message):
     try:
         bot.send_message(message.chat.id, 'Бот выключен!')
     except:
-        bot.send_message(admin[0], 'Бот выключен!')
+        bot.send_message(ADMIN_IDS[0], 'Бот выключен!')
 
 
 @bot.message_handler(commands=['start', 'deauth', 'unauthorize'])
@@ -157,7 +152,7 @@ def start(message):
     uid = call.from_user.id
 
     print('Типа запуск')
-    if uid in admin:
+    if uid in ADMIN_IDS:
         menu.admin_menu(call)
     else:
         commands.deauth(call, True)
@@ -167,7 +162,7 @@ def start(message):
 
 # noinspection PyBroadException
 @bot.message_handler(content_types=['document'])
-def files(message: object) -> object:
+def files(message):
     """
     Загрузка файлов из ТГ бота
 
@@ -204,18 +199,17 @@ def text(message):
     call = create_call(message)
 
     uid = message.from_user.id
-    calling[uid] = call
     DB = t2b(uid)
-    text = call.data
+    text_ = call.data
 
     menu.wait(call)
-    #print(text)
-    if 'работ' in text.lower() and len(text) < 11:
-        active_wait(call, text='to_job')  # Запуск ожидания такси до работы
+
+    if 'работ' in text_.lower() and len(text_) < 11:
+        active_wait(call, text_='to_job')  # Запуск ожидания такси до работы
         return
 
-    if 'дом' in text.lower() and len(text) < 11:
-        active_wait(call, text='to_home')  # Запуск ожидания такси до дома
+    if 'дом' in text_.lower() and len(text_) < 11:
+        active_wait(call, text_='to_home')  # Запуск ожидания такси до дома
         return
 
     if not DB['stage_authorize']:
@@ -236,7 +230,7 @@ def text(message):
 
     if DB['lvl_setting']:
         if 4 > DB['lvl_setting'] > 0:
-            if text not in ('Интервал', 'Количество', 'Повторы'):
+            if text_ not in ('Интервал', 'Количество', 'Повторы'):
                 settings(call)
                 return
 
@@ -244,7 +238,6 @@ def text(message):
         if DB['lvl_redactor'] == 1:
             commands.price_accept(call)
             return
-
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -257,7 +250,6 @@ def default(call):
 
     menu.wait(call)
     uid = call.from_user.id
-    calling[uid] = call
     cmd = call.data
     cmds = None
     cmdsd = None
@@ -268,9 +260,8 @@ def default(call):
         cmds = cmd.split('/')[0]
         cmdsd = cmd.split('/')[1]
 
-    if uid in admin:
+    if uid in ADMIN_IDS:
         if cmd == 'МТ2':
-            print('Хуета в боте')
             menu.admin_login(call)
             return
         elif cmd == 'ОСТ':
@@ -280,7 +271,6 @@ def default(call):
         elif cmd == 'ПРС':
             return
         elif cmd == 'Войти админ':
-            print('Хуета в боте чуть позже')
             response = commands.admin_auth(call)
             if response:
                 t2b(uid, data={'stage_authorize': 2}, type_='u')
@@ -316,7 +306,7 @@ def default(call):
             commands.run_auto(call, 'top')
         elif cmd == 'Поднять':
             response = commands.up(call)
-            if response['status']:
+            if response:
                 menu.up(call)
             else:
                 answer = f'Лотов нет\!\n\n'
@@ -382,3 +372,5 @@ def run():
         Запуск телеграм бота
     """
     bot.polling()
+
+run()

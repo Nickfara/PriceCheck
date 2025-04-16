@@ -9,9 +9,10 @@ import requests
 
 from log import log
 from preset import t2b
+from constants import NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2
 
 s = requests.Session()  # Создание сессии
-s.headers.update({'T2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
+s.headers.update({'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
 
 SECURITY_BYPASS_HEADERS = {
     'Connection': 'keep-alive',
@@ -81,11 +82,11 @@ def auth(uid):
     :return: Ответ сервера
     """
     DB = t2b(uid)
-
-    # DB = {}
-    # DB["auth_password"] = '459DxU'
-    # DB["auth_login"] = '79920228848'
-    # DB["status_sms"] = 1
+    # fixme: Починить авторизацию T2
+    #   DB = {}
+    #   DB["auth_password"] = PASSWORD_T2
+    #   DB["auth_login"] = NUMBER_T2
+    #   DB["status_sms"] = 1
 
     data = {"client_id": "digital-suite-web-app", "grant_type": "password", "username": DB["auth_login"],
             "password": DB["auth_password"],
@@ -95,8 +96,7 @@ def auth(uid):
         data['security_code_token'] = DB['security_code_token']
         data['security_code'] = ''
 
-    sms_post_url = 'https://ekt.t2.ru/api/validation/number/79920228848'
-    s.post(sms_post_url, json={'sender': 'Tele2'})
+
 
     response = s.post(TOKEN_API, data=data)
 
@@ -149,7 +149,7 @@ def send_sms(uid):
     DB = t2b(uid)
     sms_post_url = SMS_VALIDATION_API + DB["auth_login"]
 
-    response = s.post(sms_post_url, json={'sender': 'T2'})
+    response = s.post(sms_post_url, json={'sender': 'Tele2'})
     response = errors(response)
     return response
 
@@ -169,7 +169,7 @@ def sell_lot(uid, lot_for_sell):
     response = errors(response)
     try:
         price = str(int(lot['price']))
-    except TypeError:
+    except KeyError:
         price = str(int(lot['cost']['amount']))
     emoji = lot['emojis']
     name = lot['name']
