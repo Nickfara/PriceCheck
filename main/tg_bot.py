@@ -60,10 +60,10 @@ def auth(call):
     """
     response = commands.auth(call)
 
-    if response:
+    if response == 2:
         menu.home(call)
-    else:
-        run()
+    elif response == 0:
+        start()
 
 
 def stop(call):
@@ -306,7 +306,7 @@ def default(call):
             commands.run_auto(call, 'top')
         elif cmd == 'Поднять':
             response = commands.up(call)
-            if response['status']:
+            if response:
                 menu.up(call)
             else:
                 answer = f'Лотов нет\!\n\n'
@@ -372,3 +372,5 @@ def run():
         Запуск телеграм бота
     """
     bot.polling()
+
+run()
