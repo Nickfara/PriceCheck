@@ -3,12 +3,6 @@ import requests
 s = requests.Session()  # Создание сессии
 s.headers.update({'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
 
-SECURITY_BYPASS_HEADERS = {
-    'Connection': 'keep-alive',
-    'tele2-user-agent:': '"mytele2-app/3.17.0"; "unknown"; "Android/9"; "Build/12998710"',
-    'X-API-Version': '1',
-    'User-Agent': 'okhttp/4.2.0',
-}
 
 #s.headers.update(SECURITY_BYPASS_HEADERS)
 
