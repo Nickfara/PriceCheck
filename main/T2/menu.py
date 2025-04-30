@@ -159,17 +159,22 @@ def admin_login(call):
     uid = call.from_user.id
     stage_authorize = t2b(uid)['stage_authorize']
 
-    if stage_authorize > 3:
+    if stage_authorize >= 3:
         from T2.api import get_lots
         lots = get_lots(uid)
         if lots:
             response = home(call)
         else:
-            answer = 'При дополнительной проверке аутентификации возникла ошибка. Авторизуйтесь по новой!'
-            response = send(call, answer, ())
-            t2b(uid, type_='d')
-            time.sleep(3)
-            admin_menu(call)
+            from T2.api import refresh_token
+            response = api.refresh_token(call)
+            if response:
+                home(call)
+            else:
+                answer = 'При дополнительной проверке аутентификации возникла ошибка. Авторизуйтесь по новой!'
+                response = send(call, answer, ())
+                t2b(uid, type_='d')
+                time.sleep(3)
+                admin_menu(call)
     else:
         answer = 'Привет Дима\!\n\nУ тебя есть 1 аккаунт\. \nВыбери один из них:'
         btns = (('📲 +7(992)022-88-48', 'Войти админ'), ('🔑 Другой аккаунт', 'Войти'))

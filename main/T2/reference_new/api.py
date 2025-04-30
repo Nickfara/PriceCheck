@@ -18,7 +18,9 @@ def _is_ok(response: ClientResponse):
 
 
 class Tele2Api:
-    session: ClientSession
+    s = requests.Session()  # Создание сессии
+    s.headers.update({'Tele2-User-Agent': 'mytele2-app/5.11.0', 'User-Agent': 'okhttp/5.3.1'})  # Заголовок с данными
+
     access_token: str
 
     def __init__(self, phone_number: str, access_token: str = '',

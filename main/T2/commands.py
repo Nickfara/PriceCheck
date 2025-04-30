@@ -8,12 +8,12 @@ import random
 import time
 
 from tg_bot import bot
-from T2 import api, config, menu
+from T2 import config, menu
+from T2.api import T2Api as api
 
 from preset import t2b, text_lot
 from log import log
 from constants import NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2
-
 
 def_account = config.account
 def_traffic = config.add_traffic()
@@ -124,12 +124,12 @@ def admin_auth(call):
     :return: Bool об успехе или неудаче завершения.
     """
 
-    #deauth(call)
+    # deauth(call)
     uid = call.from_user.id
     DB = t2b(uid)
     data = call.data
 
-    #deauth(call)
+    # deauth(call)
 
     # Создание аккаунта:
     if DB is None:
@@ -383,6 +383,10 @@ def timer(answer, at, count, uid, call, DB):
     :param uid: ID пользователя
     :param call: Данные о команде или сообщении
     """
+
+    rand_time = random.randint(0, 5)  # Рандомизация времени ожидания
+    at += rand_time
+
     if DB['config_repeat'] > 0:
         answer += '\n*Осталось:* ' + str(
             DB['config_repeat'] - count) + ' раз\(а\)'
@@ -418,7 +422,7 @@ def run_auto(call, type_=''):
     """
     Запуск работы бота.
 
-    :param call: Данные о команде или сообщении  
+    :param call: Данные о команде или сообщении
     :param type_: Тип работы ('sell' - продажа, 'top' - поднятие).
     """
 
@@ -428,15 +432,13 @@ def run_auto(call, type_=''):
     if uid not in cache:  # Добавление аккаунта в кэш, если его нет
         cache[uid] = {'status_lagg': 0, 'status_run_auto': 0}
 
-
     if DB and DB['stage_authorize'] == 3 and cache[uid]['status_run_auto'] == 0 and cache[uid]['status_lagg'] == 0:
         count = 0
         cache[uid]['status_run_auto'] = 1
         seller_lot = [0, 0]
+
         while cache[uid]['status_run_auto'] == 1:
-
-            lots = get_lots_refresh(call)
-
+            lots = get_lots_refresh(call)  # Список активных лотов
             check_sell(call, uid, lots)  # Проверка (Продался ли лот)
 
             if count == 0:
@@ -447,6 +449,7 @@ def run_auto(call, type_=''):
             if count <= DB['config_repeat']:
 
                 if type_ == 'sell':
+
                     response = api.sell_lot(uid, def_traffic[0])
                     print(response)
                     if response['status']:
