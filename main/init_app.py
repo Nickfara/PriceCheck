@@ -1,5 +1,5 @@
 """
-    Инициализация интерфейса приложения.
+    Инициализация классов интерфейса приложения из toolsajob.kv.
 """
 import asyncio
 
@@ -28,6 +28,9 @@ cart = []
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
 class SettingsMain(MDDialog):
+    """
+    Класс инициализации kv класса диалогового окна с настройками.
+    """
     def __init__(self):
         super(SettingsMain, self).__init__()
         self.data = {'shops': []}
@@ -59,6 +62,9 @@ class SettingsMain(MDDialog):
 
 
 class SettingShop(MDBoxLayout):
+    """
+        Класс инициализации kv класса c строкой конфига магазина.
+    """
     def one(self):
         """
             Пустая функция.
@@ -67,6 +73,11 @@ class SettingShop(MDBoxLayout):
 
 
 class ItemObj(MDBoxLayout):
+    """
+            Класс инициализации kv класса с одним товаром.
+            Вызывается многократно, исходя из количества найденных товаров.
+            todo реализовать выбор количества товара, по умолчанию должно стоять значение минимального количество для заказа
+    """
     def one(self):
         """
             Пустая функция.
@@ -75,6 +86,9 @@ class ItemObj(MDBoxLayout):
 
 
 class CartMain(MDDialog):
+    """
+                Класс инициализации kv класса диалогового окна с корзиной.
+    """
     def one(self):
         """
             Пустая функция.
@@ -83,6 +97,10 @@ class CartMain(MDDialog):
 
 
 class CartShop(MDBoxLayout):
+    """
+                Класс инициализации kv класса одного магазина.
+                Вызывается многократно, исходя из количества магазинов.
+    """
     def one(self):
         """
             Пустая функция.
@@ -91,6 +109,10 @@ class CartShop(MDBoxLayout):
 
 
 class CartItem(MDBoxLayout):
+    """
+                Класс инициализации kv класса с одним товаром, для одного магазина.
+                Вызывается многократно, для одного товара для каждых магазинов.
+    """
     def one(self):
         """
             Пустая функция.
@@ -99,6 +121,9 @@ class CartItem(MDBoxLayout):
 
 
 class Plain(MDTooltip):
+    """
+                Класс инициализации kv класса для всплывающих уведомлений.
+    """
     def one(self):
         """
             Пустая функция.
@@ -107,6 +132,9 @@ class Plain(MDTooltip):
 
 
 class Main(MDBoxLayout):
+    """
+                Класс инициализации kv класса главного окна.
+    """
     def __init__(self):
         super(Main, self).__init__()
         self.base_price = []  # Кэш прайсов
@@ -126,7 +154,7 @@ class Main(MDBoxLayout):
     @staticmethod
     def build():
         """
-
+        Реализация инициализации класса.
         :return:
         """
         return Main()
@@ -140,28 +168,30 @@ class Main(MDBoxLayout):
 
     def add_to_cart(self, instance):
         """
-
+        Добавление товара в корзину.
         :param instance:
         """
         commands.Cart.add_to_cart(self, instance)
 
     def add_to_cart_metro(self, instance):
         """
-
+        Добавление товара в корзину.
+        todo Реализовать при добавлении товара в корзину приложения, добавление так же, на сервере сайта.
         :param instance:
         """
         commands.Cart.add_to_cart_metro(self, instance)
 
     def remove_from_cart(self, instance):
         """
-
+        Удаление товара из корзины.
         :param instance:
         """
         commands.Cart.remove_from_cart(self, instance)
 
     def remove_from_cart_metro(self, instance):
         """
-
+        Удаление товара из корзины.
+        todo Реализовать при удалении товара из корзины приложения, удаление так же, на сервере сайта.
         :param instance:
         """
         commands.Cart.remove_from_cart_metro(self, instance)
@@ -169,13 +199,13 @@ class Main(MDBoxLayout):
     @staticmethod
     def cart_open():
         """
-            Открыть корзину
+            Открыть диалоговое окно с корзиной.
         """
         commands.Cart.open()
 
     def cart_edit(self, instance):
         """
-
+        todo Реализовать возможность редактирования названий товаров и редактирования количества.
         :param instance:
         """
         commands.Cart.edit(self, instance)
@@ -183,28 +213,27 @@ class Main(MDBoxLayout):
     @staticmethod
     def settings_open(add=False):
         """
-
-
+        Открыть диалоговое окно с настройками.
         :param add:
         """
         commands.Settings.open(add)
 
     def func_dialog_save_enter(self, key, *args, **kwargs):
         """
-
+        todo Доделать функцию сохранения настроек по нажатию клавиши enter.
         :param key:
         """
         commands.Base.func_dialog_save_enter(self, key)
 
     def activate_enter_finder(self):
         """
-            Активировать поиск по enter
+            Активировация поиска товаров по нажатию клавиши enter.
         """
         commands.Base.activate_enter_finder(self)
 
     def on_focus_change(self, instance, text):
         """
-
+        Что-то связаное с фокусом, насколько помню в тектовом поле. Хотя могу ошибаться.
         :param instance:
         :param text:
         """
@@ -212,20 +241,24 @@ class Main(MDBoxLayout):
 
     def notify(self, text):
         """
-
+        Вроде как реализованные всплывающие уведомления. Но не помню, реализовал или нет.
         :param text:
         """
         commands.Base.notify(text)
 
     def refresh(self):
         """
-            Обновить базу данных
+            Обновить кэш с прайс-листами.
         """
 
         asyncio.ensure_future(handler.refresh(self))
 
 
 class ToolsAJob(MDApp):
+    """
+    Класс запуска самого приложения и подрузка всех классов интерфейса.
+    todo Оптимизировать логику работы.
+    """
     def __init__(self):
         super().__init__()
         self.CartItemsApp = None
@@ -258,7 +291,7 @@ class ToolsAJob(MDApp):
 
 def run_async():
     """
-        Асинхронный запуск приложения
+        Запуск приложения с интеграцией возможности асинхронных действий.
     """
 
     loop = asyncio.new_event_loop()
