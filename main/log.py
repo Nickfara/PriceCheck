@@ -4,16 +4,17 @@
 import inspect
 
 
-def log(text, type_: int = 1):
+def log(text, lvl: int = 1):
     """
+    Функция логирования проекта.
 
-    :param text: 
-    :param type_: 
+    :param text: Текст выводимый в консоль.
+    :param lvl: Тип лога: 1 - простой текст. 2 - исключение. 3 - ошибка.
     """
     text = str(text)
-    if type_ == 1:
+    if lvl == 1:
         text = f'\033[32m\033[1m{text}\033[0m'
-    elif type_ == 2:
+    elif lvl == 2:
         file = ''.join(str(inspect.stack()[1][0]).split(',')[1].split('\\')[-1].split("'"))
         file = f'[{file}]'
         func = inspect.currentframe().f_back.f_code.co_name
@@ -24,7 +25,7 @@ def log(text, type_: int = 1):
             func = ''
 
         text = f'\033[31m\033[1m[Исключение] - [{line}]|{file}|{func}: {text}\033[0m'
-    elif type_ == 3:
+    elif lvl == 3:
         text = f'\033[31m\033[1m[Ошибка] {text}\033[0m'
 
     print(text)

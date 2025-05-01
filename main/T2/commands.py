@@ -11,7 +11,7 @@ from tg_bot import bot
 from T2 import config, menu
 from T2.api import T2Api as api
 
-from preset import t2b, text_lot
+from handler import text_lot, t2b
 from log import log
 from constants import NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2
 

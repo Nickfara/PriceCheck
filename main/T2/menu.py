@@ -7,7 +7,7 @@ import time
 from telebot import types
 
 from tg_bot import bot
-from preset import t2b
+from handler import t2b
 from log import log
 from constants import ADMIN_IDS
 ids_messages = {}  # Список ID сообщений
@@ -422,7 +422,7 @@ def redactor_lot(call, lid, lots):
     lot_text = ''
     ind = {}
 
-    from preset import text_lot
+    from handler import text_lot
 
     for lot in lots:
         lot_text = text_lot(lots, lot)

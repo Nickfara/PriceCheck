@@ -93,7 +93,7 @@ class Main:
     @staticmethod
     def find(main, item_objs):
         """
-
+        Поиск товаров.
         :param main:
         :param item_objs:
         """
@@ -441,7 +441,7 @@ class Cart:
         instance.unbind(on_release=main.add_to_cart)
         instance.bind(on_release=main.remove_from_cart)
         item = instance.id
-        item = handler.str_to_dict(item)  # Конвертация строки в словарь
+        item = handler.str_to_dict2(item)  # Конвертация строки в словарь
 
         if item not in handler.get_cart():  # Если объекта нет в корзине
             handler.add_cart(item)  # Отправка в корзину на сервер
@@ -458,7 +458,7 @@ class Cart:
         instance.unbind(on_release=main.remove_from_cart)
         instance.bind(on_release=main.add_to_cart)
         item = instance.id
-        item = handler.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
+        item = handler.str_to_dict2(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
         if item in handler.get_cart():  # Если объект есть в корзине
             handler.remove_cart(dict(item))  # То объект удаляется из корзины
@@ -493,7 +493,7 @@ class Cart:
         instance.unbind(on_release=main.remove_from_cart_metro)
         instance.bind(on_release=main.add_to_cart_metro)
         item = instance.id
-        item = handler.str_to_dict(''.join(item.strip('cart')))  # Конвертация строки в словарь
+        item = handler.str_to_dict2(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
         if item in handler.get_cart():  # Если объект есть в корзине
             asyncio.ensure_future(handler.remove_from_cart(item, parse_metro))  # Удаление из корзины на сервере

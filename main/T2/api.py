@@ -8,7 +8,7 @@ import time
 import requests
 
 from log import log
-from preset import t2b
+from handler import t2b
 
 #from constants import NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2
 

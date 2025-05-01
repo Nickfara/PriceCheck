@@ -1,11 +1,11 @@
 """
- Телеграм бот
+Здесь определяются команды телеграм бота и происходит непосредственный запуск бота.
 """
 import telebot
 
 from log import log
 
-from preset import t2b
+from handler import t2b
 from constants import TOKEN_TG_BOT, ADMIN_IDS
 
 bot = telebot.TeleBot(TOKEN_TG_BOT)
@@ -20,13 +20,12 @@ from T2 import commands, menu
 def just_send(text_: str):
     """
     Простая отправка сообщений.
-    Главная цель - отправка заявка в канал.
+    Главная цель - отправка заявок в канал.
 
     :param text_: Сформированный текст.
     :return:
     """
 
-    print(text_)
     bot.send_message(chat_id=ADMIN_IDS[0], text=text_)
 
 
@@ -93,7 +92,7 @@ def settings(call):
 @bot.message_handler(commands=['help'])
 def help_command(call):
     """
-    Команда помощи в ТГ
+    Команда 'помощь' в ТГ
     :param call: Параметры команды или сообщения
     """
     menu.help_create(call)
@@ -102,6 +101,7 @@ def help_command(call):
 @bot.message_handler(commands=['to_job', 'from_job'])
 def active_wait(call, text_=None):
     """
+    Ожидание падения цены
 
     :param call:
     :param text_:
@@ -151,13 +151,10 @@ def start(message):
     menu.wait(call)
     uid = call.from_user.id
 
-    print('Типа запуск')
     if uid in ADMIN_IDS:
         menu.admin_menu(call)
     else:
         commands.deauth(call, True)
-
-    print('Типа запуск')
 
 
 # noinspection PyBroadException
@@ -243,7 +240,7 @@ def text(message):
 @bot.callback_query_handler(func=lambda call: True)
 def default(call):
     """
-    Обработчик нажатия кнопок
+    Обработчики нажатия кнопок
 
     :param call: Параметры команды или сообщения
     """
@@ -372,5 +369,6 @@ def run():
         Запуск телеграм бота
     """
     bot.polling()
+
 
 run()
