@@ -211,7 +211,7 @@ class Main(MDBoxLayout):
         commands.Cart.edit(self, instance)
 
     @staticmethod
-    def settings_open(add=False):
+    def settings_open(add:bool=False):
         """
         Открыть диалоговое окно с настройками.
         :param add:

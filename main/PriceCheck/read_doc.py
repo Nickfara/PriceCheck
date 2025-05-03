@@ -22,10 +22,13 @@ h = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", 
 
 def read(filename):  # Чтение таблицы
     """
+    Открытие документа.
 
-    :param filename:
-    :return:
+    :param filename: Имя файла.
+    :return: Список прочитанных товаров
+    [{'name': 'Наименование', 'cost': 'Цена', 'type': 'Вид фасовки', 'seller': 'Название поставщика'}, ...]
     """
+
     file_formate = filename.split('.')[1]
     path = 'data/prices/' + str(filename)
 
@@ -54,10 +57,11 @@ def read(filename):  # Чтение таблицы
 
 def xls(workbook):
     """
+    Сканирование документа в формате: .xls
 
-    :return:
-    :param workbook:
-    :return:
+    :param workbook: Лист excel
+    :return: Список прочитанных товаров
+    [{'name': 'Наименование', 'cost': 'Цена', 'type': 'Вид фасовки', 'seller': 'Название поставщика'}, ...]
     """
     items = []
     sid = False
@@ -114,9 +118,11 @@ def xls(workbook):
 # noinspection PyBroadException
 def xlsx(workbook):
     """
+    Сканирование документа в формате: .xlsx
 
-    :param workbook:
-    :return:
+    :param workbook: Лист excel
+    :return: Список прочитанных товаров
+    [{'name': 'Наименование', 'cost': 'Цена', 'type': 'Вид фасовки', 'seller': 'Название поставщика'}, ...]
     """
     sheet_names = workbook.sheetnames
     items = []
@@ -195,8 +201,8 @@ def xlsx(workbook):
 
 def filter_names(name:str = ''):
     """
-
-    :param name:
+    Фильтрация наименований, с целью приведения отличающихся имён одинаковых товаров к единому формату.
+    :param name: Наименование товара.
     :return:
     """
     name = str(name).lower()
@@ -235,36 +241,35 @@ def filter_names(name:str = ''):
     return name_
 
 
-def scanner(name: str = ''):
+def scanner():
+    """
+    Сканирование документов excel.
+
+    :return: Словарь {'cache': [Список товаров]}
     """
 
-    :param name:
-    :return:
-    """
-    name = str(name)
     items = []
     result = {'cache': []}
 
-    for file in data['shops']:
-        if file['filename'] in os.listdir('data/prices'):
-            table = read(file['filename'])
-            from PriceCheck.create_csv import converting
-            converting(table)
-            if table:
-                for i in table:
-                    items.append(i)
+    for file in data['shops']: # Итерация по поставщикам
+        if file['filename'] in os.listdir('data/prices'): # Проверка наличия документа с прайс-листом.
+            table = read(file['filename']) # Сканирование документа.
 
-    for i in items:
-        if name.lower() in i['name'].lower():
-            i["name"] = filter_names(i["name"])
+            if table: # Проверка на успешность сканирования.
+                for i in table: # Итерация по строкам в документе
+                    items.append(i) # Пополнение списка с товарами.
 
-            if i['name']:
-                result['cache'].append(i)
+    for i in items: # Итерация по списку товаров.
+        i["name"] = filter_names(i["name"]) # Фильтр названий
+
+        if i['name']: # Проверка успешности фильтрации
+            result['cache'].append(i) # Пополнение итогового списка.
 
     def key(price):
         """
+        Конвертирование прайса в тип float.
 
-        :param price:
+        :param price: Либо конвертированная цена в тип float, либо 0
         :return:
         """
         try:
@@ -284,5 +289,3 @@ def scanner(name: str = ''):
         log('Сохранение прайса в кэш.')
 
     return result
-
-scanner()

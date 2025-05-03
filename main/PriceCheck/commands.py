@@ -32,6 +32,7 @@ class Base:
     @staticmethod
     def func_dialog_save_enter(main, key):
         """
+        Сохранение по нажатию клавиши enter.
 
         :param main:
         :param key:
@@ -42,6 +43,7 @@ class Base:
     @staticmethod
     def activate_enter_finder(main):
         """
+        Поиск по нажатию клавиши enter.
 
         :param main:
         """
@@ -60,10 +62,11 @@ class Base:
 
     # noinspection PyUnusedLocal
     @staticmethod
-    def notify(text):
+    def notify(text: str):
         """
+        Уведомление.
 
-        :param text:
+        :param text: Текст
         """
         MDSnackbar(
             MDSnackbarSupportingText(text=text, ),
@@ -87,13 +90,14 @@ class Base:
 
 class Main:
     """
-        Приложение
+    Функции в главном окне приложения.
     """
 
     @staticmethod
     def find(main, item_objs):
         """
         Поиск товаров.
+
         :param main:
         :param item_objs:
         """
@@ -165,14 +169,15 @@ class Main:
 
 class Settings:
     """
-        Настройки
+    Функции в диалоговом окне настроек.
     """
 
     @staticmethod
     def preset_shop(shop):
         """
+        Генерация формы с настройками магазина.
 
-        :param shop:
+        :param shop: Магазин
         :return:
         """
         temp = {'filename': TextInput(text=str(shop['filename']),
@@ -223,10 +228,10 @@ class Settings:
         return temp
 
     @staticmethod
-    def open(add):
+    def open(add: bool):
         """
-
-        :param add:
+        Вызов генерирования и открытия диалогового окна с настройками.
+        :param add: True - Создаёт новую строку для интеграции нового поставщика. По умолчанию - False.
         :return:
         """
         main = ToolsAJob().MainApp
@@ -279,17 +284,20 @@ class Settings:
     @staticmethod
     def add_shop(main):
         """
+        Создание формы, для интеграции нового поставщика.
 
-        :param main:
+        :param main: Класс главного окна.
         """
+
         main.settings_open(None, add=True)
 
     @staticmethod
     def save(settings_main, main):
         """
+        Сохранение настроек.
 
-        :param settings_main:
-        :param main:
+        :param settings_main: Класс интерфейса окна с настройками.
+        :param main: Класс интерфейса главного окна.
         """
 
         with open('data/config.json', 'a', encoding='utf-8') as f:
@@ -333,7 +341,9 @@ class Settings:
     @staticmethod
     def exit(main):
         """
-        :param main:
+        Закрыть диалоговое окно, без сохранения настроек.
+
+        :param main: Класс интерфейса главного окна.
         """
 
         if main.dialog:
@@ -342,14 +352,13 @@ class Settings:
 
 class Cart:
     """
-        Корзина
+    Функции в диалоговом окне корзины.
     """
 
     @staticmethod
     def open():
         """
-
-        :return:
+        Открытие диалогового окна с корзиной.
         """
         main = ToolsAJob().MainApp
         # Открытие корзины
@@ -359,8 +368,8 @@ class Cart:
 
         def content():
             """
-
-            :return:
+            Генерация диалогового окна.
+            :return: Класс интерфейса корзины.
             """
             app = ToolsAJob()
             cart_main_app = app.CartMainApp()
@@ -407,16 +416,16 @@ class Cart:
     @staticmethod
     def edit(main, instance):
         """
-
-        :param main: 
-        :param instance: 
+        Редактирование товара.
+        :param main: Класс интерфейса главного окна.
+        :param instance: Товар, который нужно отредактировать.
         """
 
     @staticmethod
     def send(main):
         """
-
-        :param main: 
+        Отправить готовый список товаров в телеграм бот.
+        :param main: Класс интерфейса главного окна.
         """
         asyncio.ensure_future(handler.send_cart(main))
         if main.dialog:
@@ -431,9 +440,9 @@ class Cart:
     @staticmethod
     def add_to_cart(main, instance):
         """
-
-        :param main: 
-        :param instance: 
+        Добавить товар в корзину.
+        :param main: Класс интерфейса главного окна.
+        :param instance: Товар, который необходимо добавить.
         """
 
         instance.icon = 'cart-remove'
@@ -449,9 +458,9 @@ class Cart:
     @staticmethod
     def remove_from_cart(main, instance):
         """
-
-        :param main: 
-        :param instance: 
+        Удалить товар из корзины
+        :param main: Класс интерфейса главного окна.
+        :param instance: Товар, который необходимо удалить.
         """
         instance.icon = 'cart-plus'
         instance.icon_color = 'blue'
@@ -466,9 +475,10 @@ class Cart:
     @staticmethod
     def add_to_cart_metro(main, instance):
         """
+        Добавить товар в корзину METRO SHOP.
 
-        :param main: 
-        :param instance: 
+        :param main: Класс интерфейса главного окна.
+        :param instance: Товар, который необходимо добавить.
         """
         instance.icon = 'cart-remove'
         instance.icon_color = 'red'
@@ -484,9 +494,10 @@ class Cart:
     @staticmethod
     def remove_from_cart_metro(main, instance):
         """
+        Удалить товар из корзины METRO SHOP.
 
-        :param main: 
-        :param instance: 
+        :param main: Класс интерфейса главного окна.
+        :param instance: Товар, который необходимо удалить.
         """
         instance.icon = 'cart-plus'
         instance.icon_color = 'blue'

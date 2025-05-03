@@ -102,7 +102,7 @@ async def refresh(self):
         """
 
         from PriceCheck.read_doc import scanner
-        scanner('')
+        scanner()
 
         log('Сканирование прайсов запущено!')
         with open('data/cache_prices.json') as f:
