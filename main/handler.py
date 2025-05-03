@@ -158,7 +158,7 @@ async def remove_from_cart(item, parse_metro):
 
 def filter_shops(items: list):
     """
-    Фми
+    Фильтр какой-то
     :param items:
     :return:
     """

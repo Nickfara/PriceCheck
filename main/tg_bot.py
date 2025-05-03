@@ -57,7 +57,8 @@ def auth(call):
 
     :param call: Параметры команды или сообщения
     """
-    response = commands.auth(call)
+
+    response = commands.Auth.stage_filter(call)
 
     if response == 2:
         menu.home(call)
@@ -80,9 +81,10 @@ def settings(call):
     Вызов команды настроек
     :param call: Параметры команды или сообщения
     """
+
     menu.wait(call)
     uid = call.from_user.id
-    response = commands.settings(call)
+    response = commands.Settings.stage_filter(call)
     if response is not None:
         commands.update_def_traffic(call)
         t2b(uid, data={'lvl_setting': 0}, type_='u')

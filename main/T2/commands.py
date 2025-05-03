@@ -22,98 +22,198 @@ cache_lot = {}
 stop_timer = [False]
 
 
-def auth(call):
-    """
-    Функция авторизации.
-    
-    :param call: Данные о команде или сообщении.
-    :return: Данные о пользователе.
-    """
+class Auth:
+    @staticmethod
+    def stage_filter(call):
+        uid = call.from_user.id
+        DB = t2b(uid)
+        data = call.data
+        call = call
 
-    uid = call.from_user.id
-    DB = t2b(uid)
-    data = call.data
+        # Если пользователь не авторизован, происходит авторизация
+        if DB['stage_authorize'] < 3:
+            if DB['stage_authorize'] == 0:
+                Auth.stage_0_login_number(uid, DB, data, call)
+            elif DB['stage_authorize'] == 1:
+                Auth.stage_1_password_or_sms(uid, DB, data, call)
+            elif DB['stage_authorize'] == 2:
+                Auth.stage_2_complete_auth(uid, DB, data, call)
 
-    print(DB['stage_authorize'])
-    print(DB['status_sms'])
+        # Пользователь уже авторизован.
+        else:
+            answer = 'Вы уже авторизованы\!'
+            log(answer, 3)
+            return 2
 
-    # Если пользователь не авторизован, происходит авторизация
-    if DB['stage_authorize'] < 3:
+    @staticmethod
+    def stage_0_login_number(uid, DB, data, call):
         # Форматирование номера телефона
-        if data[0] == '8':
-            data = '7'.join(data.split('8'))
-        elif data[0] == '+' and data[1] == '7':
-            data = '7'.join(data.split('+7'))
+        data = normalize_phone_number(data)
 
         # 1 Этап - Добавление номера телефона (Номер успешно добавлен)
         if len(str(data)) == 11 and (data[0] == '7') and data[1] == '9' and DB['stage_authorize'] == 0:
             data_upd = {'auth_login': data, 'stage_authorize': 1}
             t2b(uid, data_upd, 'u')
-            res = menu.login_password(call)
+            menu.login_password(call)
             return 1
 
         # 1 Этап - Добавление номера телефона:
-        elif DB['stage_authorize'] == 0:
+        else:
             answer = 'Введите ваш номер телефона, \nв формате: [79000000000]'
-            res = menu.login_number(call, answer)
+            menu.login_number(call, answer)
             return 1
 
-        # 2 Этап - Проверка кода подтверждения:
-        elif DB['stage_authorize'] == 1:
-            # Если включено подтверждение кодом:
-            if DB['status_sms'] == 0:
-                # Если пароль не указан:
-                if len(str(DB['auth_password'])) == 0 or DB['auth_password'] is None:
-                    data_upd = {'auth_password': data, 'security_code': ''}
-                    t2b(uid, data_upd, 'u')
-
-                response = api.security_code(uid)
-                print('хуй')
-                print(response)
-
-                # При успешной отправке кода:
-                if response['status']:
-                    data_upd = {'stage_authorize': 2, 'auth_password': DB['auth_password'],
-                                'security_code_token': response['response'].json()['security_code_token']}
-                    t2b(uid, data_upd, 'u')
-                    res = menu.security_code(call)
-                    return 1
-            else:
-                response = api.send_sms(uid)
-                print('ОТПРАВЛОЕНО СМС')
-                print(response)
-                data_upd = {'stage_authorize': 2}
+    @staticmethod
+    def stage_1_password_or_sms(uid, DB, data, call):
+        # Если включено подтверждение кодом:
+        if DB['status_sms'] == 0:
+            # Если пароль не указан:
+            if len(str(DB['auth_password'])) == 0 or DB['auth_password'] is None:
+                data_upd = {'auth_password': data, 'security_code': ''}
                 t2b(uid, data_upd, 'u')
 
+            response = api.send_security_code(uid)
 
-        # 3 Этап - Проведение и проверка авторизации:
-        elif DB['stage_authorize'] == 2:
-            response = api.auth(uid)
 
-            # При успешной авторизации:
+            # При успешной отправке кода:
             if response['status']:
-                data_upd = {'stage_authorize': 3, 'status_sms': 0}
-
-                cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
+                data_upd = {'stage_authorize': 2, 'auth_password': DB['auth_password'],
+                            'security_code_token': response['response'].json()['security_code_token']}
                 t2b(uid, data_upd, 'u')
-                update_def_traffic(call)
-                return 2
+                return 1
+        else:
+            response = api.send_sms(uid)
+            data_upd = {'stage_authorize': 2}
+            t2b(uid, data_upd, 'u')
 
-            # При неудаче - возврат к 1 этапу:
-            else:
-                t2b(uid, type_='d')
-                t2b(uid)
-                answer = 'Неверные данные, попробуйте сначала\!' \
-                         '\nВведите ваш номер телефона, в формате: [79000000000]'
-                log(f'При авторизации, были введены неверные данные. \n {response}', 3)
-                menu.login_number(call, answer)
-                return 0
+    @staticmethod
+    def stage_2_complete_auth(uid, DB, data, call):
+        response = api.auth(uid)
 
-    # Пользователь уже авторизован.
-    else:
-        answer = 'Вы уже авторизованы\!'
-        log(answer, 3)
-        return 2
+        # При успешной авторизации:
+        if response['status']:
+            data_upd = {'stage_authorize': 3, 'status_sms': 0}
+
+            cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
+            t2b(uid, data_upd, 'u')
+            update_def_traffic(call)
+            return 2
+
+        # При неудаче - возврат к 1 этапу:
+        else:
+            t2b(uid, type_='d')
+            t2b(uid)
+            answer = 'Неверные данные, попробуйте сначала\!' \
+                     '\nВведите ваш номер телефона, в формате: [79000000000]'
+            log(f'При авторизации, были введены неверные данные. \n {response}', 3)
+            menu.login_number(call, answer)
+            return 0
+
+
+class Settings():
+    @staticmethod
+    def stage_filter(call):
+        uid = call.from_user.id
+        DB = t2b(uid)
+        data = call.data
+
+        config_uom = DB['config_uom']
+
+        if DB['lvl_setting'] == 0:
+            Settings.open_menu(uid, DB, data, config_uom, call)
+        elif DB['lvl_setting'] == 1:
+            Settings.interval(uid, DB, data, config_uom, call)
+        elif DB['lvl_setting'] == 2:
+            Settings.count(uid, DB, data, config_uom, call)
+        elif DB['lvl_setting'] == 3:
+            Settings.repeat(uid, DB, data, config_uom, call)
+        elif DB['lvl_setting'] == 4:
+            Settings.type(uid, DB, data, config_uom, call)
+
+    @staticmethod
+    def open_menu(uid, DB, data, config_uom, call):
+        name_ = ("🌐 *Вид:* Гигабайты" if DB['config_uom'] == "gb" else "☎️ *Вид:* Минуты")
+        name2 = ("ГБ" if DB['config_uom'] == "gb" else "МИН")
+        answer = f'🛠️ *Настройки\.* \n\nТекущие: \n{name_}\. ' \
+                 f'\n📏 *Количество:* {DB["config_count"]}{name2} за {DB["config_price"]}₽' \
+                 f'\n🕓 *Интервал:* {DB["config_autotime"]} секунд\.' \
+                 f'\n🔂 *Повторы:* {DB["config_repeat"]} раз\(а\)\.'
+        res = menu.settings(call, answer)
+        return res
+
+    @staticmethod
+    def interval(uid, DB, data, config_uom, call):
+        try:
+            int(data)
+            data_upd = {'config_autotime': call.message.text}
+            t2b(uid, data_upd, 'u')
+            return True
+        except TypeError:
+            answer = '🛠️ *Настройки\.* \n\nНапишите количество секунд, \nчерез которое будут повторяться \nподнятие и выставление\. ' \
+                     '\nИсключительно цифрами, например: 5'
+            menu.settings(call, answer)
+            return False
+
+    @staticmethod
+    def count(uid, DB, data, config_uom, call):
+        uid = call.from_user.id
+        DB = t2b(uid)
+        data = call.data
+
+        config_uom = DB['config_uom']
+
+        try:
+            config_price = int(data)
+        except TypeError:
+            answer = '🛠️ *Настройки\.* \n\nПринимаются исключительно цифры.'
+            menu.settings(call, answer)
+            return False
+
+        data_upd = {'config_count': data, 'config_price': math.ceil(config_price * 15) if config_uom == 'gb' else
+        {'config_count': data, 'config_price': math.ceil(int(data) / 1.25) if config_uom == 'min' else None}}
+
+        t2b(uid, data_upd, 'u')
+
+        return True
+
+    @staticmethod
+    def repeat(uid, DB, data, config_uom, call):
+        uid = call.from_user.id
+        DB = t2b(uid)
+        data = call.data
+
+        try:
+            int(data)
+            data_upd = {'config_repeat': call.message.text}
+            t2b(uid, data_upd, 'u')
+            return True
+        except TypeError:
+            answer = '🛠️ *Настройки\.* \n\nНапишите количество повторов, \nчерез которое бот закончит \nподнятие или ' \
+                     'выставление\. Указав 0, повторения будут бесконечны\. ' \
+                     '\nИсключительно цифрами, например: 10'
+            menu.settings(call, answer)
+            return False
+
+    @staticmethod
+    def type(uid, DB, data, config_uom, call):
+        uid = call.from_user.id
+        DB = t2b(uid)
+        data = call.data
+
+        config_uom = DB['config_uom']
+
+        if data == 'Минуты':
+            data_upd = {'config_type': 'voice', 'config_count': 62, 'config_price': 50, 'config_uom': 'min'}
+            t2b(uid, data_upd, 'u')
+            return True
+        elif data == 'Гигабайты':
+            data_upd = {'config_type': 'data', 'config_count': 6, 'config_price': 90, 'config_uom': 'gb'}
+            t2b(uid, data_upd, 'u')
+            return True
+        else:
+            answer = '🛠️ *Настройки\.* \n\nВыберите нужный для вас тип трафика:'
+            menu.settings(call, answer)
+            return True
 
 
 def admin_auth(call):
@@ -141,7 +241,7 @@ def admin_auth(call):
         log(f'Вход в {SECRET_FORMAT_NUMBER_T2}')
         data_upd = {'stage_authorize': 1, 'auth_login': NUMBER_T2, 'auth_password': PASSWORD_T2}
         t2b(uid, data_upd, 'u')
-        response = auth(call)
+        response = Auth.stage_filter(call)
         return response
 
 
@@ -181,82 +281,6 @@ def home_menu(call):
     uid = call.from_user.id
     cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
     return True
-
-
-# Меню настроек
-def settings(call):
-    """
-    Функция генерации и изменения настроек.
-
-    :param call: Данные о команде или сообщении.
-    :return: Boolean о результате работы.
-    """
-
-    uid = call.from_user.id
-    DB = t2b(uid)
-    data = call.data
-
-    config_uom = DB['config_uom']
-    if DB['lvl_setting'] == 0:
-        name_ = ("🌐 *Вид:* Гигабайты" if DB['config_uom'] == "gb" else "☎️ *Вид:* Минуты")
-        name2 = ("ГБ" if DB['config_uom'] == "gb" else "МИН")
-        answer = f'🛠️ *Настройки\.* \n\nТекущие: \n{name_}\. ' \
-                 f'\n📏 *Количество:* {DB["config_count"]}{name2} за {DB["config_price"]}₽' \
-                 f'\n🕓 *Интервал:* {DB["config_autotime"]} секунд\.' \
-                 f'\n🔂 *Повторы:* {DB["config_repeat"]} раз\(а\)\.'
-        res = menu.settings(call, answer)
-        return res
-    elif DB['lvl_setting'] == 1:
-        try:
-            int(data)
-            data_upd = {'config_autotime': call.message.text}
-            t2b(uid, data_upd, 'u')
-            return True
-        except TypeError:
-            answer = '🛠️ *Настройки\.* \n\nНапишите количество секунд, \nчерез которое будут повторяться \nподнятие и выставление\. ' \
-                     '\nИсключительно цифрами, например: 5'
-            menu.settings(call, answer)
-            return False
-    elif DB['lvl_setting'] == 2:
-        try:
-            config_price = int(data)
-        except TypeError:
-            answer = '🛠️ *Настройки\.* \n\nПринимаются исключительно цифры.'
-            menu.settings(call, answer)
-            return False
-
-        data_upd = {'config_count': data, 'config_price': math.ceil(config_price * 15) if config_uom == 'gb' else
-        {'config_count': data, 'config_price': math.ceil(int(data) / 1.25) if config_uom == 'min' else None}}
-
-        t2b(uid, data_upd, 'u')
-
-        return True
-
-    elif DB['lvl_setting'] == 3:
-        try:
-            int(data)
-            data_upd = {'config_repeat': call.message.text}
-            t2b(uid, data_upd, 'u')
-            return True
-        except TypeError:
-            answer = '🛠️ *Настройки\.* \n\nНапишите количество повторов, \nчерез которое бот закончит \nподнятие или ' \
-                     'выставление\. Указав 0, повторения будут бесконечны\. ' \
-                     '\nИсключительно цифрами, например: 10'
-            menu.settings(call, answer)
-            return False
-    elif DB['lvl_setting'] == 4:
-        if data == 'Минуты':
-            data_upd = {'config_type': 'voice', 'config_count': 62, 'config_price': 50, 'config_uom': 'min'}
-            t2b(uid, data_upd, 'u')
-            return True
-        elif data == 'Гигабайты':
-            data_upd = {'config_type': 'data', 'config_count': 6, 'config_price': 90, 'config_uom': 'gb'}
-            t2b(uid, data_upd, 'u')
-            return True
-        else:
-            answer = '🛠️ *Настройки\.* \n\nВыберите нужный для вас тип трафика:'
-            menu.settings(call, answer)
-            return True
 
 
 def profile(call):
@@ -801,12 +825,13 @@ def top(call, lid):
             for i in lots:
                 lot[0] = i
                 if lots[i]['id'] == lid:
-                    break
-            answer_lot = text_lot(lots, lot[0])
+                    answer_lot = text_lot(lots, lot[0])
 
-            answer = f'Лот "{answer_lot}" \n\- успешно поднят в топ\!'
-            log(answer)
-            bot.send_message(call.message.chat.id, answer, parse_mode='MarkdownV2')
+                    answer = f'Лот "{answer_lot}" \n\- успешно поднят в топ\!'
+                    log(answer)
+                    bot.send_message(call.message.chat.id, answer, parse_mode='MarkdownV2')
+                    break
+
             time.sleep(2)
             res = redactor_lot(call, lid)
             return res
@@ -908,3 +933,11 @@ def up(call):
     else:
 
         return False
+
+
+def normalize_phone_number(number: str) -> str:
+    if number.startswith('8'):
+        return '7' + number[1:]
+    elif number.startswith('+7'):
+        return '7' + number[2:]
+    return number

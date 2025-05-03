@@ -158,15 +158,15 @@ def admin_login(call):
     row_width = 2
     uid = call.from_user.id
     stage_authorize = t2b(uid)['stage_authorize']
-
+    from T2.api import T2Api
     if stage_authorize >= 3:
-        from T2.api import get_lots
-        lots = get_lots(uid)
+
+
+        lots = T2Api.get_active_lots(uid)
         if lots:
             response = home(call)
         else:
-            from T2.api import refresh_token
-            response = api.refresh_token(call)
+            response = T2Api.refresh_tokens(call)
             if response:
                 home(call)
             else:
