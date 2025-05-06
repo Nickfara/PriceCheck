@@ -17,7 +17,16 @@ from kivymd.uix.snackbar import (MDSnackbar,
                                  MDSnackbarActionButtonText,
                                  MDSnackbarCloseButton)
 
-import handler
+from functions import (finder,
+                       add_cart,
+                       get_cart,
+                       send_cart,
+                       send_to_cart,
+                       filter_shops,
+                       remove_cart,
+                       remove_from_cart,
+                       str_to_dict1,
+                       str_to_dict2)
 from log import log
 from PriceCheck import parse_metro
 
@@ -105,7 +114,7 @@ class Main:
         name = main.ids.text_find.text
 
         main.ids.list_items_obj.clear_widgets()
-        finder_items = handler.finder(name, main.base_price)  # Поиск товара
+        finder_items = finder(name, main.base_price)  # Поиск товара
 
         result_metro = []
         if main.checkbox_parser_metro.active:
@@ -153,7 +162,7 @@ class Main:
                 item_obj.ids.idItem.icon_color = icon_color
                 item_obj.ids.idItem.id = oid
 
-            if item in handler.get_cart():
+            if item in get_cart():
                 if item['seller'] == 'METRO':
                     btn_for_item('cart-remove', main.remove_from_cart_metro, 'red')
                 else:
@@ -330,7 +339,7 @@ class Settings:
 
         with open('data/cache_prices.json', encoding='utf-8') as f:
             result = json.load(f)
-            result_filtered = handler.filter_shops(result)
+            result_filtered = filter_shops(result)
             main.base_price = result_filtered
             log('Кэш прайса обновлён!')
 
@@ -377,7 +386,7 @@ class Cart:
                 cart_shop = app.CartShopApp()
                 items_list = []
 
-                cart_get = handler.get_cart()
+                cart_get = get_cart()
                 for item in cart_get:  # Наполнение списка товарами из кэша
                     cart_item = app.CartItemsApp()
                     if shop.lower() == item['seller'].lower():
@@ -427,7 +436,7 @@ class Cart:
         Отправить готовый список товаров в телеграм бот.
         :param main: Класс интерфейса главного окна.
         """
-        asyncio.ensure_future(handler.send_cart(main))
+        asyncio.ensure_future(send_cart(main))
         if main.dialog:
             main.dialog.dismiss()
 
@@ -450,10 +459,10 @@ class Cart:
         instance.unbind(on_release=main.add_to_cart)
         instance.bind(on_release=main.remove_from_cart)
         item = instance.id
-        item = handler.str_to_dict2(item)  # Конвертация строки в словарь
+        item = str_to_dict2(item)  # Конвертация строки в словарь
 
-        if item not in handler.get_cart():  # Если объекта нет в корзине
-            handler.add_cart(item)  # Отправка в корзину на сервер
+        if item not in get_cart():  # Если объекта нет в корзине
+            add_cart(item)  # Отправка в корзину на сервер
 
     @staticmethod
     def remove_from_cart(main, instance):
@@ -467,10 +476,10 @@ class Cart:
         instance.unbind(on_release=main.remove_from_cart)
         instance.bind(on_release=main.add_to_cart)
         item = instance.id
-        item = handler.str_to_dict2(''.join(item.strip('cart')))  # Конвертация строки в словарь
+        item = str_to_dict2(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
-        if item in handler.get_cart():  # Если объект есть в корзине
-            handler.remove_cart(dict(item))  # То объект удаляется из корзины
+        if item in get_cart():  # Если объект есть в корзине
+            remove_cart(dict(item))  # То объект удаляется из корзины
 
     @staticmethod
     def add_to_cart_metro(main, instance):
@@ -485,11 +494,11 @@ class Cart:
         instance.unbind(on_release=main.add_to_cart_metro)
         instance.bind(on_release=main.remove_from_cart_metro)
         item = instance.id
-        item = handler.str_to_dict1(item)  # Конвертация строки в словарь
+        item = str_to_dict1(item)  # Конвертация строки в словарь
 
-        if item not in handler.get_cart():  # Если объекта нет в корзине
-            asyncio.ensure_future(handler.send_to_cart(item, parse_metro))  # Отправка в корзину на сервер
-            handler.add_cart(dict(item))  # То объект добавляется в корзину
+        if item not in get_cart():  # Если объекта нет в корзине
+            asyncio.ensure_future(send_to_cart(item, parse_metro))  # Отправка в корзину на сервер
+            add_cart(dict(item))  # То объект добавляется в корзину
 
     @staticmethod
     def remove_from_cart_metro(main, instance):
@@ -504,11 +513,11 @@ class Cart:
         instance.unbind(on_release=main.remove_from_cart_metro)
         instance.bind(on_release=main.add_to_cart_metro)
         item = instance.id
-        item = handler.str_to_dict2(''.join(item.strip('cart')))  # Конвертация строки в словарь
+        item = str_to_dict2(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
-        if item in handler.get_cart():  # Если объект есть в корзине
-            asyncio.ensure_future(handler.remove_from_cart(item, parse_metro))  # Удаление из корзины на сервере
-            handler.remove_cart(dict(item))  # То объект удаляется из корзины
+        if item in get_cart():  # Если объект есть в корзине
+            asyncio.ensure_future(remove_from_cart(item, parse_metro))  # Удаление из корзины на сервере
+            remove_cart(dict(item))  # То объект удаляется из корзины
 
         if main.dialog:  # Закрыть диалоговое окно, если оно открыто
             main.dialog.dismiss()

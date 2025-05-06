@@ -7,11 +7,13 @@ import math
 import random
 import time
 
-from tg_bot import bot
+from handlers_tgBot import bot
 from T2 import config, menu
 from T2.api import T2Api as api
+from T2.api_instance import get_api
 
-from handler import text_lot, t2b
+
+from functions import text_lot, t2b
 from log import log
 from constants import NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2
 
@@ -72,6 +74,7 @@ class Auth:
                 data_upd = {'auth_password': data, 'security_code': ''}
                 t2b(uid, data_upd, 'u')
 
+            api = get_api(DB['auth_login'])
             response = api.send_security_code(uid)
 
 
@@ -82,13 +85,19 @@ class Auth:
                 t2b(uid, data_upd, 'u')
                 return 1
         else:
-            response = api.send_sms(uid)
+            api = get_api(DB['auth_login'])
+            response = api.send_sms_code()
             data_upd = {'stage_authorize': 2}
             t2b(uid, data_upd, 'u')
 
     @staticmethod
     def stage_2_complete_auth(uid, DB, data, call):
-        response = api.auth(uid)
+        api = get_api(DB['auth_login'])
+
+        if DB['status_sms'] == 0:
+            response = api.auth_with_password(DB['security_code_token'], DB['auth_password'])
+        else:
+            response = api.auth_with_code(DB['auth_password'])
 
         # При успешной авторизации:
         if response['status']:
@@ -295,8 +304,10 @@ def profile(call):
     allow_data = None
     income = None
     check = True
-
     uid = call.from_user.id
+    DB = t2b(uid)
+    uid = call.from_user.id
+    api = get_api(DB['auth_login'])
     response = api.get_rests(uid)
 
     def auth_error_message(response_):  # Вывод сообщения, об ошибке авторизации
@@ -306,7 +317,7 @@ def profile(call):
         """
 
         if 'Ошибка авторизации' == response_['text']:
-            from tg_bot import start
+            from handlers_tgBot import start
             start(call.message)
             return False
         else:
@@ -452,6 +463,7 @@ def run_auto(call, type_=''):
 
     uid = call.from_user.id
     DB = t2b(uid)
+    api = get_api(DB['auth_login'])
 
     if uid not in cache:  # Добавление аккаунта в кэш, если его нет
         cache[uid] = {'status_lagg': 0, 'status_run_auto': 0}
@@ -490,7 +502,7 @@ def run_auto(call, type_=''):
                             time.sleep(2)
                             stop(call)
                         elif 'Ошибка авторизации' == response['text']:
-                            from tg_bot import start
+                            from handlers_tgBot import start
                             start(call.message)
                         else:
                             menu.error(call)
@@ -519,7 +531,7 @@ def run_auto(call, type_=''):
                                             timer(answer, at, count, uid, call, DB)
                                         else:
                                             if 'Ошибка авторизации' == response['text']:
-                                                from tg_bot import start
+                                                from handlers_tgBot import start
                                                 start(call.message)
                                                 break
                                             else:
@@ -574,6 +586,8 @@ def stop(call):
     :param call: Данные о команде или сообщении
     """
     uid = call.from_user.id
+    DB = t2b(uid)
+    api = get_api(DB['auth_login'])
 
     if uid in cache:
         cache[uid]['status_run_auto'] = 0
@@ -601,6 +615,8 @@ def remove_minutes_lots(call):
     """
 
     uid = call.from_user.id
+    DB = t2b(uid)
+    api = get_api(DB['auth_login'])
     minutes = get_lots_refresh(call, delete_minutes=True)
     filtered_minutes = []
 
@@ -645,6 +661,8 @@ def get_lots_refresh(call, delete_minutes=False):
     :return:
     """
     uid = call.from_user.id
+    DB = t2b(uid)
+    api = get_api(DB['auth_login'])
     get_lots = api.get_lots(uid)
     response = get_lots[0]['response']
     active_lots = get_lots[1]
@@ -710,6 +728,8 @@ def send_sms(call):
     uid = call.from_user.id
     data_upd = {'status_sms': 1, 'stage_authorize': 1}
     t2b(uid, data_upd, 'u')
+    DB = t2b(uid)
+    api = get_api(DB['auth_login'])
     response = api.send_sms(uid)
     return response['status']
 
@@ -749,6 +769,8 @@ def delete_yes(call, lid):
     """
 
     uid = call.from_user.id
+    DB = t2b(uid)
+    api = get_api(DB['auth_login'])
     response = api.delete(uid, lid)
 
     if response:
@@ -772,6 +794,8 @@ def edit_lots(call):
     :param call: Данные о команде или сообщении
     """
     uid = call.from_user.id
+    DB = t2b(uid)
+    api = get_api(DB['auth_login'])
     get_lots = api.get_lots(uid)
     response = get_lots['response']
 
@@ -793,6 +817,9 @@ def redactor_lot(call, lid):
     :param lid: ID лота.
     """
     uid = call.from_user.id
+    DB = t2b(uid)
+    api = get_api(DB['auth_login'])
+
     if uid not in cache:
         cache[uid] = {'status_lagg': 0, 'status_run_auto': 0}
     cache[uid]['lid'] = lid
@@ -817,6 +844,7 @@ def top(call, lid):
     """
     uid = call.from_user.id
     DB = t2b(uid)
+    api = get_api(DB['auth_login'])
     lots = dict(json.loads(DB['list_lots']))
     response = api.top(uid, lid)
     lot = {}
@@ -866,6 +894,8 @@ def price_accept(call):
     :param call: Данные о команде или сообщении
     """
     uid = call.from_user.id
+    DB = t2b(uid)
+    api = get_api(DB['auth_login'])
     data = call.data
 
     lid = cache[uid]['lid']
@@ -915,6 +945,8 @@ def up(call):
     :param call: Данные о команде или сообщении
     """
     uid = call.from_user.id
+    DB = t2b(uid)
+    api = get_api(DB['auth_login'])
 
     lots = get_lots_refresh(call)
 

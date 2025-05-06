@@ -54,7 +54,7 @@ async def background_load(self):
         log('Поиск по нажатию "enter" включен!')
 
     def start_tg():
-        from tg_bot import run, start
+        from handlers_tgBot import run, start
         run()
         log('TG бот включен!')
 
@@ -217,7 +217,7 @@ def send_cart(self):
                 (name + ', добрый день!\nЗаявка на завтра:') if shop.lower() not in ('metro', 'купер') else 'METRO:')
             text_cart = header_text + '\n' + self.send_text[shop]
 
-            from tg_bot import just_send
+            from handlers_tgBot import just_send
 
             just_send(text_cart)
 

@@ -5,8 +5,10 @@ import telebot
 
 from log import log
 
-from handler import t2b
+from functions import t2b
 from constants import TOKEN_TG_BOT, ADMIN_IDS
+
+from handlers_registry import get_admin_commands, get_user_commands, get_param_commands
 
 bot = telebot.TeleBot(TOKEN_TG_BOT)
 cache = {'check_file': ''}
@@ -240,130 +242,42 @@ def text(message):
 
 
 @bot.callback_query_handler(func=lambda call: True)
-def default(call):
-    """
-    Обработчики нажатия кнопок
-
-    :param call: Параметры команды или сообщения
-    """
-
-    menu.wait(call)
+def callback(call):
     uid = call.from_user.id
     cmd = call.data
-    cmds = None
-    cmdsd = None
-
+    cmds, cmdsd = (cmd.split('/') + [None])[:2]
     DB = t2b(uid)
 
-    if '/' in cmd:
-        cmds = cmd.split('/')[0]
-        cmdsd = cmd.split('/')[1]
+    admin_commands = get_admin_commands(uid, t2b, menu, commands, log)
+    user_commands = get_user_commands(uid, t2b, menu, commands, settings, log, stop)
+    param_commands = get_param_commands(commands)
 
-    if uid in ADMIN_IDS:
-        if cmd == 'МТ2':
-            menu.admin_login(call)
-            return
-        elif cmd == 'ОСТ':
-            return
-        elif cmd == 'ПТ':
-            return
-        elif cmd == 'ПРС':
-            return
-        elif cmd == 'Войти админ':
-            response = commands.admin_auth(call)
-            if response:
-                t2b(uid, data={'stage_authorize': 2}, type_='u')
-                # menu.home(call)
-            else:
-                log(response, 3)
+    if uid in ADMIN_IDS and cmd in admin_commands:
+        log(f"Административная команда получена: {cmd}", 1)
+        return admin_commands[cmd](call)
 
-    if DB['stage_authorize'] < 3:  # Если пользователь не авторизован
+    if DB.get('stage_authorize', 0) < 3:
         if cmd == 'Войти':
-            auth(call)
+            log('Авторизация запрошена', 1)
+            return auth(call)
         elif cmd == 'СМС':
+            log('Отправка СМС', 1)
             commands.send_sms(call)
-            menu.sms(call)
+            return menu.sms(call)
         elif cmd == 'Отмена':
-            start(call.message)
-    elif DB['stage_authorize'] == 3:  # Если пользователь авторизован
-        if cmd == 'Главное меню':
-            result = commands.home_menu(call)
-            if result:
-                menu.home(call)
-        elif cmd == 'Профиль':
-            result = commands.profile(call)
-            if result:
-                menu.profile(call, result)
-        elif cmd == 'Запуск':
-            menu.bot_select(call)
-        elif cmd in ('Настройки', 'Назад'):
-            t2b(uid, data={'lvl_setting': 0}, type_='u')
-            settings(call)
-        elif cmd == 'Авто-продажа':
-            commands.run_auto(call, 'sell')
-        elif cmd == 'Авто-поднятие':
-            commands.run_auto(call, 'top')
-        elif cmd == 'Поднять':
-            response = commands.up(call)
-            if response:
-                menu.up(call)
-            else:
-                answer = f'Лотов нет\!\n\n'
-                log(answer, 3)
-                menu.bot_active(call, answer)
-                stop(call)
-        elif cmd == 'Отмена':
-            result = commands.home_menu(call)
-            if result:
-                menu.home(call)
-        elif cmd == 'Выйти из аккаунта':
-            start(call.message)
-        elif cmd == 'Интервал':
-            t2b(uid, data={'lvl_setting': 1}, type_='u')
-            settings(call)
-        elif cmd == 'Количество':
-            t2b(uid, data={'lvl_setting': 2}, type_='u')
-            settings(call)
-        elif cmd == 'Повторы':
-            t2b(uid, data={'lvl_setting': 3}, type_='u')
-            settings(call)
-        elif cmd == 'Вид трафика':
-            t2b(uid, data={'lvl_setting': 4}, type_='u')
-            settings(call)
-        elif cmd in ('Минуты', 'Гигабайты'):
-            settings(call)
-            t2b(uid, data={'lvl_setting': 0}, type_='u')
-        elif cmd == 'Остановить':
-            stop(call)
-        elif cmd == 'Отозвать минуты':
-            menu.remove_minutes_lots_confirm(call)
-        elif cmd == 'Подтверждение отзыва минут':
-            commands.remove_minutes_lots(call)
-        elif cmds == 'del':
-            lid = cmdsd
-            commands.delete_confirm(call, lid)
-        elif cmds == 'delconf':
-            lid = cmdsd
-            commands.delete_yes(call, lid)
-        elif cmd == 'Редактировать лоты':
-            commands.edit_lots(call)
-        elif cmds == 'red':
-            lid = cmdsd
-            commands.redactor_lot(call, lid)
-        elif cmds == 'top':
-            lid = cmdsd
-            commands.top(call, lid)
-        elif cmds == 'emoji':
-            lid = cmdsd
-            commands.emoji(call, lid)
-        elif cmds == 'name':
-            lid = cmdsd
-            commands.name(call, lid)
-        elif cmds == 'save':
-            lid = cmdsd
-            commands.save(call, lid)
-        elif call.data == 'price':
-            commands.price(call)
+            return start(call.message)
+
+    elif DB.get('stage_authorize') == 3:
+        if cmd in user_commands:
+            log(f"Пользовательская команда получена: {cmd}", 1)
+            return user_commands[cmd](call)
+        if cmds in param_commands and cmdsd:
+            log(f"Команда с параметрами получена: {cmds} {cmdsd}", 2)
+            return param_commands[cmds](call, cmdsd)
+        if cmd == 'price':
+            return commands.price(call)
+
+    log(f'Неизвестная команда: "{cmd}" от пользователя {uid}', 3)
 
 
 def run():

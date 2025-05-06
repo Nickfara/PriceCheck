@@ -10,7 +10,7 @@ from log import log
 
 from .config import clid, apikey, point1, point2
 from .database import add
-from tg_bot import just_send as send
+from handlers_tgBot import just_send as send
 
 active_bot_taxi = [False]
 

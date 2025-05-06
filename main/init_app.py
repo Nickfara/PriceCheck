@@ -20,7 +20,7 @@ from check_files import check_and_create as cac
 cac()  # Проверка на наличие необходимых json файлов
 
 from PriceCheck import commands
-import handler
+from functions import (background_load, refresh)
 
 cart = []
 
@@ -138,7 +138,7 @@ class Main(MDBoxLayout):
     def __init__(self):
         super(Main, self).__init__()
         self.base_price = []  # Кэш прайсов
-        asyncio.ensure_future(handler.background_load(self))  # Загрузка кэша
+        asyncio.ensure_future(background_load(self))  # Загрузка кэша
 
         self.theme_cls.bgColor = '#f0faff'
         self.theme_cls.btnColor = '#002538'
@@ -251,7 +251,7 @@ class Main(MDBoxLayout):
             Обновить кэш с прайс-листами.
         """
 
-        asyncio.ensure_future(handler.refresh(self))
+        asyncio.ensure_future(refresh(self))
 
 
 class ToolsAJob(MDApp):
@@ -268,6 +268,7 @@ class ToolsAJob(MDApp):
         self.CartMainApp = None
         self.SettingsMainApp = None
         self.MainApp = None
+
 
     def build(self):
         self.MainApp = Main()
