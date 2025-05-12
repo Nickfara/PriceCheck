@@ -8,6 +8,9 @@ from log import log
 import asyncio
 import json
 
+import threading
+_t2b_lock = threading.Lock()
+
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
 cache_cart = 'data/cache_cart.json'
@@ -425,27 +428,27 @@ def t2b(uid, data: dict = True, type_='g'):
                'status_sms': 0, 'stage_authorize': 0, 'lvl_setting': 0, 'lvl_redactor': 0,
                'security_code': '', 'security_code_token': '', "config_count": 6, "config_autotime": 35,
                "config_uom": "gb", "config_repeat": 20, "config_price": 90, "config_type": "data"}
-
-    with open(f'data/t2b.json') as f:
-        if type_ == 'u':
-            file = json.load(f)
-            for i in data:
-                file[uid][i] = data[i]
-            with open(f'data/t2b.json', 'w') as f2:
-                json.dump(file, f2)
-        elif type_ == 'g':
-            file = json.load(f)
-            if uid in file:
-                return file[uid]
-            else:
-                file[uid] = default
-
-                with open('data/t2b.json', 'w') as f2:
-                    json.dump(file, f2)
-                    return file[uid]
-        elif type_ == 'd':
-            file = json.load(f)
-            if uid in file:
-                file[uid] = default
+    with _t2b_lock:
+        with open(f'data/t2b.json') as f:
+            if type_ == 'u':
+                file = json.load(f)
+                for i in data:
+                    file[uid][i] = data[i]
                 with open(f'data/t2b.json', 'w') as f2:
                     json.dump(file, f2)
+            elif type_ == 'g':
+                file = json.load(f)
+                if uid in file:
+                    return file[uid]
+                else:
+                    file[uid] = default
+
+                    with open('data/t2b.json', 'w') as f2:
+                        json.dump(file, f2)
+                        return file[uid]
+            elif type_ == 'd':
+                file = json.load(f)
+                if uid in file:
+                    file[uid] = default
+                    with open(f'data/t2b.json', 'w') as f2:
+                        json.dump(file, f2)

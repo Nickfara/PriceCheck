@@ -155,8 +155,10 @@ def start(message):
     menu.wait(call)
     uid = call.from_user.id
 
+
     if uid in ADMIN_IDS:
-        menu.admin_menu(call)
+        commands.deauth(call)
+        return menu.admin_menu(call)
     else:
         commands.deauth(call, True)
 

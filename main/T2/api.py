@@ -17,41 +17,6 @@ from functions import t2b
 from T2.constants import SECURITY_BYPASS_HEADERS, MAIN_API, SMS_VALIDATION_API, TOKEN_API, SECURE_VALIDATION_API
 
 
-def safe_request(method, url, json_=None, headers=None, params=None, timeout=10):
-    """
-
-    :param method: 
-    :param url: 
-    :param json_: 
-    :param headers: 
-    :param params: 
-    :param timeout: 
-    :return: 
-    """
-    try:
-        response = requests.request(
-            method=method.upper(),
-            url=url,
-            json=json_,
-            params=params,
-            headers=headers,
-            timeout=timeout
-        )
-
-        if not response.ok:
-            log(f"[{method.upper()}] HTTP {response.status_code}: {response.text}", 2)
-            return None
-
-        try:
-            return response.json()
-        except (JSONDecodeError, ValueError) as e:
-            log(f"[{method.upper()}] Ошибка парсинга JSON: {e} \nОтвет: {response.text}", 2)
-            return None
-
-    except RequestException as e:
-        log(f"[{method.upper()}] Сетевая ошибка: {e}")
-        return None
-
 
 class T2Api:
     """
@@ -86,17 +51,73 @@ class T2Api:
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self.session = requests.Session()  # пересоздаем
+        self.s = requests.Session()  # пересоздаем
 
     def __aenter__(self):
-        self.session = self.s(headers={
+        self.s(headers={
             'Authorization': f'Bearer {self.access_token}',
             **SECURITY_BYPASS_HEADERS
         })
         return self
 
     def __aexit__(self, *args):
-        self.session.close()
+        self.s.close()
+    
+    def safe_request(self, method, url: str, json_: dict = None, data: dict = None, headers: dict = None, params=None,
+                     timeout=10):
+        """
+
+        :param method:
+        :param url:
+        :param json_:
+        :param headers:
+        :param params:
+        :param timeout:
+        :return:
+        """
+        try:
+            response = self.s.request(
+                method=method.upper(),
+                url=url,
+                json=json_,
+                data=data,
+                params=params,
+                headers=headers,
+                timeout=timeout
+            )
+
+            if not response.ok:
+                log(f"[{method.upper()}] HTTP {response.status_code}: {response.text}", 2)
+
+                if response.status_code == 401 and self.refresh_token:
+                    log("Токен истёк. Обновляю...", 2)
+                    new_tokens = self.refresh_tokens(self.refresh_token)
+                    if new_tokens:
+                        self.access_token, self.refresh_token = new_tokens
+                        self.s.headers.update({'Authorization': f'Bearer {self.access_token}'})
+
+                        # Повторная попытка
+                        response = self.s.request(
+                            method=method.upper(),
+                            url=url,
+                            json=json_,
+                            data=data,
+                            params=params,
+                            headers=headers,
+                            timeout=timeout
+                        )
+                else:
+                    return None
+
+            try:
+                return response.json()
+            except (JSONDecodeError, ValueError) as e:
+                log(f"[{method.upper()}] Ошибка парсинга JSON: {e} \nОтвет: {response.text}", 2)
+                return None
+
+        except RequestException as e:
+            log(f"[{method.upper()}] Сетевая ошибка: {e}")
+            return None
 
     def check_if_authorized(self):
         """
@@ -104,7 +125,7 @@ class T2Api:
         :return: 
         """
         url = self.profile_api
-        response = safe_request("GET", url)
+        response = self.safe_request(method="GET", url=url)
         return response
 
     def send_sms_code(self):
@@ -115,7 +136,7 @@ class T2Api:
         url = self.sms_post_url
         payload = {'sender': 'Tele2'}
 
-        data = safe_request("POST", url, json_=payload)
+        data = self.safe_request(method="POST", url=url, json_=payload)
 
         return data
 
@@ -135,7 +156,7 @@ class T2Api:
             "password_type": "password"
         }
 
-        data = safe_request("POST", url, json_=payload)
+        data = self.safe_request(method="POST", url=url, json_=payload)
 
         return data
 
@@ -155,12 +176,14 @@ class T2Api:
             'password_type': 'sms_code'
         }
 
-        data = safe_request("POST", url, json_=payload)
+        data = self.safe_request(method="POST", url=url, json_=payload)
 
         if data:
-            return data['access_token'], data['refresh_token']
+            if 'access_token' in data and 'refresh_token' in data:
+                return data['access_token'], data['refresh_token']
+        return None
 
-    def auth_with_password(self, security_code_token: str, password: str):
+    def auth_with_password(self, phone_number: str, security_code: str, security_code_token: str, password: str):
         """
 
         :param phone_number: 
@@ -172,16 +195,24 @@ class T2Api:
         payload = {
             'client_id': 'digital-suite-web-app',
             'grant_type': 'password',
-            'username': self.phone_number,
+            'username': phone_number,
             'password': password,
             'password_type': 'password',
-            'security_code_token': security_code_token
+            'security_code_token': security_code_token,
+            'security_code': security_code
         }
 
-        data = safe_request("POST", url, data=payload)
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+
+        data = self.safe_request(method="POST", url=url, data=payload, headers=headers)
 
         if data:
-            return data['access_token'], data['refresh_token']
+            if 'access_token' in data and 'refresh_token' in data:
+                self.phone_number = phone_number
+                return data['access_token'], data['refresh_token']
+        return None
 
     def refresh_tokens(self, refresh_token: str):
         """
@@ -196,7 +227,7 @@ class T2Api:
             'refresh_token': refresh_token,
         }
 
-        data = safe_request("POST", url, data=payload)
+        data = self.safe_request(method="POST", url=url, data=payload)
 
         if data:
             return data['access_token'], data['refresh_token']
@@ -215,8 +246,13 @@ class T2Api:
                        'uom': 'min' if lot['lot_type'] == 'voice' else 'gb'}
         }
 
-        result = safe_request("PUT", url, json_=update_data)
-        return result
+        result = self.safe_request(method="PUT", url=url, json_=update_data)
+
+        if result:
+            return result
+
+        log(f'Ошибка поднятия лота. API вернул: {result.status_code}', 3)
+        return None
 
     def top(self, lot_id):
         """
@@ -226,18 +262,18 @@ class T2Api:
         """
         url = self.top_api
         update_data = {"lotId": lot_id}
-        result = None
         repeat = 0
 
         while repeat < 3:
-            result = safe_request("PUT", url, json_=update_data)
+            result = self.safe_request(method="PUT", url=url, json_=update_data)
             if result:
                 return result
             else:
-                log('Ошибка поднятия в топ. Повторение попытки.', 3)
+                log(f'Ошибка поднятия в топ. API вернул: {result.status_code}Повторение попытки.', 3)
                 time.sleep(1)
             repeat += 1
-        return result
+
+        return None
 
     @staticmethod
     def patch_name(uid, lot_id, data_imp):
@@ -261,8 +297,13 @@ class T2Api:
             }
         }
         data = json.dumps(data)
+        result = self.safe_request(method="PATCH", url=url, json_=data)
 
-        return safe_request("PATCH", url, json_=data)
+        if result:
+            return result
+
+        log(f'Ошибка модификации имени. API вернул: {result.status_code}', 3)
+        return None
 
     def return_lot(self, lot_id):
         """
@@ -272,7 +313,7 @@ class T2Api:
         """
         url = f'{self.market_api}/{lot_id}'
 
-        return safe_request("DELETE", url)
+        return self.safe_request(method="DELETE", url=url)
 
     def get_balance(self):
         """
@@ -281,7 +322,7 @@ class T2Api:
         """
         url = self.balance_api
 
-        response = safe_request("GET", url)
+        response = self.safe_request(method="GET", url=url)
         if response:
             return response['data']['value']
 
@@ -294,7 +335,7 @@ class T2Api:
         """
         url = self.market_api
 
-        response = safe_request("GET", url)
+        response = self.safe_request(method="GET", url=url)
         if response:
             lots = list(response['data'])
             active_lots = [a for a in lots if a['status'] == 'active']
@@ -309,7 +350,7 @@ class T2Api:
         """
         url = self.rests_api
 
-        response = safe_request("GET", url)
+        response = self.safe_request(method="GET", url=url)
 
         if response:
             rests = list(response['data']['rests'])
@@ -331,7 +372,7 @@ class T2Api:
         """
 
         url = self.name_api
-        response = safe_request("GET", url)
+        response = self.safe_request(method="GET", url=url)
 
         return response
 
@@ -341,6 +382,6 @@ class T2Api:
         :return: 
         """
         url = self.statistics_api
-        response = safe_request("GET", url)
+        response = self.safe_request(method="GET", url=url)
 
         return response

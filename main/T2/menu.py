@@ -3,19 +3,33 @@
 """
 
 import time
+import re
 
 from telebot import types
+from telebot.apihelper import ApiTelegramException
 
 from handlers_tgBot import bot
 from functions import t2b
 from log import log
 from constants import ADMIN_IDS
+
 ids_messages = {}  # Список ID сообщений
 new_message = 0  # Блокирует изменение сообщений
 i = 0  # Несколько попыток выдать ошибку, функция error()
 cancel_btn = ('❌ Отмена', 'Отмена')
 
 admin_ids = ADMIN_IDS
+
+
+def escape_markdown_v2(text: str) -> str:
+    """
+    Экранизирует специальные символы Telegram Markdown V2 в переданном тексте.
+    :param text: Обычный текст
+    :return: Экранизированный текст
+    """
+    escape_chars = r'_*[]()~`>#+-=|{}.!'
+    return re.sub(r'(?<!\\)([%s])' % re.escape(escape_chars), r'\\\1', str(text))
+
 
 # noinspection PyBroadException
 def send(call, answer: str, btns: tuple, row_width: int = 3, new_message=new_message):
@@ -29,7 +43,6 @@ def send(call, answer: str, btns: tuple, row_width: int = 3, new_message=new_mes
         :param btns: Кортеж с кнопками(('Текст', 'Команда'), ('Текст', 'Команда')).
         """
 
-    returned = False
     uid = call.from_user.id
     mid = call.message.message_id
 
@@ -49,19 +62,27 @@ def send(call, answer: str, btns: tuple, row_width: int = 3, new_message=new_mes
 
     if new_message == 0:  # Обновление сообщения.
         try:
+            if new_message:
+                return bot.send_message(chat_id=uid, text=answer, reply_markup=markup,
+                                        parse_mode='MarkdownV2')
+            return bot.edit_message_text(chat_id=uid, text=answer, message_id=mid, reply_markup=markup, parse_mode='MarkdownV2')
+        except ApiTelegramException as e:
+            if "can't parse entities" in str(e):
+                if new_message:
+                    return bot.send_message(chat_id=uid, text=escape_markdown_v2(answer), reply_markup=markup,
+                                            parse_mode='MarkdownV2')
+                return bot.edit_message_text(chat_id=uid, text=escape_markdown_v2(answer), message_id=mid,
+                                             reply_markup=markup, parse_mode='MarkdownV2')
+            elif "message to edit not found" in str(e):
+                return bot.send_message(chat_id=uid, text=escape_markdown_v2(answer), reply_markup=markup,
+                                        parse_mode='MarkdownV2')
+            raise  # пробрасываем другие исключения
 
-            bot.edit_message_text(chat_id=uid, message_id=mid, text=answer, reply_markup=markup,
-                                  parse_mode='MarkdownV2')
-            returned = True
-        except:
-            new_message = 1  # При срабатывании исключения блокируется изменение сообщения.
 
     if new_message == 1:  # Отправка нового сообщения.
-        print(answer)
-        bot.send_message(chat_id=uid, text=answer, reply_markup=markup, parse_mode='MarkdownV2')
-        returned = True
+        return True
 
-    return returned
+    return None
 
 
 # noinspection PyBroadException
@@ -157,16 +178,17 @@ def help_create(call):
 def admin_login(call):
     row_width = 2
     uid = call.from_user.id
+    from T2.session_manager import get_api
+    api = get_api(uid)
+
     stage_authorize = t2b(uid)['stage_authorize']
-    from T2.api import T2Api
     if stage_authorize >= 3:
 
-
-        lots = T2Api.get_active_lots(uid)
+        lots = api.get_active_lots()
         if lots:
             response = home(call)
         else:
-            response = T2Api.refresh_tokens(call)
+            response = api.refresh_tokens(call)
             if response:
                 home(call)
             else:

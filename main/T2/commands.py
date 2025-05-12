@@ -9,13 +9,11 @@ import time
 
 from handlers_tgBot import bot
 from T2 import config, menu
-from T2.api import T2Api as api
-from T2.api_instance import get_api
+from T2.session_manager import get_api
 
-
-from functions import text_lot, t2b
+from functions import (text_lot, t2b)
 from log import log
-from constants import NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2
+from constants import (NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2)
 
 def_account = config.account
 def_traffic = config.add_traffic()
@@ -30,92 +28,79 @@ class Auth:
         uid = call.from_user.id
         DB = t2b(uid)
         data = call.data
-        call = call
 
-        # Если пользователь не авторизован, происходит авторизация
         if DB['stage_authorize'] < 3:
             if DB['stage_authorize'] == 0:
-                Auth.stage_0_login_number(uid, DB, data, call)
+                return Auth.stage_0_login_number(uid, DB, data, call)
             elif DB['stage_authorize'] == 1:
-                Auth.stage_1_password_or_sms(uid, DB, data, call)
+                return Auth.stage_1_password_or_sms(uid, DB, data, call)
             elif DB['stage_authorize'] == 2:
-                Auth.stage_2_complete_auth(uid, DB, data, call)
-
-        # Пользователь уже авторизован.
+                return Auth.stage_2_complete_auth(uid, DB, data, call)
         else:
-            answer = 'Вы уже авторизованы\!'
-            log(answer, 3)
+            log("Уже авторизован", 3)
             return 2
 
     @staticmethod
     def stage_0_login_number(uid, DB, data, call):
-        # Форматирование номера телефона
-        data = normalize_phone_number(data)
-
-        # 1 Этап - Добавление номера телефона (Номер успешно добавлен)
-        if len(str(data)) == 11 and (data[0] == '7') and data[1] == '9' and DB['stage_authorize'] == 0:
-            data_upd = {'auth_login': data, 'stage_authorize': 1}
-            t2b(uid, data_upd, 'u')
+        phone = normalize_phone_number(data)
+        if len(phone) == 11 and phone.startswith('79'):
+            t2b(uid, {'auth_login': phone, 'stage_authorize': 1}, 'u')
             menu.login_password(call)
             return 1
-
-        # 1 Этап - Добавление номера телефона:
         else:
-            answer = 'Введите ваш номер телефона, \nв формате: [79000000000]'
-            menu.login_number(call, answer)
+            menu.login_number(call, 'Введите номер телефона в формате 7900...')
             return 1
 
     @staticmethod
     def stage_1_password_or_sms(uid, DB, data, call):
-        # Если включено подтверждение кодом:
+        api = get_api(uid)
+
         if DB['status_sms'] == 0:
-            # Если пароль не указан:
-            if len(str(DB['auth_password'])) == 0 or DB['auth_password'] is None:
-                data_upd = {'auth_password': data, 'security_code': ''}
-                t2b(uid, data_upd, 'u')
+            if not DB.get('auth_password'):
+                t2b(uid, {'auth_password': data}, 'u')
 
-            api = get_api(DB['auth_login'])
             response = api.send_security_code(uid)
-
-
-            # При успешной отправке кода:
-            if response['status']:
-                data_upd = {'stage_authorize': 2, 'auth_password': DB['auth_password'],
-                            'security_code_token': response['response'].json()['security_code_token']}
-                t2b(uid, data_upd, 'u')
-                return 1
+            if response and 'security_code_token' in response:
+                t2b(uid, {
+                    'stage_authorize': 2,
+                    'security_code_token': response['security_code_token']
+                }, 'u')
+                menu.security_code(call)
+                return True
+            else:
+                log("Ошибка отправки security code", 3)
         else:
-            api = get_api(DB['auth_login'])
-            response = api.send_sms_code()
-            data_upd = {'stage_authorize': 2}
-            t2b(uid, data_upd, 'u')
+            api.send_sms_code()
+            t2b(uid, {'stage_authorize': 2}, 'u')
+            menu.sms(call)
+            return True
+        return None
 
     @staticmethod
     def stage_2_complete_auth(uid, DB, data, call):
-        api = get_api(DB['auth_login'])
+        api = get_api(uid)
+        try:
+            if DB['status_sms'] == 0:
+                token = api.auth_with_password(DB['auth_login'], DB['security_code'], DB['security_code_token'], DB['auth_password'])
+            else:
+                token = api.auth_with_code(DB['auth_login'], data)
 
-        if DB['status_sms'] == 0:
-            response = api.auth_with_password(DB['security_code_token'], DB['auth_password'])
-        else:
-            response = api.auth_with_code(DB['auth_password'])
-
-        # При успешной авторизации:
-        if response['status']:
-            data_upd = {'stage_authorize': 3, 'status_sms': 0}
-
-            cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
-            t2b(uid, data_upd, 'u')
-            update_def_traffic(call)
-            return 2
-
-        # При неудаче - возврат к 1 этапу:
-        else:
+            if token:
+                access_token, refresh_token = token
+                t2b(uid, {
+                    'token': access_token,
+                    'refresh_token': refresh_token,
+                    'stage_authorize': 3,
+                    'status_sms': 0
+                }, 'u')
+                update_def_traffic(call)
+                cache[uid] = {'status_run_auto': 0, 'status_lagg': 0}
+                return 2
+        except Exception as e:
+            log(f"Ошибка авторизации: {e}", 3)
             t2b(uid, type_='d')
             t2b(uid)
-            answer = 'Неверные данные, попробуйте сначала\!' \
-                     '\nВведите ваш номер телефона, в формате: [79000000000]'
-            log(f'При авторизации, были введены неверные данные. \n {response}', 3)
-            menu.login_number(call, answer)
+            menu.login_number(call, 'Неверные данные. Введите номер телефона в формате 7900...')
             return 0
 
 
@@ -227,56 +212,40 @@ class Settings():
 
 def admin_auth(call):
     """
-    Функция предназначена для авторизации админа.
+    Авторизация под админским номером.
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     :return: Bool об успехе или неудаче завершения.
     """
-
-    # deauth(call)
+    deauth(call)  # Деавторизация, в качестве исключения ошибок.
     uid = call.from_user.id
-    DB = t2b(uid)
-    data = call.data
-
-    # deauth(call)
-
-    # Создание аккаунта:
-    if DB is None:
-        log('Создание аккаунта')
-        t2b(uid)
-
-    # Авторизация в SECRET_FORMAT_NUMBER_T2
-    if data == 'Войти админ':
-        log(f'Вход в {SECRET_FORMAT_NUMBER_T2}')
-        data_upd = {'stage_authorize': 1, 'auth_login': NUMBER_T2, 'auth_password': PASSWORD_T2}
-        t2b(uid, data_upd, 'u')
-        response = Auth.stage_filter(call)
-        return response
+    log(f'Вход в {SECRET_FORMAT_NUMBER_T2}')
+    t2b(uid, {
+        'auth_login': NUMBER_T2,
+        'auth_password': PASSWORD_T2,
+        'status_sms': 0,
+        'stage_authorize': 1  # 1 в случае если выше 0
+    }, 'u')
+    return Auth.stage_filter(call)
 
 
 def deauth(call, lobby=False):
     """
-    Функция деавторизации.
+    Сброс авторизации.
 
-    :param call: Данные о команде или сообщении.
+    :param call: CallbackQuery.
     :param lobby: Если выполнено из лобби, выполняется start.
     :return: Boolean о результате работы.
     """
+    uid = call.from_user.id
     try:
-        uid = call.from_user.id
-        DB = t2b(uid)
-
-        if DB:
-            t2b(uid, type_='d')
-
+        t2b(uid, type_='d')
         if lobby:
             menu.start(call.message)
-
-        log('Пользователь удалён.')
+        log(f'Пользователь {uid} удалён.')
         return True
-
     except KeyError:
-        log('Ошибка удаления пользователя!', 3)
+        log(f'Ошибка удаления пользователя {uid}', 3)
         return False
 
 
@@ -284,7 +253,7 @@ def home_menu(call):
     """
     Функция открытия главного экрана.
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     """
 
     uid = call.from_user.id
@@ -296,115 +265,41 @@ def profile(call):
     """
     Генерация меню профиля.
 
-    :param call: Данные о команде или сообщении
-    :return: bool о результате работы.
+    :param call: Объект CallbackQuery
     """
-
-    allow_voice = None
-    allow_data = None
-    income = None
-    check = True
     uid = call.from_user.id
-    DB = t2b(uid)
-    uid = call.from_user.id
-    api = get_api(DB['auth_login'])
-    response = api.get_rests(uid)
+    api = get_api(uid)
 
-    def auth_error_message(response_):  # Вывод сообщения, об ошибке авторизации
-        """
-
-        :param response_:
-        """
-
-        if 'Ошибка авторизации' == response_['text']:
-            from handlers_tgBot import start
-            start(call.message)
-            return False
-        else:
-            menu.error(call)
-            return False
-
-    if response['status']:
-        allow_traffic = response['rests']
-    else:
-        log('❌ Ошибка response в функции profile файла commands - get_rests', 3)
-        log(response, 3)
-        auth_error_message(response)
-
+    try:
+        rests = api.get_rests()
+        stats = api.get_statistics()
+        balance = api.get_balance()
+        name = api.get_name()
+    except Exception as e:
+        log(f'Ошибка при запросе профиля: {e}', 3)
+        menu.error(call)
         return False
 
-    response = api.get_statistics(uid)
-
-    if response['status']:
-        statistics = response['response'].json()['data']
-    else:
-        log('❌ Ошибка response в функции profile файла commands - get_statistics', 3)
-        log(response, 3)
-        auth_error_message(response)
-
+    if not all([rests, stats, balance, name]):
+        log(f'Некорректные данные в профиле: rests={rests}, stats={stats}, balance={balance}, name={name}', 3)
+        menu.error(call)
         return False
 
-    response = api.get_balance(uid)
+    # Форматирование чисел
+    def fmt(num):
+        s = f"{int(num):,}".replace(',', "'")
+        return s
 
-    if response['status']:
-        balance = response['response'].json()['data']['value']
-    else:
-        log('❌ Ошибка response в функции profile файла commands - get_balance', 3)
-        log(response, 3)
-        auth_error_message(response)
+    answer = (
+        f"👤 *Профиль*\n\n"
+        f"Здравствуйте, {name['data']}!\n\n"
+        f"💰 *Баланс:* _{fmt(balance)}₽_\n"
+        f"✅ *Доступно:* {rests['data']} ГБ и {rests['voice']} МИН\n"
+        f"🛒 *Продано:* {fmt(stats['soldData']['value'])} ГБ и {fmt(stats['soldVoice']['value'])} МИН\n"
+        f"📈 *Доход:* {fmt(stats['totalIncome']['amount'])}₽\n"
+    )
 
-        return False
-
-    response = api.get_name(uid)
-
-    if response['status']:
-        username = response['response'].json()['data']
-    else:
-        auth_error_message(response)
-
-        return False
-
-    t2b(uid)  # Оно здесь, потому что сначала обновляются данные, потом копируются
-
-    if check:
-        balance = str(balance).split('.')
-        if len(str(balance[0])) > 3:
-            balance2 = list(balance[0])
-            balance2.insert(-3, "'")
-            balance = ''.join(balance2) + '\.' + balance[1]
-        else:
-            balance = balance[0] + '\.' + balance[1]
-
-        income = str(int(statistics["totalIncome"]["amount"]))
-
-        if len(str(income)) > 3:
-            income = list(income)
-            income.insert(-3, "'")
-            income = ''.join(income)
-
-        allow_data = str(int(statistics["soldData"]["value"]))
-
-        if len(allow_data) > 3:
-            allow_data = list(allow_data)
-            allow_data.insert(-3, "'")
-            allow_data = ''.join(allow_data)
-
-        allow_voice = str(int(statistics["soldVoice"]["value"]))
-
-        if len(allow_voice) > 3:
-            allow_voice = list(allow_voice)
-            allow_voice.insert(-3, "'")
-            allow_voice = ''.join(allow_voice)
-
-    answer = f'👤 *Профиль\.* \n\nЗдравствуйте, {username}\!\n\n'
-
-    answer += f'💰 *Баланс:* _{balance}₽_\n'
-    answer += f'✅ *Доступно:* {allow_traffic["data"]} ГБ и {allow_traffic["voice"]} МИН\.\n'
-    answer += f'🛒 *Продано:* {allow_data} ГБ\ и' \
-              f' {allow_voice} МИН\.\n'
-    answer += f'📈 *Доход:* {income}₽\.\n\n'
-    res = answer
-    return res
+    return answer
 
 
 def timer(answer, at, count, uid, call, DB):
@@ -416,7 +311,7 @@ def timer(answer, at, count, uid, call, DB):
     :param at: Время
     :param count: Количество повторений
     :param uid: ID пользователя
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     """
 
     rand_time = random.randint(0, 5)  # Рандомизация времени ожидания
@@ -453,170 +348,105 @@ def timer(answer, at, count, uid, call, DB):
     cache[uid]['status_lagg'] = 0
 
 
-def run_auto(call, type_=''):
+def run_auto(call, type_='sell'):
     """
-    Запуск работы бота.
+    Запускает авто-продажу или авто-поднятие.
 
-    :param call: Данные о команде или сообщении
-    :param type_: Тип работы ('sell' - продажа, 'top' - поднятие).
+    :param call: CallbackQuery
+    :param type_: 'sell' или 'top'
     """
-
     uid = call.from_user.id
     DB = t2b(uid)
-    api = get_api(DB['auth_login'])
+    api = get_api(uid)
 
-    if uid not in cache:  # Добавление аккаунта в кэш, если его нет
-        cache[uid] = {'status_lagg': 0, 'status_run_auto': 0}
+    if DB['stage_authorize'] != 3:
+        log("Пользователь не авторизован", 3)
+        menu.bot_active(call, "Авторизуйтесь, используя команду: /auth")
+        return
 
-    if DB and DB['stage_authorize'] == 3 and cache[uid]['status_run_auto'] == 0 and cache[uid]['status_lagg'] == 0:
-        count = 0
-        cache[uid]['status_run_auto'] = 1
-        seller_lot = [0, 0]
+    if cache.get(uid, {}).get('status_run_auto') == 1:
+        log("Автоматическая работа уже запущена", 3)
+        menu.bot_active(call, "Цикл уже запущен!")
+        return
 
-        while cache[uid]['status_run_auto'] == 1:
-            lots = get_lots_refresh(call)  # Список активных лотов
-            check_sell(call, uid, lots)  # Проверка (Продался ли лот)
+    cache[uid] = {'status_run_auto': 1, 'status_lagg': 0}
+    count = 0
+    seller_lot = [0, 0]
 
-            if count == 0:
-                seller_lot[0] = len(lots)
+    while cache[uid]['status_run_auto']:
+        lots = get_lots_refresh(call)  # Список активных лотов
+        check_sell(call, uid, lots)  # Проверка (Продался лота на факт продажи)
 
-            seller_lot[1] = len(lots)
+        if count == 0:
+            seller_lot[0] = len(lots)
+        seller_lot[1] = len(lots)
 
-            if count <= DB['config_repeat']:
+        if count >= DB['config_repeat'] and DB['config_repeat'] > 0:
+            break
 
-                if type_ == 'sell':
-
-                    response = api.sell_lot(uid, def_traffic[0])
-                    print(response)
-                    if response['status']:
-                        answer = 'Лот успешно выставлен\!'
-                        menu.bot_active(call, answer)
-                        time.sleep(2)
-                        at = DB['config_autotime']
-                        answer = 'Авто\-продажа работает\!\n'
-                        timer(answer, at, count, uid, call, DB)
-                    else:
-                        if 'Недостаточно трафика' == response['text']:
-                            answer = 'Недостаточно трафика\!'
-                            menu.bot_active(call, answer)
-                            time.sleep(2)
-                            stop(call)
-                        elif 'Ошибка авторизации' == response['text']:
-                            from handlers_tgBot import start
-                            start(call.message)
-                        else:
-                            menu.error(call)
-                        break
-                elif type_ == 'top':
-                    if len(lots) > 0:
-                        rand_id = random.randint(0, len(lots) - 1)
-                        lot_id = lots[f'{rand_id}']['id']
-                        if not lots[str(rand_id)]['status']:
-                            if lots[str(rand_id)]['status'] != 'revoked':
-
-                                if DB['config_repeat'] != 0:
-                                    count += 1
-                                if count <= DB['config_repeat']:
-                                    response = api.top(uid, lot_id)
-                                    if response:
-                                        if response['status']:
-                                            answer_lot = text_lot(lots, f'{rand_id}')
-                                            answer = f'Лот успешно поднят в топ\:\n\n{answer_lot}'
-                                            log('Лот поднят в топ!')
-                                            menu.bot_active(call, answer)
-                                            time.sleep(2)
-
-                                            at = DB['config_autotime']
-                                            answer = 'Авто\-поднятие работает\!\n'
-                                            timer(answer, at, count, uid, call, DB)
-                                        else:
-                                            if 'Ошибка авторизации' == response['text']:
-                                                from handlers_tgBot import start
-                                                start(call.message)
-                                                break
-                                            else:
-                                                answer = 'Данный лот уже продан\!' if 'is not in ACTIVE status.' in str(
-                                                    response['text']) else str(response['text'])
-                                                log(answer, 3)
-                                                menu.bot_active(call, answer)
-                                                time.sleep(2)
-                                else:
-                                    answer = f'Авто\-поднятие завершено\!'
-                                    answer += f'\nПродано: {seller_lot[0] - seller_lot[1]} лотов за сеанс\.'
-                                    log(answer)
-                                    menu.bot_active(call, answer, sell_check=True)
-                                    stop(call)
-                                    break
-
-                            else:
-                                answer = f'Попался удалённый лот\!'
-                                log(answer, 3)
-                                menu.bot_active(call, answer)
-                        else:
-                            answer = f'Попался лот находящийся уже в топе\!'
-                            log(answer, 3)
-                            menu.bot_active(call, answer)
-                    else:
-                        answer = f'Лотов нет\!\n\n'
-                        log(answer, 3)
-                        menu.bot_active(call, answer, )
-                        stop(call)
-                        break
+        if type_ == 'sell':
+            result = api.sell_lot(def_traffic[0])
+            if result:
+                menu.bot_active(call, "Лот успешно выставлен!")
+                time.sleep(2)
+                timer("Авто-продажа работает", DB['config_autotime'], count, uid, call, DB)
+            else:
+                menu.bot_active(call, "Ошибка при выставлении лота.")
+                stop(call)
+                break
+        elif type_ == 'top':
+            if lots:
+                rand_id = random.choice(list(lots.keys()))
+                lot_id = lots[rand_id]['id']
+                result = api.top(lot_id)
+                if result:
+                    menu.bot_active(call, f"Лот #{lot_id} успешно поднят!")
+                    time.sleep(2)
+                    timer("Авто-поднятие работает", DB['config_autotime'], count, uid, call, DB)
                 else:
-                    answer = 'Неверный тип запуска!'
-                    log(answer, 3)
-    else:
-        if not DB or DB['stage_authorize'] != 3:
-            answer = 'Авторизуйтесь, используя команду: /auth'
-            deauth(call)
-        elif cache[uid]['status_run_auto'] != 0:
-            answer = 'Цикл авто-продажи уже запущен\! cache[uid][\'status_run_auto\'] = 1'
-        elif cache[uid]['status_lagg'] != 0:
-            answer = 'Ожидание после выставления не окончено\! cache[uid][\'status_lagg\'] = 1'
-        else:
-            answer = 'Неизвестная ошибка в run_auto!'
+                    menu.bot_active(call, "Ошибка при поднятии в топ.")
+                    stop(call)
+                    break
+            else:
+                menu.bot_active(call, "Нет доступных лотов.")
+                stop(call)
+                break
 
-        log(answer, 3)
+        count += 1
+
+    stop(call)
 
 
 def stop(call):
     """
-    Остановка работы бота.
+    Остановка автоматической работы.
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     """
     uid = call.from_user.id
-    DB = t2b(uid)
-    api = get_api(DB['auth_login'])
+    cache[uid]['status_run_auto'] = 0
+    stop_timer[0] = True
 
-    if uid in cache:
-        cache[uid]['status_run_auto'] = 0
-        stop_timer[0] = True
-        time.sleep(1.5)  # Ожидание для безопасности
-        get_lots = api.get_lots(uid)
-        response = get_lots[0]
-        active_traffic = get_lots[1]
+    api = get_api(uid)
+    lots = api.get_active_lots()
+    if lots:
+        t2b(uid, {'list_lots': json.dumps(lots)}, 'u')
+    else:
+        log("Не удалось получить активные лоты", 3)
 
-        if response['status']:
-            data_upd = {'list_lots': json.dumps(active_traffic)}  # Обновление списка лотов
-            t2b(uid, data_upd, 'u')
-        else:
-            log(response['text'], 3)
-            menu.bot_active(call, response['text'])
-
-    res = menu.home(call)
-    return res
+    return menu.home(call)
 
 
 def remove_minutes_lots(call):
     """
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     """
 
     uid = call.from_user.id
     DB = t2b(uid)
-    api = get_api(DB['auth_login'])
+
+    api = get_api(uid)
     minutes = get_lots_refresh(call, delete_minutes=True)
     filtered_minutes = []
 
@@ -640,7 +470,7 @@ def remove_minutes_lots(call):
 def update_def_traffic(call):
     """
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     """
     uid = call.from_user.id
     DB = t2b(uid)
@@ -654,65 +484,44 @@ def update_def_traffic(call):
 
 def get_lots_refresh(call, delete_minutes=False):
     """
-    Получение списка активных лотов.
+    Получение активных лотов с возможностью фильтрации по типу
 
-    :param call: Данные о команде или сообщении
-    :param delete_minutes: bool об: удаляются ли минуты или нет. Умолчание: 'False'.
-    :return:
+    :param call: CallbackQuery
+    :param delete_minutes: bool, если True — фильтровать только минуты
     """
     uid = call.from_user.id
+    api = get_api(uid)
     DB = t2b(uid)
-    api = get_api(DB['auth_login'])
-    get_lots = api.get_lots(uid)
-    response = get_lots[0]['response']
-    active_lots = get_lots[1]
-    lots = {}
 
-    if response.ok:
-        data_upd = {'list_lots': json.dumps(response.json()['data'])}
-        t2b(uid, data_upd, 'u')
+    response = api.get_active_lots()
+    if not response:
+        log('Ошибка при получении лотов', 3)
+        return {}
 
-        data_upd = {'list_lots': json.dumps(active_lots)}
-        t2b(uid, data_upd, 'u')
-        DB = t2b(uid)
+    # Фильтрация
+    type_filter = 'min' if delete_minutes else ('gb' if DB['config_type'] == 'data' else 'min')
+    filtered = {str(i): lot for i, lot in enumerate(response) if lot['volume']['uom'] == type_filter}
 
-        all_lots = json.loads(DB['list_lots'])
+    # Сохраняем в БД (на всякий случай)
+    t2b(uid, {'list_lots': json.dumps(filtered)}, 'u')
 
-        i = 0
-        type_ = DB['config_type']
-        type_ = 'gb' if type_ == 'data' else 'min' if type_ == 'volume' else False
-
-        # Отсеивание нужного типа трафика
-        if type_:
-            for obj in all_lots:
-                if delete_minutes:
-                    type_ = 'min'
-                if all_lots[obj]['type'] == type_:
-                    lots[str(i)] = all_lots[obj]
-                    i += 1
-        else:
-            lots = all_lots
-
-        return lots
-
-    return lots
+    return filtered
 
 
 def check_sell(call, uid, lots):
     """
     Проверка на продажу лота
 
-    :param call: Данные о команде или сообщении.
+    :param call: CallbackQuery.
     :param uid: ID пользователя.
     :param lots: Список всех активных лотов.
     """
 
-    if uid in cache_lot:
-        if len(lots) < len(cache_lot[uid]):
-            answer = f'Лот продан\!'
-            menu.bot_active(call, answer, sell_check=True)
-            time.sleep(3)
-            return True
+    if uid in cache_lot and len(lots) < len(cache_lot[uid]):
+        log("Лот продан", 2)
+        menu.bot_active(call, "Лот продан!", sell_check=True)
+        time.sleep(2.5)
+        return True
 
     cache_lot[uid] = lots
     return False
@@ -720,25 +529,20 @@ def check_sell(call, uid, lots):
 
 def send_sms(call):
     """
-    Отправка СМС
-
-    :param call: Данные о команде или сообщении
+    Отправка SMS с кодом подтверждения
+    :param call: CallbackQuery
     """
-
     uid = call.from_user.id
-    data_upd = {'status_sms': 1, 'stage_authorize': 1}
-    t2b(uid, data_upd, 'u')
-    DB = t2b(uid)
-    api = get_api(DB['auth_login'])
-    response = api.send_sms(uid)
-    return response['status']
+    t2b(uid, {'status_sms': 1, 'stage_authorize': 1}, 'u')
+    result = Auth.stage_filter(call)
+    return bool(result)
 
 
 def delete_confirm(call, lid):
     """
     Подтверждение удаления лота.
 
-    :param call: Данные о команде или сообщении.
+    :param call: CallbackQuery.
     :param lid: ID лота.
     """
 
@@ -764,13 +568,14 @@ def delete_yes(call, lid):
     """
     Удаление лота.
 
-    :param call: Данные о команде или сообщении.
+    :param call: CallbackQuery.
     :param lid: ID лота.
     """
 
     uid = call.from_user.id
     DB = t2b(uid)
-    api = get_api(DB['auth_login'])
+
+    api = get_api(uid)
     response = api.delete(uid, lid)
 
     if response:
@@ -791,15 +596,16 @@ def edit_lots(call):
     """
     Меню редактирование лотов.
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     """
     uid = call.from_user.id
     DB = t2b(uid)
-    api = get_api(DB['auth_login'])
+
+    api = get_api(uid)
     get_lots = api.get_lots(uid)
     response = get_lots['response']
 
-    if response['status']:
+    if response:
         data_upd = {'list_lots': json.dumps(['active_traffic'])}
         t2b(uid, data_upd, 'u')
 
@@ -813,19 +619,20 @@ def redactor_lot(call, lid):
     """
     Редактирование лота.
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     :param lid: ID лота.
     """
     uid = call.from_user.id
     DB = t2b(uid)
-    api = get_api(DB['auth_login'])
+
+    api = get_api(uid)
 
     if uid not in cache:
         cache[uid] = {'status_lagg': 0, 'status_run_auto': 0}
     cache[uid]['lid'] = lid
 
     response = api.get_lots(uid)
-    if response['status']:
+    if response:
         data_upd = {'list_lots': json.dumps(response['active_traffic'])}
         t2b(uid, data_upd, 'u')
 
@@ -839,17 +646,18 @@ def redactor_lot(call, lid):
 def top(call, lid):
     """
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     :param lid:
     """
     uid = call.from_user.id
     DB = t2b(uid)
-    api = get_api(DB['auth_login'])
+
+    api = get_api(uid)
     lots = dict(json.loads(DB['list_lots']))
     response = api.top(uid, lid)
     lot = {}
     if response:
-        if response['status']:
+        if response:
             for i in lots:
                 lot[0] = i
                 if lots[i]['id'] == lid:
@@ -868,7 +676,7 @@ def top(call, lid):
 def name(call_, lid_):
     """
 
-    :param call_: Данные о команде или сообщении
+    :param call_: CallbackQuery
     :param lid_:
     """
     return call_, lid_
@@ -877,7 +685,7 @@ def name(call_, lid_):
 def price(call):
     """
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     """
 
     res = menu.price(call)
@@ -891,11 +699,12 @@ def price(call):
 def price_accept(call):
     """
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     """
     uid = call.from_user.id
     DB = t2b(uid)
-    api = get_api(DB['auth_login'])
+
+    api = get_api(uid)
     data = call.data
 
     lid = cache[uid]['lid']
@@ -920,7 +729,7 @@ def price_accept(call):
 def emoji(call, lid):
     """
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     :param lid:
     """
     res = menu.emoji(call, lid)
@@ -933,7 +742,7 @@ def emoji(call, lid):
 def save(call, lid):
     """
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     :param lid:
     """
     return call, lid
@@ -942,11 +751,12 @@ def save(call, lid):
 def up(call):
     """
 
-    :param call: Данные о команде или сообщении
+    :param call: CallbackQuery
     """
     uid = call.from_user.id
     DB = t2b(uid)
-    api = get_api(DB['auth_login'])
+
+    api = get_api(uid)
 
     lots = get_lots_refresh(call)
 
@@ -968,8 +778,12 @@ def up(call):
 
 
 def normalize_phone_number(number: str) -> str:
-    if number.startswith('8'):
-        return '7' + number[1:]
-    elif number.startswith('+7'):
+    """
+    Приведение номера к формату 79XXXXXXXXX
+    """
+    number = number.strip()
+    if number.startswith('+7'):
         return '7' + number[2:]
+    elif number.startswith('8'):
+        return '7' + number[1:]
     return number

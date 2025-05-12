@@ -3,7 +3,6 @@
 """
 import inspect
 
-
 def log(text, lvl: int = 1):
     """
     Функция логирования проекта.
