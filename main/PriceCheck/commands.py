@@ -189,6 +189,7 @@ class Settings:
         :param shop: Магазин
         :return:
         """
+
         temp = {'filename': TextInput(text=str(shop['filename']),
                                       size_hint_y=None,
                                       height="30dp"),
@@ -274,11 +275,17 @@ class Settings:
                 preset_shop = Settings.preset_shop(shop)
                 settings_main.data['shops'].append(preset_shop)
 
+
             for shop in settings_main.data['shops']:
                 settings_shop = ToolsAJob().SettingShopApp()
 
-                for obj in shop:
-                    settings_shop.ids.shop.add_widget(shop[obj])
+                settings_shop.file_name = ''
+                settings_shop.title = ''
+                settings_shop.price = ''
+                settings_shop.supplier = ''
+                #for obj in shop:
+                    #settings_shop.ids.shop.add_widget(shop[obj])
+
 
                 settings_main.ids.main.add_widget(settings_shop)
 
@@ -406,7 +413,9 @@ class Cart:
                                 cart_item.ids.buttonItem.on_release = main.add_to_cart
                         cart_item.ids.buttonItem.id = str(item) + 'cart'
 
-                        cart_item.ids.textItem.text = str(item['name'])
+                        cart_item.ids.name_field.text = str(item['name'])
+                        cart_item.ids.qty_field.text = "1"
+                        cart_item.add_product_card(item)
                         items_list.append(cart_item)
 
                 if len(items_list) > 0:  # Наполнение корзины товарами
@@ -415,7 +424,7 @@ class Cart:
                     for i in items_list:
                         cart_shop.ids.listItems.add_widget(i)
 
-                cart_main_app.ids.listShops.add_widget(cart_shop)
+                cart_main_app.ids.cart_items_box.add_widget(cart_shop)
             return cart_main_app
 
         main.dialog = content()
@@ -447,22 +456,25 @@ class Cart:
         """
 
     @staticmethod
-    def add_to_cart(main, instance):
+    def add_to_cart(name, instance):
         """
         Добавить товар в корзину.
         :param main: Класс интерфейса главного окна.
         :param instance: Товар, который необходимо добавить.
         """
 
+
         instance.icon = 'cart-remove'
         instance.icon_color = 'red'
-        instance.unbind(on_release=main.add_to_cart)
-        instance.bind(on_release=main.remove_from_cart)
+        instance.unbind(on_release=Cart.add_to_cart)
+        instance.bind(on_release=Cart.remove_from_cart)
         item = instance.id
+
         item = str_to_dict2(item)  # Конвертация строки в словарь
 
         if item not in get_cart():  # Если объекта нет в корзине
             add_cart(item)  # Отправка в корзину на сервер
+
 
     @staticmethod
     def remove_from_cart(main, instance):
@@ -473,8 +485,8 @@ class Cart:
         """
         instance.icon = 'cart-plus'
         instance.icon_color = 'blue'
-        instance.unbind(on_release=main.remove_from_cart)
-        instance.bind(on_release=main.add_to_cart)
+        instance.unbind(on_release=Cart.remove_from_cart)
+        instance.bind(on_release=Cart.add_to_cart)
         item = instance.id
         item = str_to_dict2(''.join(item.strip('cart')))  # Конвертация строки в словарь
 
@@ -491,8 +503,8 @@ class Cart:
         """
         instance.icon = 'cart-remove'
         instance.icon_color = 'red'
-        instance.unbind(on_release=main.add_to_cart_metro)
-        instance.bind(on_release=main.remove_from_cart_metro)
+        instance.unbind(on_release=Cart.add_to_cart_metro)
+        instance.bind(on_release=Cart.remove_from_cart_metro)
         item = instance.id
         item = str_to_dict1(item)  # Конвертация строки в словарь
 
@@ -510,8 +522,8 @@ class Cart:
         """
         instance.icon = 'cart-plus'
         instance.icon_color = 'blue'
-        instance.unbind(on_release=main.remove_from_cart_metro)
-        instance.bind(on_release=main.add_to_cart_metro)
+        instance.unbind(on_release=Cart.remove_from_cart_metro)
+        instance.bind(on_release=Cart.add_to_cart_metro)
         item = instance.id
         item = str_to_dict2(''.join(item.strip('cart')))  # Конвертация строки в словарь
 

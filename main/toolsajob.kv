@@ -57,195 +57,239 @@
                         size_hint_y: None
 
 
-<SettingsMain>
+<SettingsMain@MDDialog>:
     id: dialog
     size_hint_y: None
-    size_hint_max_y: .9
-    size_hint_min_y: .1
-
-    MDDialogHeadlineText:
-        text: 'Настройки'
-
-    MDDialogContentContainer:
-        MDBoxLayout:
-            orientation: 'vertical'
-            size_hint_y: None
-            height: '300dp'
-
-            MDBoxLayout:
-                size_hint_y: None
-                height: btn_refresh.height
-                orientation: 'horizontal'
-
-                MDIconButton:
-                    id: btn_refresh
-                    on_release: root.refresh(root)
-                    icon: "refresh"
-                    icon_color: btn
-                    line_color: btn
-
-            MDBoxLayout:
-                size_hint_y: None
-                height: checkbox_parser_metro.height
-                orientation: 'horizontal'
-
-                MDLabel:
-                    text: 'METRO: '
-                    size_hint_y: None
-                    height: checkbox_parser_metro.height
-                    halign: 'right'
-
-                MDCheckbox:
-                    id: checkbox_parser_metro
-                    size_hint: None, None
-                    width: self.width
-                    height: self.height
-
-            MDBoxLayout:
-                orientation: 'horizontal'
-                size_hint_y: None
-                height: 45
-
-                MDLabel:
-                    text: 'Имя файла'
-                MDLabel:
-                    text: 'Название'
-                MDLabel:
-                    text: 'Цена'
-                MDLabel:
-                    text: 'Тип'
-                MDLabel:
-                    text: 'Поставщик'
-                MDLabel:
-                    text: 'Горизонталь'
-                MDLabel:
-                    text: 'Вертикаль'
-                MDLabel:
-                    text: 'Поиск'
-
-            ScrollView:
-                do_scroll_x: False
-
-                MDBoxLayout:
-                    id: main
-                    orientation: 'vertical'
-                    spacing: 40
-                    padding: (0, 60, 0, 0)
-                    pos_hint: {"center_x": .5, "center_y": .5}
-                    adaptive_height: True
-                    size_hint_y: None
-                    minimum_height: self.height
-
-    MDDialogButtonContainer:
-        MDIconButton:
-            icon: 'plus'
-            on_release: root.add_shop(app.MainApp)
-
-        MDBoxLayout:
-
-        MDIconButton:
-            icon: 'close'
-            on_release: root.exit_settings(app.MainApp)
-            icon_color: 'red'
-            line_color: 'red'
-            text_color: 'red'
-
-        MDIconButton:
-            icon: 'check'
-            on_release: root.save_settings(app.MainApp)
-            icon_color: 'green'
-            line_color: 'green'
-            text_color: 'green'
-
-<SettingShop>
-    MDBoxLayout:
-        id: shop
-        orientation: 'horizontal'
-        size_hint_y: None
-        height: '80dp'
-        spacing: 2
-
-
-<CartMain>
-    size_hint_y: None
-    size_hint_max_y: .9
-    size_hint_min_y: .1
-
-    MDDialogHeadlineText:
-        text: 'Корзина'
-        halign: 'left'
-
-    MDDialogContentContainer:
-        MDBoxLayout:
-            orientation: 'vertical'
-            size_hint_y: None
-            height: 400
-            spacing: 12
-
-            ScrollView:
-                do_scroll_x: False
-                size: (1, 1)
-
-                MDBoxLayout:
-                    id: listShops
-                    orientation: 'vertical'
-                    padding: (0, 10, 0, 0)
-                    adaptive_height: True
-                    size_hint_y: None
-                    minimum_height: self.height
-
-    MDDialogButtonContainer:
-        MDBoxLayout:
-            MDIconButton:
-                icon: 'page-next'
-                on_release: root.edit
-                icon_color: 'green'
-                line_color: 'green'
-                text_color: 'green'
-
-<CartShop>
-    size_hint_y: None
-    height: 200
+    height: min(root.height, dp(600))
+    type: "custom"
+    radius: [12, 12, 12, 12]
 
     MDBoxLayout:
-        id: cartGlobal
-        orientation:'vertical'
-        spacing: "12dp"
+        orientation: "vertical"
+        padding: dp(20)
+        spacing: dp(12)
 
         MDLabel:
-            id:CartName
-            text: ''
+            text: "Настройки"
+            font_style: "H6"
+            halign: "center"
+            size_hint_y: None
+            height: self.texture_size[1]
 
-        MDBoxLayout:
-            orientation: 'horizontal'
+        ScrollView:
+            MDList:
+                OneLineAvatarIconListItem:
+                    text: "Обновить магазины"
+                    on_release: root.refresh(root)
+                    IconLeftWidget:
+                        icon: "refresh"
 
-            ScrollView:
-                do_scroll_x: False
-                size: (1, 1)
-                MDBoxLayout:
-                    id: listItems
-                    orientation: 'vertical'
-                    padding: (0, 10, 0, 0)
-                    adaptive_height: True
+                OneLineAvatarIconListItem:
+                    text: "METRO парсинг"
+                    IconLeftWidget:
+                        icon: "factory"
+                    RightCheckbox:
+                        id: checkbox_parser_metro
+                        active: False
+
+                MDSeparator:
+                    height: dp(1)
+
+                # Заголовок для таблицы
+                MDLabel:
+                    text: "Параметры магазина:"
+                    theme_text_color: "Secondary"
                     size_hint_y: None
+                    height: self.texture_size[1]
+
+                # Подписи к столбцам (можно адаптировать под реальные поля)
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: dp(30)
+
+                    MDLabel:
+                        text: "Имя файла"
+                    MDLabel:
+                        text: "Название"
+                    MDLabel:
+                        text: "Цена"
+                    MDLabel:
+                        text: "Тип"
+                    MDLabel:
+                        text: "Поставщик"
+                    MDLabel:
+                        text: "Горизонталь"
+                    MDLabel:
+                        text: "Вертикаль"
+                    MDLabel:
+                        text: "Поиск"
+
+                # Контейнер под элементы магазина
+                MDBoxLayout:
+                    id: main
+                    orientation: "vertical"
+                    adaptive_height: True
+                    spacing: dp(6)
+
+        # Кнопки снизу
+        MDBoxLayout:
+            spacing: dp(10)
+            padding: dp(10), 0
+            size_hint_y: None
+            height: dp(48)
+
+            MDIconButton:
+                icon: "plus"
+                on_release: root.add_shop(app.MainApp)
+
+            MDBoxLayout:
+                size_hint_x: 0.6
+
+            MDIconButton:
+                icon: "close"
+                icon_color: "red"
+                on_release: root.exit_settings(app.MainApp)
+
+            MDIconButton:
+                icon: "check"
+                icon_color: "green"
+                on_release: root.save_settings(app.MainApp)
+
+<SettingShop>:
+    id: shop
+    file_name: '12'
+    title: ''
+    price: ''
+    supplier: ''
+
+    MDBoxLayout:
+        orientation: 'horizontal'
+        spacing: dp(8)
+        padding: dp(8)
+        size_hint_y: None
+        height: dp(56)
+        md_bg_color: [1, 1, 1, 0.04]
+
+        ScrollView:
+            do_scroll_x: True
+            bar_width: dp(2)
+
+            MDBoxLayout:
+                orientation: 'horizontal'
+                size_hint_x: None
+                width: self.minimum_width
+                spacing: dp(12)
+
+                MDLabel:
+                    text: root.file_name
+                    size_hint_x: None
+                    width: self.texture_size[0]
+                    theme_text_color: "Primary"
+
+                MDLabel:
+                    text: root.title
+                    size_hint_x: None
+                    width: self.texture_size[0]
+                    theme_text_color: "Primary"
+
+                MDLabel:
+                    text: root.price
+                    size_hint_x: None
+                    width: self.texture_size[0]
+                    theme_text_color: "Primary"
+
+                MDLabel:
+                    text: root.supplier
+                    size_hint_x: None
+                    width: self.texture_size[0]
+                    theme_text_color: "Primary"
 
 
 
-<CartItem>
+<CartMain@MDDialog>:
+    id: cart_main
     size_hint_y: None
-    height: 30
-    orientation: 'horizontal'
+    height: dp(300) #min(root.height, dp(600))
+    type: "custom"
+    radius: [12, 12, 12, 12]
+
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(20)
+        spacing: dp(12)
+
+        MDLabel:
+            text: "Корзина"
+            font: "H5"
+            halign: "center"
+            size_hint_y: None
+            height: self.texture_size[1]
+
+        ScrollView:
+            MDBoxLayout:
+                id: cart_items_box
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(8)
+
+        MDButtonText:
+            text: "Оформить заказ"
+            pos_hint: {"center_x": 0.5}
+            #on_release: root.confirm_checkout()
+
+<CartShop@MDCard>:
+    orientation: "vertical"
+    padding: dp(10)
+    size_hint_y: None
+    height: self.minimum_height
+    #md_bg_color: app.theme_cls.bg_light
 
     MDLabel:
-        id: textItem
-        text: ''
-        allow_selection: True
-        allow_copy: True
+        id: CartName
+        text: "Магазин"
+        #font_style: "Subtitle1"
+        size_hint_y: None
+        height: self.texture_size[1]
+
+    ScrollView:
+        do_scroll_x: False
+        MDList:
+            id: listItems
+
+
+<CartItem@MDBoxLayout>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: "60dp"
+    spacing: "8dp"
+    padding: "8dp"
+
+    MDTextField:
+        id: name_field
+        text: "" #root.item_name
+        hint_text: "Название"
+        #mode: "rectangle"
+        size_hint_x: .55
+        multiline: False
+        on_text_validate: root.update_name(self.text)
+
+    MDTextField:
+        id: qty_field
+        text: "1" #str(root.item_quantity)
+        hint_text: "Кол-во"
+        #mode: "rectangle"
+        size_hint_x: .25
+        #input_filter: 'int'
+        multiline: False
+        on_text_validate: root.update_quantity(self.text)
 
     MDIconButton:
         id: buttonItem
-        text: ' '
-        line_color: 'white'
+        icon: "delete"
+        icon_color: "red"
+        on_release: root.remove_self()
 
 <ItemObj>
     MDListItem:

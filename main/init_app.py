@@ -9,11 +9,13 @@ import PriceCheck.commands
 
 MainApp = App.get_running_app()
 
+from kivy.properties import StringProperty, NumericProperty, ObjectProperty
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.uix.tooltip import MDTooltip
+from kivymd.uix.card import MDCard
 
 from check_files import check_and_create as cac
 
@@ -31,6 +33,7 @@ class SettingsMain(MDDialog):
     """
     Класс инициализации kv класса диалогового окна с настройками.
     """
+
     def __init__(self):
         super(SettingsMain, self).__init__()
         self.data = {'shops': []}
@@ -56,20 +59,28 @@ class SettingsMain(MDDialog):
         """
         commands.Settings.exit(temp_main)
 
-    @staticmethod
-    def refresh(main):
-        PriceCheck.commands.Settings.refresh(main)
+    def refresh(self):
+        """
+            Обновить кэш с прайс-листами.
+        """
+
+        asyncio.ensure_future(refresh(self))
 
 
 class SettingShop(MDBoxLayout):
     """
         Класс инициализации kv класса c строкой конфига магазина.
     """
+    file_name = StringProperty()
+    title = StringProperty()
+    price = StringProperty()
+    supplier = StringProperty()
+
     def one(self):
-        """
-            Пустая функция.
-        """
         pass
+
+
+
 
 
 class ItemObj(MDBoxLayout):
@@ -78,6 +89,7 @@ class ItemObj(MDBoxLayout):
             Вызывается многократно, исходя из количества найденных товаров.
             todo реализовать выбор количества товара, по умолчанию должно стоять значение минимального количество для заказа
     """
+
     def one(self):
         """
             Пустая функция.
@@ -89,6 +101,7 @@ class CartMain(MDDialog):
     """
                 Класс инициализации kv класса диалогового окна с корзиной.
     """
+
     def one(self):
         """
             Пустая функция.
@@ -97,26 +110,56 @@ class CartMain(MDDialog):
 
 
 class CartShop(MDBoxLayout):
-    """
-                Класс инициализации kv класса одного магазина.
-                Вызывается многократно, исходя из количества магазинов.
-    """
-    def one(self):
-        """
-            Пустая функция.
-        """
-        pass
+    def _init_(self, **kwargs):
+        super()._init_(**kwargs)
+        self.cart_items = []
 
+    def add_product_card(self, item_data):
+        card = CartItem(
+            item_data=item_data,
+            on_update=self.update_item_data,
+            on_remove=self.remove_item_card
+        )
+        self.ids.listItems.add_widget(card)
+        self.cart_items.append(card)
+
+    def update_item_data(self, updated_data):
+        # Тут можно обновлять JSON-файл, словарь или отправить на сервер
+        print("Обновлено:", updated_data)
+
+    def remove_item_card(self, item_widget):
+        self.ids.listItems.remove_widget(item_widget)
+        self.cart_items.remove(item_widget)
 
 class CartItem(MDBoxLayout):
-    """
-                Класс инициализации kv класса с одним товаром, для одного магазина.
-                Вызывается многократно, для одного товара для каждых магазинов.
-    """
-    def one(self):
-        """
-            Пустая функция.
-        """
+    def _init_(self, item_data, on_update=None, on_remove=None, **kwargs):
+        super()._init_(**kwargs)
+        self.item_name = item_data.get('name', '')
+        self.item_quantity = item_data.get('quantity', 1)
+        self.item_data = item_data
+        self.on_update = on_update
+        self.on_remove = on_remove
+
+    def update_name(self, new_name):
+        self.item_name = new_name
+        self.item_data['name'] = new_name
+        if self.on_update:
+            self.on_update(self.item_data)
+
+    def update_quantity(self, new_qty):
+        try:
+            self.item_quantity = int(new_qty)
+            self.item_data['quantity'] = int(new_qty)
+            if self.on_update:
+                self.on_update(self.item_data)
+        except ValueError:
+            pass
+
+    def remove_self(self):
+        if self.on_remove:
+            self.on_remove(self)
+
+    def add_product_card(self, item):
         pass
 
 
@@ -124,6 +167,7 @@ class Plain(MDTooltip):
     """
                 Класс инициализации kv класса для всплывающих уведомлений.
     """
+
     def one(self):
         """
             Пустая функция.
@@ -135,6 +179,7 @@ class Main(MDBoxLayout):
     """
                 Класс инициализации kv класса главного окна.
     """
+
     def __init__(self):
         super(Main, self).__init__()
         self.base_price = []  # Кэш прайсов
@@ -211,7 +256,7 @@ class Main(MDBoxLayout):
         commands.Cart.edit(self, instance)
 
     @staticmethod
-    def settings_open(add:bool=False):
+    def settings_open(add: bool = False):
         """
         Открыть диалоговое окно с настройками.
         :param add:
@@ -246,12 +291,6 @@ class Main(MDBoxLayout):
         """
         commands.Base.notify(text)
 
-    def refresh(self):
-        """
-            Обновить кэш с прайс-листами.
-        """
-
-        asyncio.ensure_future(refresh(self))
 
 
 class ToolsAJob(MDApp):
@@ -259,6 +298,7 @@ class ToolsAJob(MDApp):
     Класс запуска самого приложения и подрузка всех классов интерфейса.
     todo Оптимизировать логику работы.
     """
+
     def __init__(self):
         super().__init__()
         self.CartItemsApp = None
@@ -268,7 +308,6 @@ class ToolsAJob(MDApp):
         self.CartMainApp = None
         self.SettingsMainApp = None
         self.MainApp = None
-
 
     def build(self):
         self.MainApp = Main()
