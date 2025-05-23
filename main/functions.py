@@ -42,10 +42,11 @@ async def background_load(self):
 
         with open('data/cache_prices.json') as f:
             result = json.load(f)
-            result_filtered = filter_shops(result['cache'])
+            if result['cache']:
+                result_filtered = filter_shops(result['cache'])
 
-            self.base_price = result_filtered
-            log('Прайс загружен в кэш!')
+                self.base_price = result_filtered
+                log('Прайс загружен в кэш!')
 
         try:
             with open('data/cache_cart.json', 'w') as f:
@@ -107,12 +108,13 @@ async def refresh(self):
         from PriceCheck.read_doc import scanner
         scanner()
 
-        log('Сканирование прайсов запущено!')
+        log('Сканирование кэша прайсов запущено!')
         with open('data/cache_prices.json') as f:
             result = json.load(f)
-            result_filtered = filter_shops(result)
+            print(result)
+            result_filtered = filter_shops(result['cache'])
             self.base_price = result_filtered
-            log('Отсканированы файлы и обновлён кэш!')
+            log('Отсканирован кэш и подгружен в оперативку!')
 
         with open('data/config.json') as f:
             data = json.load(f)
@@ -161,8 +163,9 @@ async def remove_from_cart(item, parse_metro):
 
 def filter_shops(items: list):
     """
-    Фильтр какой-то
-    :param items:
+    Фильтр активных магазинов для кэша
+
+    :param items: Кэшированные объекты
     :return:
     """
     shops = []
@@ -170,13 +173,14 @@ def filter_shops(items: list):
 
     with open('data/config.json') as f:
         config = json.load(f)
-        for shop in config['shops']:
-            if shop['active']:
-                shops.append(shop['seller'])
+        for shop in config['shops_params']:
+            if shop['status']:
+                shops.append(shop['title'])
 
-    for item in items:
-        if item['seller'] in shops:
-            items_filtered.append(item)
+    if shops:
+        for item in items:
+            if item['title'] in shops:
+                items_filtered.append(item)
 
     return items_filtered
 

@@ -7,9 +7,12 @@ from kivy.app import App
 
 import PriceCheck.commands
 
+import kivymd
+
+print(kivymd.__version__)
 MainApp = App.get_running_app()
 
-from kivy.properties import StringProperty, NumericProperty, ObjectProperty
+from kivy.properties import StringProperty, NumericProperty, ObjectProperty, BooleanProperty
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.dialog import MDDialog
@@ -38,12 +41,13 @@ class SettingsMain(MDDialog):
         super(SettingsMain, self).__init__()
         self.data = {'shops': []}
 
-    def add_shop(self, temp_main):
+    def add_shop(self, SettingShopApp):
         """
 
-        :param temp_main:
+        :param SettingShopApp:
         """
-        commands.Settings.add_shop(temp_main)
+
+        self.ids.main.add_widget(SettingShopApp())
 
     def save_settings(self, temp_main):
         """
@@ -67,20 +71,29 @@ class SettingsMain(MDDialog):
         asyncio.ensure_future(refresh(self))
 
 
-class SettingShop(MDBoxLayout):
+class SettingShop(MDCard):
     """
         Класс инициализации kv класса c строкой конфига магазина.
     """
-    file_name = StringProperty()
-    title = StringProperty()
-    price = StringProperty()
-    supplier = StringProperty()
 
-    def one(self):
-        pass
+    filename = StringProperty("")
+    title = StringProperty("")
+    dist_h = StringProperty("")
+    dist_w = StringProperty("")
+    dist_text = StringProperty("")
+    price_w = StringProperty("")
+    product_name_w = StringProperty("")
+    packaging_w = StringProperty("")
+    status = BooleanProperty()
 
+    def update_value(self, filename, value):
+        setattr(self, filename, value)
+        print(f"[UPDATE] {filename} изменено на: {value}")
+        # Здесь можно обновить JSON/базу/кэш
 
-
+    def remove_self(self):
+        if self.parent:
+            self.parent.remove_widget(self)
 
 
 class ItemObj(MDBoxLayout):
@@ -110,8 +123,8 @@ class CartMain(MDDialog):
 
 
 class CartShop(MDBoxLayout):
-    def _init_(self, **kwargs):
-        super()._init_(**kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.cart_items = []
 
     def add_product_card(self, item_data):
@@ -131,9 +144,10 @@ class CartShop(MDBoxLayout):
         self.ids.listItems.remove_widget(item_widget)
         self.cart_items.remove(item_widget)
 
+
 class CartItem(MDBoxLayout):
-    def _init_(self, item_data, on_update=None, on_remove=None, **kwargs):
-        super()._init_(**kwargs)
+    def __init__(self, item_data, on_update=None, on_remove=None, **kwargs):
+        super().__init__(**kwargs)
         self.item_name = item_data.get('name', '')
         self.item_quantity = item_data.get('quantity', 1)
         self.item_data = item_data
@@ -261,7 +275,7 @@ class Main(MDBoxLayout):
         Открыть диалоговое окно с настройками.
         :param add:
         """
-        commands.Settings.open(add)
+        commands.Settings.open()
 
     def func_dialog_save_enter(self, key, *args, **kwargs):
         """
@@ -292,7 +306,6 @@ class Main(MDBoxLayout):
         commands.Base.notify(text)
 
 
-
 class ToolsAJob(MDApp):
     """
     Класс запуска самого приложения и подрузка всех классов интерфейса.
@@ -310,21 +323,25 @@ class ToolsAJob(MDApp):
         self.MainApp = None
 
     def build(self):
+        # self.theme_cls.themeStyle = "gray"
+        # self.theme_cls.primaryPalette = "blue"
+        # self.theme_cls.error_color = "red"
+
+        print(self.theme_cls.backgroundColor)
+
         self.MainApp = Main()
 
         self.SettingsMainApp = SettingsMain
 
-        self.CartMainApp = CartMain
-
         self.SettingShopApp = SettingShop
 
-        self.ItemObjApp = ItemObj
+        self.CartMainApp = CartMain
 
         self.CartShopApp = CartShop
 
         self.CartItemsApp = CartItem
 
-        # self.PlainApp = Plain()
+        self.ItemObjApp = ItemObj
 
         return self.MainApp
 

@@ -34,7 +34,7 @@ def read(filename):  # Чтение таблицы
 
     try:
         with open(path, encoding='utf-8'):
-            pass
+            log(f'Файл "{filename}" найден!')
     except FileNotFoundError:
         response = False
         log(f'Файл "{filename}" не найден!', 2)
@@ -64,53 +64,58 @@ def xls(workbook):
     [{'name': 'Наименование', 'cost': 'Цена', 'type': 'Вид фасовки', 'seller': 'Название поставщика'}, ...]
     """
     items = []
-    sid = False
-    seller = False
+    price_w = False
+    product_name_w = False
+    packaging_w = False
+    title = False
     end_time = 0
-    for i in data['shops']:
-        for i2 in workbook.sheets():
-            worksheet = workbook.sheet_by_index(workbook.sheets().index(i2))
-            findname = str(worksheet.cell_value(i['findname'][0], i['findname'][1])).lower()
-            if i['findtext'].lower() in findname:
-                sid = i['sid']
-                seller = i['seller']
+
+    for shop in data['shops_params']:
+        for param in workbook.sheets():
+            worksheet = workbook.sheet_by_index(workbook.sheets().index(param))
+            dist_text = str(worksheet.cell_value(shop['dist_w'], shop['dist_h'])).lower()
+            if shop['dist_text'].lower() in dist_text:
+                price_w = shop['price_w']
+                product_name_w = shop['product_name_w']
+                packaging_w = shop['packaging_w']
+                title = shop['title']
                 break
 
-    if isinstance(sid, list):
-        for i2 in workbook.sheets():
-            worksheet = workbook.sheet_by_index(workbook.sheets().index(i2))
-            for i in range(0, worksheet.utter_max_rows):  # Чтение строк
+    if title:
+        for sheet in workbook.sheets():
+            worksheet = workbook.sheet_by_index(workbook.sheets().index(sheet))
+            for line in range(0, worksheet.utter_max_rows):  # Чтение строк
                 item = {}
                 try:
                     # Проверка наличия индексов
-                    str(worksheet.cell_value(i, sid[0]))
-                    str(worksheet.cell_value(i, sid[1]))
-                    str(worksheet.cell_value(i, sid[2]))
+                    str(worksheet.cell_value(line, price_w))
+                    str(worksheet.cell_value(line, product_name_w))
+                    str(worksheet.cell_value(line, packaging_w))
                 except IndexError:
                     if end_time == 5:
-                        log(f'Конец документа. Страница: {i2}')
+                        log(f'Конец документа. Страница: {sheet}')
                         break
                     end_time += 1
                 else:
-                    item['name'] = str(worksheet.cell_value(i, sid[0]))
-                    item['seller'] = seller
-                    if item['name'] != 'None':
-                        end_time = 0
-                    item['name'] = ''.join(item['name'].split(','))  # Удаление запятых из названия
-                    item['cost'] = str(worksheet.cell_value(i, sid[1]))
-                    if sid[2] != -1:
-                        item['type'] = str(worksheet.cell_value(i, sid[2]))
-                    else:
-                        item['type'] = ''
+                    item['product_name'] = str(worksheet.cell_value(line, product_name_w))
+                    item['title'] = title
 
-                    if item['cost'] == '' or item['cost'] is None:
-                        item['cost'] = 'категория'
+                    if item['product_name'] != 'None':
+                        end_time = 0
+
+                    item['product_name'] = ''.join(item['product_name'].split(','))  # Удаление запятых из названия
+                    item['price'] = str(worksheet.cell_value(line, price_w))
+                    if packaging_w != -1:
+                        item['packaging'] = str(worksheet.cell_value(line, packaging_w))
+                    else:
+                        item['packaging'] = ''
+
+                    if item['price'] == '' or item['price'] is None:
+                        item['price'] = 'категория'
                     else:
                         items.append(item)
     else:
-        items = False
-        error_text = 'Не найдено имя поставщика в таблице!'
-        log(error_text, 3)
+        log('Не найдено имя поставщика в таблице!', 3)
 
     return items
 
@@ -124,72 +129,76 @@ def xlsx(workbook):
     :return: Список прочитанных товаров
     [{'name': 'Наименование', 'cost': 'Цена', 'type': 'Вид фасовки', 'seller': 'Название поставщика'}, ...]
     """
+
     sheet_names = workbook.sheetnames
     items = []
-    sid = False
-    seller = False
-    type_n = None
-
+    price_w = False
+    product_name_w = False
+    packaging_w = False
+    title = False
     end_time = 0
-    for i in data['shops']:
-        for i2 in sheet_names:
-            worksheet = workbook[i2]
+
+    for shop in data['shops_params']:
+        for sheet in sheet_names:
+            worksheet = workbook[sheet]
+            print(f'Shop БЛЯДЬ:   {shop}')
             try:
-                findname = str(worksheet[h[i['findname'][0]]][i['findname'][1]].value).lower()
-                if i['findtext'].lower() in findname:
-                    sid = (h[i['sid'][0]], h[i['sid'][1]])
-                    seller = i['seller']
-                    type_n = i['sid'][2]
+                dist_text = str(worksheet[h[shop['dist_w']]][shop['dist_h']].value).lower()
+                if shop['dist_text'].lower() in dist_text:
+                    price_w = shop['price_w']
+                    product_name_w = shop['product_name_w']
+                    packaging_w = shop['packaging_w']
+                    title = shop['title']
                     break
             except IndexError as e:
                 log(e, 2)
-                log(i, 2)
+                log(shop, 2)
 
-    if isinstance(sid, list):
-        for i2 in sheet_names:
-            worksheet = workbook[i2]
-            for i in range(0, 1000):  # Чтение строк
+    if title:
+        for sheet in sheet_names:
+            worksheet = workbook[sheet]
+            for line in range(0, 1000):  # Чтение строк
                 item = {}
                 try:
                     # Проверка наличия индексов
-                    str(worksheet[f'{sid[0]}'][i].value)
-                    str(worksheet[f'{sid[1]}'][i].value)
-                    str(worksheet[f'{sid[2]}'][i].value)
+                    str(worksheet[f'{price_w}'][line].value)
+                    str(worksheet[f'{product_name_w}'][line].value)
+                    str(worksheet[f'{packaging_w}'][line].value)
                 except IndexError:
                     if end_time == 5:
-                        item['seller'] = seller
+                        item['title'] = title
                         break
                     end_time += 1
                 else:
-                    name = str(worksheet[f'{sid[0]}'][i].value)
-                    cost = str(worksheet[f'{sid[1]}'][i].value)
+                    product_name = str(worksheet[f'{product_name_w}'][line].value)
+                    price = str(worksheet[f'{price_w}'][line].value)
 
-                    if 'мороженое' in str(name).lower():
+                    if 'мороженое' in str(product_name).lower():
                         break
 
-                    item['seller'] = seller
-                    item['name'] = str(name)
+                    item['title'] = title
+                    item['product_name'] = str(product_name)
 
-                    if item['name'] != 'None':
+                    if item['product_name'] != 'None':
                         end_time = 0
 
-                    item['name'] = ''.join(item['name'].split(','))  # Удаление запятых из названия
+                    item['product_name'] = ''.join(item['product_name'].split(','))  # Удаление запятых из названия
 
                     try:
-                        item['cost'] = cost
+                        item['price'] = price
                     except:
-                        item['cost'] = ''
+                        item['price'] = ''
 
-                    if type_n != -1:
+                    if packaging_w != -1:
                         try:
-                            item['type'] = str(worksheet[f'{sid[2]}'][i].value)
+                            item['packaging'] = str(worksheet[f'{packaging_w}'][line].value)
                         except:
-                            item['type'] = 'хз'
+                            item['packaging'] = 'хз'
                     else:
-                        item['type'] = ''
+                        item['packaging'] = ''
 
-                    if item['cost'] == '':
-                        item['cost'] = 'категория'
+                    if item['price'] == '':
+                        item['price'] = 'категория'
 
                     items.append(item)
     else:
@@ -199,7 +208,7 @@ def xlsx(workbook):
     return items
 
 
-def filter_names(name:str = ''):
+def filter_names(name: str = ''):
     """
     Фильтрация наименований, с целью приведения отличающихся имён одинаковых товаров к единому формату.
     :param name: Наименование товара.
@@ -250,20 +259,20 @@ def scanner():
 
     items = []
     result = {'cache': []}
+    for file in data['shops_params']:  # Итерация по поставщикам
+        print(f'Файл типа того: {file}')
+        if file['filename'] in os.listdir('data/prices'):  # Проверка наличия документа с прайс-листом.
+            table = read(file['filename'])  # Сканирование документа.
 
-    for file in data['shops']: # Итерация по поставщикам
-        if file['filename'] in os.listdir('data/prices'): # Проверка наличия документа с прайс-листом.
-            table = read(file['filename']) # Сканирование документа.
+            if table:  # Проверка на успешность сканирования.
+                for i in table:  # Итерация по строкам в документе
+                    items.append(i)  # Пополнение списка с товарами.
 
-            if table: # Проверка на успешность сканирования.
-                for i in table: # Итерация по строкам в документе
-                    items.append(i) # Пополнение списка с товарами.
+    for item in items:  # Итерация по списку товаров.
+        item["product_name"] = filter_names(item["product_name"])  # Фильтр названий
 
-    for i in items: # Итерация по списку товаров.
-        i["name"] = filter_names(i["name"]) # Фильтр названий
-
-        if i['name']: # Проверка успешности фильтрации
-            result['cache'].append(i) # Пополнение итогового списка.
+        if item['product_name']:  # Проверка успешности фильтрации
+            result['cache'].append(item)  # Пополнение итогового списка.
 
     def key(price):
         """
@@ -273,7 +282,7 @@ def scanner():
         :return:
         """
         try:
-            return float(price['cost'])
+            return float(price['price'])
         except TypeError:
             return 0
         except KeyError:
@@ -288,4 +297,5 @@ def scanner():
         json.dump(result, file)
         log('Сохранение прайса в кэш.')
 
+    print(f'Сканирование документов завершено успешно вроде как, сам смотри: {result}')
     return result

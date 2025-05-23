@@ -9,6 +9,9 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.metrics import dp
 from kivy.uix.textinput import TextInput
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.label import MDLabel
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.uix.snackbar import (MDSnackbar,
                                  MDSnackbarSupportingText,
@@ -182,63 +185,7 @@ class Settings:
     """
 
     @staticmethod
-    def preset_shop(shop):
-        """
-        Генерация формы с настройками магазина.
-
-        :param shop: Магазин
-        :return:
-        """
-
-        temp = {'filename': TextInput(text=str(shop['filename']),
-                                      size_hint_y=None,
-                                      height="30dp"),
-
-                'sid_w': TextInput(text=str(shop['sid'][0]),
-                                   size_hint_x=None,
-                                   width="22dp",
-                                   size_hint_y=None,
-                                   height="30dp"),
-
-                'sid_h': TextInput(text=str(shop['sid'][1]),
-                                   size_hint_x=None,
-                                   width="22dp",
-                                   size_hint_y=None,
-                                   height="30dp"),
-
-                'sid_t': TextInput(text=str(shop['sid'][2]),
-                                   size_hint_x=None,
-                                   width="22dp",
-                                   size_hint_y=None,
-                                   height="30dp"),
-
-                'seller': TextInput(text=shop['seller'],
-                                    size_hint_y=None,
-                                    height="30dp"),
-
-                'findname_w': TextInput(text=str(shop['findname'][0]),
-                                        size_hint_x=None,
-                                        width="22dp",
-                                        size_hint_y=None,
-                                        height="30dp"),
-
-                'findname_h': TextInput(text=str(shop['findname'][1]),
-                                        size_hint_x=None,
-                                        width="22dp",
-                                        size_hint_y=None,
-                                        height="30dp"),
-
-                'findtext': TextInput(text=shop['findtext'],
-                                      size_hint_y=None,
-                                      height="30dp"),
-
-                'active': MDCheckbox(active=shop['active'],
-                                     size_hint_x=None,
-                                     width="25dp")}
-        return temp
-
-    @staticmethod
-    def open(add: bool):
+    def open():
         """
         Вызов генерирования и открытия диалогового окна с настройками.
         :param add: True - Создаёт новую строку для интеграции нового поставщика. По умолчанию - False.
@@ -256,36 +203,25 @@ class Settings:
 
             :return:
             """
+
             settings_main.data['shops'] = []
 
             with open('data/config.json', encoding='utf-8') as f:
                 data = json.load(f)
 
-            if add:
-                new_shop = {"filename": "Введите имя файла",
-                            "sid": [0, 0, 0],
-                            "seller": "Введите название поставщика",
-                            "findname": [0, 0],
-                            "findtext": "Введите слово для поиска",
-                            "active": False}
 
-                data["shops"].append(new_shop)
-
-            for shop in data["shops"]:
-                preset_shop = Settings.preset_shop(shop)
-                settings_main.data['shops'].append(preset_shop)
-
-
-            for shop in settings_main.data['shops']:
+            for shop in data["shops_params"]:
                 settings_shop = ToolsAJob().SettingShopApp()
 
-                settings_shop.file_name = ''
-                settings_shop.title = ''
-                settings_shop.price = ''
-                settings_shop.supplier = ''
-                #for obj in shop:
-                    #settings_shop.ids.shop.add_widget(shop[obj])
-
+                settings_shop.filename = shop["filename"]
+                settings_shop.title = shop["title"]
+                settings_shop.dist_h = str(shop["dist_h"])
+                settings_shop.dist_w = str(shop["dist_w"])
+                settings_shop.dist_text = shop["dist_text"]
+                settings_shop.price_w = str(shop["price_w"])
+                settings_shop.product_name_w = str(shop["product_name_w"])
+                settings_shop.packaging_w = str(shop["packaging_w"])
+                settings_shop.status = bool(shop["status"])
 
                 settings_main.ids.main.add_widget(settings_shop)
 
@@ -296,17 +232,6 @@ class Settings:
 
         main.dialog.open()
 
-    # noinspection PyUnusedLocal
-    @staticmethod
-    def add_shop(main):
-        """
-        Создание формы, для интеграции нового поставщика.
-
-        :param main: Класс главного окна.
-        """
-
-        main.settings_open(None, add=True)
-
     @staticmethod
     def save(settings_main, main):
         """
@@ -316,37 +241,34 @@ class Settings:
         :param main: Класс интерфейса главного окна.
         """
 
-        with open('data/config.json', 'a', encoding='utf-8') as f:
+        with open('data/config.json', 'r+', encoding='utf-8') as f:
             data = json.load(f)
-            data["shops"] = []
+            data["shops_params"] = []
             data['metro_active'] = main.checkbox_parser_metro.active
 
-            for shop in settings_main.data['shops']:
-                sid_w = shop['sid_w'].text
-                sid_h = shop['sid_h'].text
-                sid_t = shop['sid_t'].text
-                seller = shop['seller'].text
-                findname_w = shop['findname_w'].text
-                findname_h = shop['findname_h'].text
-                findtext = shop['findtext'].text
-                active = shop['active'].active
+            print(f'Итерация по списку: {settings_main.ids.main.children}')
+            for shop in reversed(settings_main.ids.main.children):
 
-                data["shops"].append(
-                    {'filename': shop['filename'].text,
-                     'sid': (int(sid_w),
-                             int(sid_h),
-                             int(sid_t)),
-                     'seller': seller,
-                     'findname': (int(findname_w),
-                                  int(findname_h)),
-                     'findtext': findtext,
-                     'active': active})
+                data["shops_params"].append({
+                    "filename": shop.ids.get("filename_field").text,
+                    "title": shop.ids.get("title_field").text,
+                    "dist_h": int(shop.ids.get("dist_h_field").text),
+                    "dist_w": int(shop.ids.get("dist_w_field").text),
+                    "dist_text": shop.ids.get("dist_text_field").text,
+                    "price_w": int(shop.ids.get("price_w_field").text),
+                    "product_name_w": int(shop.ids.get("product_name_w_field").text),
+                    "packaging_w": int(shop.ids.get("packaging_w_field").text),
+                    "status": bool(shop.ids.get("status_field").active)
+                })
+
             # noinspection PyTypeChecker
+            f.seek(0)  # Возвращение к началу файла для записи
             json.dump(data, f)
+            f.truncate()  # Удаление остатка старого файла
 
         with open('data/cache_prices.json', encoding='utf-8') as f:
             result = json.load(f)
-            result_filtered = filter_shops(result)
+            result_filtered = filter_shops(result["cache"])
             main.base_price = result_filtered
             log('Кэш прайса обновлён!')
 
@@ -373,61 +295,39 @@ class Cart:
 
     @staticmethod
     def open():
-        """
-        Открытие диалогового окна с корзиной.
-        """
-        main = ToolsAJob().MainApp
-        # Открытие корзины
+        app = ToolsAJob()
+        main = app.MainApp
+        cart_main_layout = app.CartMainApp()
 
-        if main.dialog:  # Закрыть диалоговое окно, если оно открыто
+        if main.dialog:
             main.dialog.dismiss()
 
-        def content():
-            """
-            Генерация диалогового окна.
-            :return: Класс интерфейса корзины.
-            """
-            app = ToolsAJob()
-            cart_main_app = app.CartMainApp()
-            for shop in ['Матушка', 'Алма', 'METRO']:
-                cart_shop = app.CartShopApp()
-                items_list = []
+        # добавление товаров как раньше
+        for shop in ['Матушка', 'Алма', 'METRO']:
+            cart_shop = app.CartShopApp()
+            items_list = []
 
-                cart_get = get_cart()
-                for item in cart_get:  # Наполнение списка товарами из кэша
-                    cart_item = app.CartItemsApp()
-                    if shop.lower() == item['seller'].lower():
-                        if item in cart_get:
-                            cart_item.ids.buttonItem.icon = 'cart-remove'
-                            cart_item.ids.buttonItem.icon_color = 'blue'
-                            if item['seller'] == 'METRO':
-                                cart_item.ids.buttonItem.on_release = main.remove_from_cart_metro
-                            else:
-                                cart_item.ids.buttonItem.on_release = main.remove_from_cart
-                        else:
-                            cart_item.ids.buttonItem.icon = 'cart-plus'
-                            cart_item.ids.buttonItem.icon_color = 'blue'
-                            if item['seller'] == 'METRO':
-                                cart_item.ids.buttonItem.on_release = main.add_to_cart_metro
-                            else:
-                                cart_item.ids.buttonItem.on_release = main.add_to_cart
-                        cart_item.ids.buttonItem.id = str(item) + 'cart'
+            cart_get = get_cart()
+            for item in cart_get:
+                if shop.lower() == item['seller'].lower():
+                    item["quantity"] = 1  # Временное жёсткое задавание количества
+                    cart_item = app.CartItemsApp(item)
+                    cart_item.ids.name_field.text = item['name']
+                    cart_item.ids.qty_field.text = "1"
+                    cart_item.ids.buttonItem.icon = 'cart-remove'
+                    cart_item.ids.buttonItem.icon_color = 'blue'
+                    cart_item.ids.buttonItem.on_release = main.remove_from_cart
+                    cart_item.add_product_card(item)
+                    items_list.append(cart_item)
 
-                        cart_item.ids.name_field.text = str(item['name'])
-                        cart_item.ids.qty_field.text = "1"
-                        cart_item.add_product_card(item)
-                        items_list.append(cart_item)
+            if items_list:
+                cart_shop.ids.CartName.text = f"{shop}:"
+                for widget in items_list:
+                    cart_shop.ids.listItems.add_widget(widget)
+                cart_main_layout.ids.cart_items_box.add_widget(cart_shop)
 
-                if len(items_list) > 0:  # Наполнение корзины товарами
-                    cart_shop.ids.CartName.text = str(shop) + ':'
+        main.dialog = cart_main_layout
 
-                    for i in items_list:
-                        cart_shop.ids.listItems.add_widget(i)
-
-                cart_main_app.ids.cart_items_box.add_widget(cart_shop)
-            return cart_main_app
-
-        main.dialog = content()
         main.dialog.open()
 
     # noinspection PyUnusedLocal
@@ -463,7 +363,6 @@ class Cart:
         :param instance: Товар, который необходимо добавить.
         """
 
-
         instance.icon = 'cart-remove'
         instance.icon_color = 'red'
         instance.unbind(on_release=Cart.add_to_cart)
@@ -474,7 +373,6 @@ class Cart:
 
         if item not in get_cart():  # Если объекта нет в корзине
             add_cart(item)  # Отправка в корзину на сервер
-
 
     @staticmethod
     def remove_from_cart(main, instance):
