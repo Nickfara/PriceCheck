@@ -1,5 +1,5 @@
 """
-    Функции сопутствующие всему проекту.
+Функции сопутствующие всему проекту.
 """
 import time
 
@@ -28,43 +28,56 @@ async def async_start(start):
     await loop.run_in_executor(executor, start)
 
 
-async def background_load(self):
+async def background_load(main_app):
     """
-
-    :param self:
+    Асинхронная прогрузка функций:
+    1. Подрузка кэша.
+    2. Активация события on_enter.
+    3. Телеграм бот.
+    4. Автоматическая отправка админ меню в ТГ бот.
+    5. Парсинг такси.
+    :param main_app: Экземпляр класса интерфейса главного меню.
     """
 
     # noinspection PyTypeChecker, PyBroadException
-    def start():
+    def load_cache():
         """
-            Функция запуска
+        Загрузка кэша в оперативную память.
         """
-
         with open('data/cache_prices.json') as f:
             result = json.load(f)
             if result['cache']:
                 result_filtered = filter_shops(result['cache'])
 
-                self.base_price = result_filtered
-                log('Прайс загружен в кэш!')
+                main_app.base_price = result_filtered
 
-        try:
-            with open('data/cache_cart.json', 'w') as f:
-                json.dump({'cart': []}, f)
-        except FileNotFoundError:
-            pass
+                log('Прайс из кэша загружен в оперативку!')
 
-        self.activate_enter_finder
+    def activate_on_enter():
+        """
+        Функция запуска события on_enter.
+        """
+
+        from PriceCheck.commands import Base
+        Base.activate_on_enter(main_app)
+
         log('Поиск по нажатию "enter" включен!')
 
-    def start_tg():
+    def activate_tg_bot():
+        """
+        Телеграм бот.
+        """
         from handlers_tgBot import run, start
         run()
         log('TG бот включен!')
 
-    async def send_first():
+    def send_first():
+        """
+        Автоматическая отправка админ меню в ТГ бот.
+        """
         time.sleep(1)
         from T2.menu import admin_menu
+
         class Call(object):
             """
                 Класс 'call'
@@ -83,35 +96,40 @@ async def background_load(self):
         admin_menu(Call, 1)
         log('Админу было отправлено меню!')
 
-    def start_taxi():
+    def activate_taxi_pars():
+        """
+        Парсинг такси.
+        """
         import ParserTaxi.taxi_parser as tp
+
         tp.run()
         log('Парсер такси включен!')
 
-    await async_start(start)
-    await async_start(start_taxi)
-    await send_first()
-    await async_start(start_tg)
+    await async_start(load_cache)
+    await async_start(activate_on_enter)
+    await async_start(activate_taxi_pars)
+    await async_start(activate_tg_bot)
+    await async_start(send_first)
 
 
 async def refresh(self):
     """
-
+    Асинхронный запуска обновления кэша.
     :param self:
     """
 
     def start():
         """
-            Функция запуска
+        Обновление кэша.
         """
 
         from PriceCheck.read_doc import scanner
-        scanner()
-
         log('Сканирование кэша прайсов запущено!')
+        scanner()
+        log('Сканирование кэша прайсов завершено!')
+
         with open('data/cache_prices.json') as f:
             result = json.load(f)
-            print(result)
             result_filtered = filter_shops(result['cache'])
             self.base_price = result_filtered
             log('Отсканирован кэш и подгружен в оперативку!')
@@ -128,14 +146,14 @@ async def refresh(self):
 
 async def send_to_cart(item, parse_metro):
     """
-
-    :param item:
-    :param parse_metro:
+    Асинхронный запуска отправки товара в корзину metro.
+    :param item: Объект товара.
+    :param parse_metro: Объект класса...
     """
 
     def start():
         """
-            Функция запуска
+        Отправка товара в корзину metro.
         """
 
         parse_metro.add_cart(item)
@@ -146,9 +164,9 @@ async def send_to_cart(item, parse_metro):
 
 async def remove_from_cart(item, parse_metro):
     """
-
-    :param item:
-    :param parse_metro:
+    Асинхронный запуск удаления из корзины metro.
+    :param item: Объект товара.
+    :param parse_metro: Объект класса...
     """
 
     def start():
@@ -157,6 +175,23 @@ async def remove_from_cart(item, parse_metro):
         """
         parse_metro.remove_cart(item)
         log(f'Товар: "{item["name"]}" удалён из корзины!')
+
+    await async_start(start)
+
+
+async def find(main_app, item_obj):
+    """
+    Асинхронный запуск поиска товара в прайс-листе.
+    :param main_app: Объект интерфейса главного экрана.
+    :param item_obj: Объект интерфейса карточки товара.
+    """
+
+    def start():
+        """
+        Поиск товара в прайс-листе.
+        """
+        from PriceCheck.commands import Main
+        Main.find(main_app, item_obj)
 
     await async_start(start)
 
@@ -170,7 +205,6 @@ def filter_shops(items: list):
     """
     shops = []
     items_filtered = []
-
     with open('data/config.json') as f:
         config = json.load(f)
         for shop in config['shops_params']:
@@ -246,7 +280,7 @@ def remove_cart(item: dict):
 
 def preset(name, back_list, new):
     """
-
+    todo Понять, что за функция и заполнить описание.
     :param name:
     :param back_list:
     :param new:
@@ -304,6 +338,7 @@ def filter_names(name):
 def str_to_dict1(text: str):
     """
     Конвертация строки в словарь, версия 1.
+    todo разобраться в чём разница между версиями и объеденить функции.
     :param text: Строка.
     :return:
     """
@@ -320,6 +355,7 @@ def str_to_dict1(text: str):
 def str_to_dict2(text: str):
     """
     Конвертация строки в словарь, версия 2.
+    todo разобраться в чём разница между версиями и объеденить функции.
     :param text: Строка.
     :return:
     """
@@ -341,6 +377,7 @@ def str_to_dict2(text: str):
 def str_to_list(text: str):
     """
     Конвертация строки в список.
+    todo Возможно присоединить фунцию к конверторам выше.
     :param text: Строка.
     :return:
     """
@@ -357,7 +394,7 @@ def str_to_list(text: str):
 
 def finder(text: str, items: list):
     """
-    Поиск объекта в списке.
+    Поиск объекта {text} в списке {items}.
 
     :param text: Имя объекта.
     :param items: Список объектов.
@@ -370,7 +407,7 @@ def finder(text: str, items: list):
         if word != '':
             if first_word:
                 for item in items:
-                    if word.lower() in item['name'].lower():
+                    if word.lower() in item['product_name'].lower():
                         finding_items.append(item)
                 first_word = False
             else:
@@ -385,7 +422,7 @@ def finder(text: str, items: list):
 
 def text_lot(lots, i):
     """
-    Генерация текста для сообщения с данными о лоте.
+    Подготовка текста для сообщения с данными о лоте.
 
     :param lots: Список всех лотов.
     :param i: Вероятно id нужного лота

@@ -38,39 +38,41 @@ ToolsAJob = App.get_running_app
 
 class Base:
     """
-        Базовый класс
+    Класс с нейтральными методами.
     """
 
     @staticmethod
-    def func_dialog_save_enter(main, key):
+    def func_dialog_save_enter(main_app, key):
         """
         Сохранение по нажатию клавиши enter.
 
-        :param main:
-        :param key:
+        :param main_app: Экземпляр интерфейса главного окна.
+        :param key: Объект нажатой кнопки.
         """
-        if len(main.ids.text_find.text) > 0 and key == 13:
-            main.find(key)
+        if len(main_app.ids.text_find.text) > 0 and key == 13:
+            main_app.find(key)
 
     @staticmethod
-    def activate_enter_finder(main):
+    def activate_on_enter(main_app):
         """
         Поиск по нажатию клавиши enter.
+        todo заменить вызов инициализации класса, на вызов экземпляра класса.
 
-        :param main:
+        :param main_app: Экземпляр интерфейса главного окна.
         """
-        Window.bind(on_key_down=main.func_dialog_save_enter)
+        Window.bind(on_key_down=Base.func_dialog_save_enter)
 
     @staticmethod
-    def on_focus_change(main, instance, text):
+    def on_focus_change(main_app, instance, text):
         """
-
-        :param main:
-        :param instance:
-        :param text:
+        Фокусирование на текстовом поле.
+        
+        :param main_app: Экземпляр интерфейса главного окна.
+        :param instance: Объект фокусировки.
+        :param text: Текст с объекта фокусировки.
         """
         shop = str(instance.id)
-        main.send_text[shop] = str(text)
+        main_app.send_text[shop] = str(text)
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -102,63 +104,64 @@ class Base:
 
 class Main:
     """
-    Функции в главном окне приложения.
+    Методы в главном окне приложения.
     """
 
     @staticmethod
-    def find(main, item_objs):
+    def find(main_app, item_obj_):
         """
         Поиск товаров.
 
-        :param main:
-        :param item_objs:
+        :param main_app: Экземпляр интерфейса главного экрана.
+        :param item_obj_: Класс интерфейса карточки товара.
         """
 
-        name = main.ids.text_find.text
+        name = main_app.ids.text_find.text  # текст из текстового поля для поиска
 
-        main.ids.list_items_obj.clear_widgets()
-        finder_items = finder(name, main.base_price)  # Поиск товара
+        main_app.ids.list_items_obj.clear_widgets()  # Очистка виджетов в списке товаров
+        finder_items = finder(name, main_app.base_price)  # Поиск name в оперативке списка товаров из кэша
 
-        result_metro = []
-        if main.checkbox_parser_metro.active:
-            result_metro = parse_metro.search(name)
+        result_metro = []  # Список с результатом поиска в metro cc
+
+        if main_app.checkbox_parser_metro.active:
+            result_metro = parse_metro.search(name)  # Поиск в metro cc
 
         if isinstance(result_metro, list):
             for item in result_metro:
                 finder_items.append(
                     {'seller': 'METRO',
-                     'name': item['name'],
+                     'name': item['product_name'],
                      'cost': str(item['price']),
                      'bundleId': item['bundleId'],
                      'minOrderQuantity': item['minOrderQuantity']
-                     })
+                     })  # Наполнение основного списка найденных товаров, товарами из metro cc
 
-        for item in finder_items:  # Добавление товаров в список на главный экран
+        for item in finder_items:  # Добавление карточек товаров в список на главный экран
 
-            item_obj = item_objs()
-            text = item['name'] + '.'
-            cost_str = 'Цена: ' + item['cost'] + '₽'
+            item_obj = item_obj_()  # Генерация карточки товара.
+            text = item['product_name'] + '.'
+            cost_str = 'Цена: ' + item['price'] + '₽'
 
-            if 'type' in item:
-                if item['type'] != '':
-                    cost = cost_str + ' за ' + item['type']
+            if 'packaging' in item:
+                if item['packaging'] != '':
+                    cost = cost_str + ' за ' + item['packaging']
                 else:
                     cost = cost_str
             else:
                 cost = cost_str
 
             item_obj.ids.item_seller.text = item[
-                'seller']  # Здесь надо присвоить ячейкам с товарами значения и ниже в двух также
+                'title']  # Здесь надо присвоить ячейкам с товарами значения и ниже в двух также
             item_obj.ids.item_name.text = text.capitalize()
             item_obj.ids.item_cost.text = cost
 
             def btn_for_item(icon, on_release, icon_color, oid=str(item)):
                 """
-
-                :param icon:
-                :param on_release:
-                :param icon_color:
-                :param oid:
+                Генерация кнопки для карточки товара
+                :param icon: MD название иконки 
+                :param on_release: функция при нажатии
+                :param icon_color: Цвет иконки
+                :param oid: объект (словарь в формате строки)
                 """
                 item_obj.ids.idItem.icon = icon
                 item_obj.ids.idItem.bind(on_release=on_release)
@@ -166,17 +169,17 @@ class Main:
                 item_obj.ids.idItem.id = oid
 
             if item in get_cart():
-                if item['seller'] == 'METRO':
-                    btn_for_item('cart-remove', main.remove_from_cart_metro, 'red')
+                if item['title'] == 'METRO':
+                    btn_for_item('cart-remove', main_app.remove_from_cart_metro, 'red')
                 else:
-                    btn_for_item('cart-remove', main.remove_from_cart, 'red')
+                    btn_for_item('cart-remove', main_app.remove_from_cart, 'red')
             else:
-                if item['seller'] == 'METRO':
-                    btn_for_item('cart-plus', main.add_to_cart_metro, 'blue')
+                if item['title'] == 'METRO':
+                    btn_for_item('cart-plus', main_app.add_to_cart_metro, 'blue')
                 else:
-                    btn_for_item('cart-plus', main.add_to_cart, 'blue')
+                    btn_for_item('cart-plus', main_app.add_to_cart, 'blue')
 
-            main.ids.list_items_obj.add_widget(item_obj)
+            main_app.ids.list_items_obj.add_widget(item_obj)
 
 
 class Settings:
@@ -188,67 +191,57 @@ class Settings:
     def open():
         """
         Вызов генерирования и открытия диалогового окна с настройками.
-        :param add: True - Создаёт новую строку для интеграции нового поставщика. По умолчанию - False.
-        :return:
         """
-        main = ToolsAJob().MainApp
-        if main.dialog:  # Закрыть диалоговое окно, если оно открыто
-            main.dialog.clear_widgets()
-            main.dialog.dismiss()
+        main_app = ToolsAJob().MainApp  # Ссылка на экземпляр главного меню.
 
-        settings_main = ToolsAJob().SettingsMainApp()
+        if main_app.dialog:  # Закрытие диалогового окна, если открыто.
+            main_app.dialog.clear_widgets()
+            main_app.dialog.dismiss()
 
-        def content():
-            """
+        settings_main_app = ToolsAJob().SettingsMainApp  # Ссылка на экземпляр окна настроек
 
-            :return:
-            """
+        settings_main_app.data['shops'] = []
 
-            settings_main.data['shops'] = []
+        with open('data/config.json', encoding='utf-8') as f:
+            data = json.load(f)
 
-            with open('data/config.json', encoding='utf-8') as f:
-                data = json.load(f)
+        for shop in data["shops_params"]:
+            settings_shop = ToolsAJob().SettingShopApp()  # Создание экземпляра строки магазина
 
+            settings_shop.filename = shop["filename"]
+            settings_shop.title = shop["title"]
+            settings_shop.dist_h = str(shop["dist_h"])
+            settings_shop.dist_w = str(shop["dist_w"])
+            settings_shop.dist_text = shop["dist_text"]
+            settings_shop.price_w = str(shop["price_w"])
+            settings_shop.product_name_w = str(shop["product_name_w"])
+            settings_shop.packaging_w = str(shop["packaging_w"])
+            settings_shop.status = bool(shop["status"])
 
-            for shop in data["shops_params"]:
-                settings_shop = ToolsAJob().SettingShopApp()
+            settings_main_app.ids.main.add_widget(settings_shop)
 
-                settings_shop.filename = shop["filename"]
-                settings_shop.title = shop["title"]
-                settings_shop.dist_h = str(shop["dist_h"])
-                settings_shop.dist_w = str(shop["dist_w"])
-                settings_shop.dist_text = shop["dist_text"]
-                settings_shop.price_w = str(shop["price_w"])
-                settings_shop.product_name_w = str(shop["product_name_w"])
-                settings_shop.packaging_w = str(shop["packaging_w"])
-                settings_shop.status = bool(shop["status"])
+        settings_main_app.ids.checkbox_parser_metro.active = data['metro_active']
 
-                settings_main.ids.main.add_widget(settings_shop)
+        main_app.dialog = settings_main_app
 
-            settings_main.ids.checkbox_parser_metro.active = data['metro_active']
-            return settings_main
-
-        main.dialog = content()
-
-        main.dialog.open()
+        main_app.dialog.open()
 
     @staticmethod
-    def save(settings_main, main):
+    def save(settings_main_app, main_app):
         """
         Сохранение настроек.
 
-        :param settings_main: Класс интерфейса окна с настройками.
-        :param main: Класс интерфейса главного окна.
+        :param settings_main_app: Экземпляр интерфейса окна с настройками.
+        :param main_app: Экземпляр интерфейса главного окна.
         """
 
         with open('data/config.json', 'r+', encoding='utf-8') as f:
             data = json.load(f)
             data["shops_params"] = []
-            data['metro_active'] = main.checkbox_parser_metro.active
+            data['metro_active'] = main_app.checkbox_parser_metro.active
 
-            print(f'Итерация по списку: {settings_main.ids.main.children}')
-            for shop in reversed(settings_main.ids.main.children):
-
+            print(f'Итерация по списку: {settings_main_app.ids.main.children}')
+            for shop in reversed(settings_main_app.ids.main.children):
                 data["shops_params"].append({
                     "filename": shop.ids.get("filename_field").text,
                     "title": shop.ids.get("title_field").text,
@@ -269,23 +262,23 @@ class Settings:
         with open('data/cache_prices.json', encoding='utf-8') as f:
             result = json.load(f)
             result_filtered = filter_shops(result["cache"])
-            main.base_price = result_filtered
+            main_app.base_price = result_filtered
             log('Кэш прайса обновлён!')
 
-        if main.dialog:
-            main.dialog.dismiss()
+        if main_app.dialog:
+            main_app.dialog.dismiss()
 
     # noinspection PyUnusedLocal
     @staticmethod
-    def exit(main):
+    def exit(MainApp):
         """
         Закрыть диалоговое окно, без сохранения настроек.
 
         :param main: Класс интерфейса главного окна.
         """
 
-        if main.dialog:
-            main.dialog.dismiss()
+        if MainApp.dialog:
+            MainApp.dialog.dismiss()
 
 
 class Cart:
@@ -297,7 +290,7 @@ class Cart:
     def open():
         app = ToolsAJob()
         main = app.MainApp
-        cart_main_layout = app.CartMainApp()
+        cart_main_layout = app.CartMainApp
 
         if main.dialog:
             main.dialog.dismiss()
@@ -309,10 +302,10 @@ class Cart:
 
             cart_get = get_cart()
             for item in cart_get:
-                if shop.lower() == item['seller'].lower():
+                if shop.lower() == item['title'].lower():
                     item["quantity"] = 1  # Временное жёсткое задавание количества
                     cart_item = app.CartItemsApp(item)
-                    cart_item.ids.name_field.text = item['name']
+                    cart_item.ids.name_field.text = item['product_name']
                     cart_item.ids.qty_field.text = "1"
                     cart_item.ids.buttonItem.icon = 'cart-remove'
                     cart_item.ids.buttonItem.icon_color = 'blue'

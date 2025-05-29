@@ -25,7 +25,7 @@ from check_files import check_and_create as cac
 cac()  # Проверка на наличие необходимых json файлов
 
 from PriceCheck import commands
-from functions import (background_load, refresh)
+from functions import (background_load, refresh, find)
 
 cart = []
 
@@ -41,31 +41,31 @@ class SettingsMain(MDDialog):
         super(SettingsMain, self).__init__()
         self.data = {'shops': []}
 
-    def add_shop(self, SettingShopApp):
+    def add_shop(self, setting_shop_app):
         """
 
-        :param SettingShopApp:
+        :param setting_shop_app:
         """
 
-        self.ids.main.add_widget(SettingShopApp())
+        self.ids.main.add_widget(setting_shop_app())
 
-    def save_settings(self, temp_main):
+    def save_settings(self, main_app):
         """
 
-        :param temp_main:
+        :param main_app: Экземпляр интерфейса главного меню.
         """
-        commands.Settings.save(self, temp_main)
+        commands.Settings.save(self, main_app)
 
-    def exit_settings(self, temp_main):
+    def exit_settings(self, main_app):
         """
 
-        :param temp_main:
+        :param main_app: Экземпляр интерфейса главного меню.
         """
-        commands.Settings.exit(temp_main)
+        commands.Settings.exit(main_app)
 
     def refresh(self):
         """
-            Обновить кэш с прайс-листами.
+        Обновить кэш с прайс-листами.
         """
 
         asyncio.ensure_future(refresh(self))
@@ -73,7 +73,7 @@ class SettingsMain(MDDialog):
 
 class SettingShop(MDCard):
     """
-        Класс инициализации kv класса c строкой конфига магазина.
+    Класс инициализации kv класса c строкой конфига магазина.
     """
 
     filename = StringProperty("")
@@ -86,21 +86,19 @@ class SettingShop(MDCard):
     packaging_w = StringProperty("")
     status = BooleanProperty()
 
-    def update_value(self, filename, value):
-        setattr(self, filename, value)
-        print(f"[UPDATE] {filename} изменено на: {value}")
-        # Здесь можно обновить JSON/базу/кэш
-
     def remove_self(self):
+        """
+        Удаление виджета с карточкой магазина.
+        """
         if self.parent:
             self.parent.remove_widget(self)
 
 
 class ItemObj(MDBoxLayout):
     """
-            Класс инициализации kv класса с одним товаром.
-            Вызывается многократно, исходя из количества найденных товаров.
-            todo реализовать выбор количества товара, по умолчанию должно стоять значение минимального количество для заказа
+    Класс инициализации kv класса с одним товаром.
+    Вызывается многократно, исходя из количества найденных товаров.
+    todo реализовать выбор количества товара, по умолчанию должно стоять значение минимального количество для заказа
     """
 
     def one(self):
@@ -115,7 +113,7 @@ class CartMain(MDDialog):
                 Класс инициализации kv класса диалогового окна с корзиной.
     """
 
-    def one(self):
+    def confirm_checkout(self):
         """
             Пустая функция.
         """
@@ -128,6 +126,10 @@ class CartShop(MDBoxLayout):
         self.cart_items = []
 
     def add_product_card(self, item_data):
+        """
+        Добавить товар в корзину.
+        :param item_data:
+        """
         card = CartItem(
             item_data=item_data,
             on_update=self.update_item_data,
@@ -137,10 +139,17 @@ class CartShop(MDBoxLayout):
         self.cart_items.append(card)
 
     def update_item_data(self, updated_data):
+        """
+        Обновить название товара. todo
+        """
         # Тут можно обновлять JSON-файл, словарь или отправить на сервер
         print("Обновлено:", updated_data)
 
     def remove_item_card(self, item_widget):
+        """
+        Удалить товар из корзины.
+        :param item_widget: Объект удаления.
+        """
         self.ids.listItems.remove_widget(item_widget)
         self.cart_items.remove(item_widget)
 
@@ -155,12 +164,18 @@ class CartItem(MDBoxLayout):
         self.on_remove = on_remove
 
     def update_name(self, new_name):
+        """
+        Обновить название товара.
+        """
         self.item_name = new_name
         self.item_data['name'] = new_name
         if self.on_update:
             self.on_update(self.item_data)
 
     def update_quantity(self, new_qty):
+        """
+        Обновить количество товара.
+        """
         try:
             self.item_quantity = int(new_qty)
             self.item_data['quantity'] = int(new_qty)
@@ -170,16 +185,22 @@ class CartItem(MDBoxLayout):
             pass
 
     def remove_self(self):
-        if self.on_remove:
-            self.on_remove(self)
+        """
+        Удалить товар из корзины.
+        """
+        if self.parent:
+            self.parent.remove_widget(self)
 
     def add_product_card(self, item):
+        """
+        TODO Реализовать возвращение товара в корзину в течении 5 секунд после удаления.
+        """
         pass
 
 
 class Plain(MDTooltip):
     """
-                Класс инициализации kv класса для всплывающих уведомлений.
+    Инициализация класса всплывающего уведомления.
     """
 
     def one(self):
@@ -191,7 +212,7 @@ class Plain(MDTooltip):
 
 class Main(MDBoxLayout):
     """
-                Класс инициализации kv класса главного окна.
+    Инициализация класса главного окна.
     """
 
     def __init__(self):
@@ -222,7 +243,6 @@ class Main(MDBoxLayout):
         """
              Поиск среди продуктов
         """
-
         commands.Main.find(self, ItemObj)
 
     def add_to_cart(self, instance):
@@ -270,35 +290,31 @@ class Main(MDBoxLayout):
         commands.Cart.edit(self, instance)
 
     @staticmethod
-    def settings_open(add: bool = False):
+    def settings_open():
         """
         Открыть диалоговое окно с настройками.
-        :param add:
         """
         commands.Settings.open()
 
     def func_dialog_save_enter(self, key, *args, **kwargs):
         """
         todo Доделать функцию сохранения настроек по нажатию клавиши enter.
-        :param key:
+        :param key: Данные о нажатой кнопке
         """
         commands.Base.func_dialog_save_enter(self, key)
 
-    def activate_enter_finder(self):
-        """
-            Активировация поиска товаров по нажатию клавиши enter.
-        """
-        commands.Base.activate_enter_finder(self)
 
     def on_focus_change(self, instance, text):
         """
-        Что-то связаное с фокусом, насколько помню в тектовом поле. Хотя могу ошибаться.
-        :param instance:
-        :param text:
+        При фокусировании на текстовом поле.
+
+        :param instance: Объект фокусировки.
+        :param text: Текст с объекта фокусировки.
         """
         commands.Base.on_focus_change(self, instance, text)
 
-    def notify(self, text):
+    @staticmethod
+    def notify(text):
         """
         Вроде как реализованные всплывающие уведомления. Но не помню, реализовал или нет.
         :param text:
@@ -323,19 +339,19 @@ class ToolsAJob(MDApp):
         self.MainApp = None
 
     def build(self):
-        # self.theme_cls.themeStyle = "gray"
-        # self.theme_cls.primaryPalette = "blue"
-        # self.theme_cls.error_color = "red"
+        # todo self.theme_cls.themeStyle = "gray"
+        # todo self.theme_cls.primaryPalette = "blue"
+        # todo self.theme_cls.error_color = "red"
 
         print(self.theme_cls.backgroundColor)
 
         self.MainApp = Main()
 
-        self.SettingsMainApp = SettingsMain
+        self.SettingsMainApp = SettingsMain()
 
         self.SettingShopApp = SettingShop
 
-        self.CartMainApp = CartMain
+        self.CartMainApp = CartMain()
 
         self.CartShopApp = CartShop
 

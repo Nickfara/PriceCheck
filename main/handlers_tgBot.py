@@ -177,7 +177,7 @@ def files(message):
         try:
             file_info = bot.get_file(message.document.file_id)
             downloaded_file = bot.download_file(file_info.file_path)
-            src = 'C:/users/Буфет/Documents/GitHub/PriceCheck/main/prices/' + message.document.file_name
+            src = 'C:/users/Буфет/Documents/GitHub/PriceCheck/main/data/prices/' + message.document.file_name
             with open(src, 'wb') as new_file:
                 new_file.write(downloaded_file)
             try:

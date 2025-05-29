@@ -46,7 +46,7 @@ def read(filename):  # Чтение таблицы
         elif file_formate == 'xlsx':  # Чтение xlsx
             workbook = open_xlsx(path)
             log(f'Начало сканирования файла: {filename}')
-            response = xlsx(workbook)
+            response = xlsx(workbook, filename)
         else:
             response = False  # Формат файла неверный
             error_text = 'Неверный формат файла.'
@@ -73,7 +73,7 @@ def xls(workbook):
     for shop in data['shops_params']:
         for param in workbook.sheets():
             worksheet = workbook.sheet_by_index(workbook.sheets().index(param))
-            dist_text = str(worksheet.cell_value(shop['dist_w'], shop['dist_h'])).lower()
+            dist_text = str(worksheet.cell_value(shop['dist_h'], shop['dist_w'])).lower()
             if shop['dist_text'].lower() in dist_text:
                 price_w = shop['price_w']
                 product_name_w = shop['product_name_w']
@@ -121,7 +121,7 @@ def xls(workbook):
 
 
 # noinspection PyBroadException
-def xlsx(workbook):
+def xlsx(workbook, filename_true):
     """
     Сканирование документа в формате: .xlsx
 
@@ -137,22 +137,13 @@ def xlsx(workbook):
     packaging_w = False
     title = False
     end_time = 0
-
     for shop in data['shops_params']:
-        for sheet in sheet_names:
-            worksheet = workbook[sheet]
-            print(f'Shop БЛЯДЬ:   {shop}')
-            try:
-                dist_text = str(worksheet[h[shop['dist_w']]][shop['dist_h']].value).lower()
-                if shop['dist_text'].lower() in dist_text:
-                    price_w = shop['price_w']
-                    product_name_w = shop['product_name_w']
-                    packaging_w = shop['packaging_w']
-                    title = shop['title']
-                    break
-            except IndexError as e:
-                log(e, 2)
-                log(shop, 2)
+        if shop['filename'].lower() == filename_true.lower():
+            price_w = shop['price_w']
+            product_name_w = shop['product_name_w']
+            packaging_w = shop['packaging_w']
+            title = shop['title']
+            break
 
     if title:
         for sheet in sheet_names:
@@ -161,17 +152,17 @@ def xlsx(workbook):
                 item = {}
                 try:
                     # Проверка наличия индексов
-                    str(worksheet[f'{price_w}'][line].value)
-                    str(worksheet[f'{product_name_w}'][line].value)
-                    str(worksheet[f'{packaging_w}'][line].value)
+                    str(worksheet[f'{h[price_w]}'][line].value)
+                    str(worksheet[f'{h[product_name_w]}'][line].value)
+                    str(worksheet[f'{h[packaging_w]}'][line].value)
                 except IndexError:
                     if end_time == 5:
                         item['title'] = title
                         break
                     end_time += 1
                 else:
-                    product_name = str(worksheet[f'{product_name_w}'][line].value)
-                    price = str(worksheet[f'{price_w}'][line].value)
+                    product_name = str(worksheet[f'{h[product_name_w]}'][line].value)
+                    price = str(worksheet[f'{h[price_w]}'][line].value)
 
                     if 'мороженое' in str(product_name).lower():
                         break
@@ -191,7 +182,7 @@ def xlsx(workbook):
 
                     if packaging_w != -1:
                         try:
-                            item['packaging'] = str(worksheet[f'{packaging_w}'][line].value)
+                            item['packaging'] = str(worksheet[f'{h[packaging_w]}'][line].value)
                         except:
                             item['packaging'] = 'хз'
                     else:
@@ -260,11 +251,13 @@ def scanner():
     items = []
     result = {'cache': []}
     for file in data['shops_params']:  # Итерация по поставщикам
-        print(f'Файл типа того: {file}')
+        log(f'Начато сканирование: {file}')
         if file['filename'] in os.listdir('data/prices'):  # Проверка наличия документа с прайс-листом.
             table = read(file['filename'])  # Сканирование документа.
+            log(f"Сканирование завершено: {table}")
 
             if table:  # Проверка на успешность сканирования.
+                log("Сканирование завершено успешно!")
                 for i in table:  # Итерация по строкам в документе
                     items.append(i)  # Пополнение списка с товарами.
 
