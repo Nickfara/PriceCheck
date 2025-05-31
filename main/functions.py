@@ -53,15 +53,6 @@ async def background_load(main_app):
 
                 log('Прайс из кэша загружен в оперативку!')
 
-    def activate_on_enter():
-        """
-        Функция запуска события on_enter.
-        """
-
-        from PriceCheck.commands import Base
-        Base.activate_on_enter(main_app)
-
-        log('Поиск по нажатию "enter" включен!')
 
     def activate_tg_bot():
         """
@@ -105,11 +96,22 @@ async def background_load(main_app):
         tp.run()
         log('Парсер такси включен!')
 
+    def check_metro():
+        with open('data/config.json') as f:
+            data = json.load(f)
+            if data['metro_active']:  # Если метро включено в настройках, запускает авторизацию
+                from PriceCheck import parse_metro
+                result = parse_metro.get_valid_session()
+                if result:
+                    log('MShop авторизован!')
+
+
     await async_start(load_cache)
-    await async_start(activate_on_enter)
     await async_start(activate_taxi_pars)
-    await async_start(activate_tg_bot)
     await async_start(send_first)
+    await async_start(check_metro)
+    await async_start(activate_tg_bot)
+
 
 
 async def refresh(self):
@@ -138,7 +140,7 @@ async def refresh(self):
             data = json.load(f)
             if data['metro_active']:  # Если метро включено в настройках, запускает авторизацию
                 from PriceCheck import parse_metro
-                parse_metro.auth_check()
+                parse_metro.get_valid_session()
                 log('MShop авторизован!')
 
     await async_start(start)

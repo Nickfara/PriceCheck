@@ -19,6 +19,7 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.uix.tooltip import MDTooltip
 from kivymd.uix.card import MDCard
+from kivy.core.window import Window
 
 from check_files import check_and_create as cac
 
@@ -43,7 +44,6 @@ class SettingsMain(MDDialog):
 
     def add_shop(self, setting_shop_app):
         """
-
         :param setting_shop_app:
         """
 
@@ -230,6 +230,7 @@ class Main(MDBoxLayout):
         self.dialog = False
         self.send_text = {}
         self.data = {}
+        Window.bind(on_key_down=self.on_enter_find)
 
     @staticmethod
     def build():
@@ -296,12 +297,15 @@ class Main(MDBoxLayout):
         """
         commands.Settings.open()
 
-    def func_dialog_save_enter(self, key, *args, **kwargs):
+    def on_enter_find(self, window, key, *args, **kwargs):
         """
-        todo Доделать функцию сохранения настроек по нажатию клавиши enter.
-        :param key: Данные о нажатой кнопке
+        Сохранение по нажатию клавиши enter.
+
+        :param key: Объект нажатой кнопки.
         """
-        commands.Base.func_dialog_save_enter(self, key)
+
+        if len(self.ids.text_find.text) > 0 and key == 13:
+            self.find()
 
 
     def on_focus_change(self, instance, text):

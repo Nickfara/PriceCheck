@@ -92,7 +92,7 @@ def check_and_create():
              'cache_prices': {"cache": []},
              'db_taxi': {"price": []},
              'cookies_kuper': {"shops": {}},
-             'cookies_mshop': {"shops": []},
+             'cookies_mshop': {"shops": {}, 'time': ""},
              't2b': {}
              }
 
@@ -100,7 +100,7 @@ def check_and_create():
     temp = {'cache_prices': ('cache', list),
             'db_taxi': ('price', list),
             'cookies_kuper': ('shops', dict),
-            'cookies_mshop': ('shops', list),
+            'cookies_mshop': ('shops', dict),
             }
 
     for name in files:

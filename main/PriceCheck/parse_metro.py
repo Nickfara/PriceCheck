@@ -3,13 +3,22 @@
 """
 
 import json
+import os
 import time
+from datetime import datetime
+
 import requests
 
-from bs4 import BeautifulSoup as Bs
 from fake_useragent import UserAgent
-from selenium.webdriver import Firefox
+from requests import Response, Session
+
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+import time
 
 from log import log
 
@@ -19,7 +28,6 @@ random_ua = ua.random
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
 cookies = {}
-# noinspection SpellCheckingInspection
 profile = {
     'customerId': "6431100029141862",  # Настроен при авторизации
     't_time': "1732197309446",  # Настроен при авторизации
@@ -32,27 +40,25 @@ profile = {
     'cartId': "f039c83f-8484-4cc9-bf2f-a63e96b6e864",
     'sessionid': ''
 }
-# noinspection PyBroadException
-try:
-    with open('../data/cookies_mshop.json') as f:
-        cookies = json.load(f)['shops']
-except:
-    cookies = {'shops': []}
+LOGIN_CHECK_URL = f'https://mshop.metro-cc.ru/explore.border.v1/orderlist/country/RU/customerid/{profile["customerId"]}?rows=10&locale=ru-RU&selectedCustomerStore={profile["storeId"]}'  # Приватный API для проверки актуальности КУКИ файлов
+LOGIN = "bokova_shura@mail.ru"
+PASSWORD = "Dlink1980!!!"
+COOKIES_FILE = "data/cookies_mshop.json"
 
 
 # noinspection SpellCheckingInspection
-def cirkle(numb, lengue=0):
+def cirkle(numb:float, lengue:int=0) -> float | None:
     """
-
-    :param numb:
-    :param lengue:
-    :return:
+    Округление дробного числа до нужно количество цифр после запятой.
+    :param numb: Дробное число.
+    :param lengue: Количество цифр, необходимое после запятой.
+    :return: Возвращается дробное число, при успехе, либо None.
     """
     try:
         float(numb)
     except TypeError:
         log('Число не является дробным', 3)
-        return None
+        return
 
     numb = str(numb)
     right_numb = numb.split('.')[1]
@@ -81,7 +87,7 @@ def cirkle(numb, lengue=0):
 # noinspection SpellCheckingInspection
 def create_link(data):
     """
-
+    Генерация ссылки для поиска.
     :param data:
     :return:
     """
@@ -94,257 +100,16 @@ def create_link(data):
 
     return fulllink
 
-
 # noinspection SpellCheckingInspection
-def new_auth():
+def search(text:str) -> list | None:
     """
-        Возможно новая функция авторизации
+    Поиск на сайте mshop.
+
+    :param text: Наименование товара.
+    :return: Список из словарей: {'name': 'наименование товара', 'price': 'цена', 'bundleId': 'id товара': 'Минимальное количество для заказа'}
     """
-    s = requests.Session()
-    k = s.get(url='https://idam.metro-cc.ru/web/captchaConfig?clientId=BTEX&realmId=SSO_CUST_RU').json()['siteKey']
-    s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/reload?k={k}')
-    s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/clr?k={k}')
-    c4 = s.get(url=create_link({
-        "scheme": "https",
-        "host": "www.recaptcha.net",
-        "filename": "/recaptcha/enterprise/anchor",
-        "query": {
-            "ar": "1",
-            "k": k,
-            "co": "aHR0cHM6Ly9pZGFtLm1ldHJvLWNjLnJ1OjQ0Mw..",
-            "hl": "en",
-            "v": "pPK749sccDmVW_9DSeTMVvh2",
-            "size": "invisible",
-            "cb": "2a9awybl7uln"
-        }
-    }))
-    rc_token = Bs(c4.text, 'html.parser').find(id='recaptcha-token')['value']
-
-    s.get(url='https://www.google.com/js/bg/W8CPGdzYmlcjn--3_xeFmudIk8Wv0vupGU9Bdr5QE-g.js')
-    s.get(url='https://www.recaptcha.net/recaptcha/enterprise/webworker.js?hl=en&v=pPK749sccDmVW_9DSeTMVvh2')
-    s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/reload?k={k}')
-    s.post(url=f'https://www.recaptcha.net/recaptcha/enterprise/clr?k={k}')
-
-    '''for url_numb in (c1, c2, c3, c4, c5, c6, c7, c8):
-        log(f'c{i}:')
-        try:
-            log(url_numb.json())
-            log(url_numb.text)
-            log('\n\n\n')
-        except:
-            try:
-                log(url_numb.reason)
-                log(url_numb.text)
-                log('END!\n\n\n')
-            except:
-                log(url_numb)
-                log('\n\n\n')
-        i += 1'''
-
-    data_auth = {
-        "user_id": "bokova_shura@mail.ru",
-        "password": "Dlink1980!!!",
-        "user_type": "CUST",
-        "client_id": "BTEX",
-        "response_type": "code",
-        "country_code": "RU",
-        "locale_id": "ru-RU",
-        "realm_id": "SSO_CUST_RU",
-        "account_id": "",
-        "redirect_url": "https://mshop.metro-cc.ru/shop/portal/my-orders/all?idamRedirect=1",
-        "state": profile['state'],
-        "nonce": "",
-        "scope": "openid+clnt=BTEX",
-        "code_challenge": "X24I_T1kLXCRhV-o24wLBVRODgj9AULUni3HeJ_21G4",
-        "code_challenge_method": "S256",
-        "rc_token": rc_token
-    }
-    authenticate = s.post(url='https://idam.metro-cc.ru/web/authc/authenticate', data=data_auth)
-    try:
-        authenticate.json()['url']
-    except EncodingWarning:
-        pass
-    except KeyError:
-        pass
-
-    date_get_url = s.get(url=create_link({
-        "scheme": "https",
-        "host": "idam.metro-cc.ru",
-        "filename": "/authorize/api/oauth2/authorize",
-        "query": {
-            "client_id": "BTEX",
-            "redirect_uri": "https://mshop.metro-cc.ru/ordercapture/uidispatcher/static/silent-redirect.html",
-            "response_type": "code",
-            "scope": "openid clnt=BTEX",
-            "state": profile['state'],
-            "code_challenge": "Cm15FKICW2IPESm1D5WpY38M8HHGPYqbyQSrGyVIi4k",
-            "code_challenge_method": "S256",
-            "prompt": "none",
-            "realm_id": "SSO_CUST_RU",
-            "country_code": "RU",
-            "locale_id": "ru-RU"
-        }
-    }))
-    r_url = Bs(date_get_url.text, 'html.parser').find('script')
-    r_url = \
-        str(r_url).split("var locationUrl = '")[1].split('window.location = htmlDecode(locationUrl);')[0].split("';")[0]
-    r_data = r_url.split(';')
-
-    for i in r_data:
-        item = i.split('=')
-        if item[0] == 'state':
-            profile['state'] = item[1]
-
-    data_access_token = {
-        "grant_type": "authorization_code",
-        "redirect_uri": "https://mshop.metro-cc.ru/ordercapture/uidispatcher/static/silent-redirect.html",
-        "code": "dc598fb5-fdda-49ed-8da5-b9d040bc253b",  # СОдержится в ссылке r_url возможно следующая строка тоже там
-        "code_verifier": "fb200a7bf7f4492e8a28d0919a8fd815f31f383b5fba4e29ba6f96caa32c7a2402faee2bfb324cf8ac2c58f83e5dd22d",
-        "client_id": "BTEX"
-    }
-    s.post(url='https://idam.metro-cc.ru/authorize/api/oauth2/access_token', data=data_access_token)
-    s.post(
-        url='https://mshop.metro-cc.ru/explore.login.v1/auth/loginWithIdamAccessToken?country=RU')
-    singleSignOn = s.post(url='https://mshop.metro-cc.ru/explore.login.v1/auth/singleSignOn')
-    try:
-        singleSignOn.json()
-    except EncodingWarning:
-        log(singleSignOn.text, 3)
-
-
-# noinspection SpellCheckingInspection,PyBroadException
-def auth():
-    """
-
-    :return:
-    """
-    browser = Firefox()  # Загрузка браузера
-
-    url = "https://idam.metro-cc.ru/web/Signin?state=a22fc20c7a8f4cc29527582a9b69f480&scope=openid+clnt%3DBTEX&locale_id=ru-RU&redirect_uri=https%3A%2F%2Fmshop.metro-cc.ru%2Fshop%2Fportal%2Fmy-orders%2Fall%3FidamRedirect%3D1&client_id=BTEX&country_code=RU&realm_id=SSO_CUST_RU&user_type=CUST&DR-Trace-ID=idam-trace-id&code_challenge=X24I_T1kLXCRhV-o24wLBVRODgj9AULUni3HeJ_21G4&code_challenge_method=S256&response_type=code"
-
-    browser.get(url)
-    # browser.execute_script("document.body.style.zoom='15%'")
-    while True:
-        try:
-            try:
-                browser.find_element('user_id').send_keys("bokova_shura@mail.ru")  # Ввод логина
-                browser.find_element('password').send_keys("Dlink1980!!!")  # Ввод пароля
-            except:
-                browser.find_element(By.XPATH, '//*[@id="user_id"]').send_keys("bokova_shura@mail.ru")  # Ввод логина
-                browser.find_element(By.XPATH, '//*[@id="password"]').send_keys("Dlink1980!!!")  # Ввод пароля
-            break
-        except:
-            time.sleep(1)
-
-    while True:
-        try:
-            try:
-                browser.find_element('submit').click()  # Нажатие кнопки "Войти
-            except:
-                browser.find_element(By.XPATH, '//*[@id="submit"]').click()
-            break
-        except:
-            time.sleep(1)
-
-    log('Успешная авторизация!')
-    repeat = 0
-    while True:
-        try:
-            browser.find_element(By.XPATH,
-                                 '/html/body/div[1]/div/div/div[2]/div[2]/div[3]/div[3]/div/div/div/div/div/div/div[1]/div/div').click()
-            break
-        except:
-            time.sleep(1)
-            repeat += 1
-            if repeat > 10:
-                break
-            # browser.execute_script("document.body.style.zoom='15%'")
-
-    log('Выбор адреса доставки выполнен!')
-    cookies_ = {'shops': browser.get_cookies()}
-
-    with open('../data/cookies_mshop.json', 'w') as f_:
-        # noinspection PyTypeChecker
-        json.dump(cookies_, f_)
-        return True
-
-
-# noinspection SpellCheckingInspection, PyBroadException
-def auth_check():
-    """
-
-    :return:
-    """
-    for i in range(1, 2):
-        s = requests.Session()  # Создание сессии
-        url = f'https://mshop.metro-cc.ru/explore.border.v1/orderlist/country/RU/customerid/{profile["customerId"]}?rows=10&locale=ru-RU&selectedCustomerStore={profile["storeId"]}'
-
-        try:
-            with open('../data/cookies_mshop.json') as f_:
-                cookies_ = json.load(f_)['shops']
-        except:
-            cookies_ = {'shops': []}
-
-        for cookie in cookies_:
-            # noinspection PyTypeChecker
-            s.cookies.set(cookie['name'], cookie['value'])
-
-        response = s.get(url=url)
-        try:
-            response_reauth = s.post(url='https://mshop.metro-cc.ru/explore.login.v1/auth/singleSignOn')
-            s.cookies.set('compressedJWT', response_reauth.json()['compressedJWT'])
-        except:
-            pass
-
-        if response:
-            getProfile = s.get(create_link({
-                "scheme": "https",
-                "host": "mshop.metro-cc.ru",
-                "filename": f"/ordercapture/checkout/customer/RU/{profile['customerId']}/1",
-                "query": {
-                    "__t": profile['t_time']
-                }
-            }))
-            getProfile = getProfile.json()["data"]
-            profile['customerId'] = getProfile['customerId']
-            profile['fsdAddressId'] = getProfile['addresses']
-            for i2 in getProfile['addresses']:
-                if getProfile['addresses'][i2]['buildingName'] == "БУФЕТ":
-                    profile['fsdAddressId'] = getProfile['addresses'][i2]['hash']
-                    profile['storeId'] = getProfile['addresses'][i2]['deliveryStore']
-                    profile['t_time'] = \
-                        s.get(
-                            url='https://mshop.metro-cc.ru/ordercapture/uidispatcher/rest/min-stable-ui-version').json()[
-                            "timestampUtc"]
-                    break
-
-            url_info = s.get(
-                url=f'https://mshop.metro-cc.ru/ordercapture/customercart/carts/alias/current?customerId={profile["customerId"]}&cardholderNumber=1&storeId={profile["storeId"]}&country=RU&locale=ru-RU&fsdAddressId={profile["fsdAddressId"]}&__t={profile["t_time"]}')
-            profile['cartId'] = url_info.json()['data']['cartId']
-            return s
-        else:
-            if response.status_code in (400, 401, 403):
-                log('Ошибка доступа.\n Повторная авторизация!', 3)
-                if i < 2:
-                    auth()  # Авторизация через selenium
-                else:
-                    log('Ошибка авторизации!!!', 3)
-                    return False
-            else:
-                log(f'Ошибка запроса. Статус: {response.status_code}. Подробнее: {response.reason}', 3)
-                return False
-
-
-# noinspection SpellCheckingInspection
-def search(text):
-    """
-
-    :param text:
-    :return:
-    """
-    s = auth_check()
-    # profile['sessionid'] = s.headers.items() # Попытка достать сессион айди
-
+    log("Начато выполнение поиска в mshop.")
+    s = get_valid_session()
     if s:
         s.headers.update({
             'CallTreeId': profile['CallTreeId']
@@ -372,11 +137,12 @@ def search(text):
 
         url_findID = create_link(data_url_findID)  # Генерация ссылки для поиска айди
         s.headers.update({'Content-Type': 'application/json', 'Priority': 'u=4'})
-        ids = s.get(url=url_findID).json()['resultIds']  # Получение айди найденных товаров
+        requests = s.get(url=url_findID) # Получение айди найденных товаров
+        ids = requests.json()['resultIds']
+
         ids_text = '&ids='.join(ids)
         items = s.get(
             url=f'https://mshop.metro-cc.ru/evaluate.article.v1/betty-variants?storeIds={profile["storeId"]}&ids={ids_text}&country=RU&locale=ru-RU&customerId={profile["customerId"]}&__t={profile["t_time"]}')  # Получение товаров
-
         try:
             objects = items.json()['result']
             result = []
@@ -404,13 +170,13 @@ def search(text):
 
 
 # noinspection SpellCheckingInspection
-def add_cart(obj):
+def add_cart(obj:dict) -> Response | str | None:
     """
-
-    :param obj:
-    :return:
+    Добавить товар в корзину на сервере.
+    :param obj: Добавляемый товар {'name': 'наименование товара', 'price': 'цена', 'bundleId': 'id товара': 'Минимальное количество для заказа'}
+    :return: Результат работы.
     """
-    s = auth_check()
+    s = get_valid_session()
     if s:
 
         temp_url = {
@@ -450,13 +216,14 @@ def add_cart(obj):
 
 
 # noinspection SpellCheckingInspection
-def remove_cart(item):
+def remove_cart(item) -> Response | str | None:
     """
+    Удалить товар из корзины на сервере.
 
-    :param item:
-    :return:
+    :param item: Добавляемый товар: {'name': 'наименование товара', 'price': 'цена', 'bundleId': 'id товара': 'Минимальное количество для заказа'}
+    :return: Результат работы.
     """
-    s = auth_check()
+    s = get_valid_session()
     if s:
 
         url = (f'https://mshop.metro-cc.ru/ordercapture/customercart/carts/{profile["cartId"]}/items/'
@@ -473,3 +240,126 @@ def remove_cart(item):
     else:
         result = None
     return result
+
+
+def login_and_get_cookies(email: str, password: str) -> dict:
+    """
+    Авторизуется на mshop.metro-cc.ru и возвращает cookies для дальнейших запросов.
+    :param email: Логин.
+    :param password: Пароль.
+    :return: Куки файлы.
+    """
+
+    options = Options()
+    options.binary_location = r"A:\Program Files\Google\Chrome\Application\chrome.exe"
+
+    options.add_argument("--headless")  # Убери, если хочешь видеть браузер, верни, если не хочешь его видеть.
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=1920,1080")
+
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver.get("https://mshop.metro-cc.ru/")
+
+    # Ожидание полной загрузки
+    time.sleep(5)
+
+    try:
+        # Ввод логина
+        login_input = driver.find_element(By.NAME, "user_id")
+        login_input.send_keys(email)
+
+        # Ввод пароля
+        password_input = driver.find_element(By.NAME, "password")
+        password_input.send_keys(password)
+
+        # Подтверждение входа
+        submit_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Войти') and @type='submit']")
+        submit_btn.click()
+
+        time.sleep(6)  # Ожидание редиректа
+
+        cookies = driver.get_cookies()
+        session_cookies = {cookie['name']: cookie['value'] for cookie in cookies}
+
+        return session_cookies
+
+    except Exception as e:
+        print("Ошибка авторизации:", e)
+        return {}
+
+    finally:
+        driver.quit()
+
+
+def get_valid_session(email=LOGIN, password=PASSWORD, cookies_file=COOKIES_FILE) -> Session:
+    """Проверка куки файлы на актуальность и получение актуального объекта сессии.
+
+        :param email: Логин.
+        :type email: str
+        :param password: Пароль.
+        :type password: str
+        :param cookies_file: Путь к файлу с куки.
+        :type cookies_file: str
+        :return: Объект сессии.
+        """
+    # 1. Попытка загрузить сохранённые cookies
+    if os.path.exists(cookies_file):
+        with open(cookies_file) as f:
+            data = json.load(f)
+            cookies = data['shops']
+            date_time_ = data['time']
+
+
+        # Конвертация даты и времени в словарь. 2025-05-31 21:40:54.997495 > {'year': 2025, 'month': 05, 'day': 31, 'hours': 21, 'minute': 40}
+        date_time = date_time_.split(' ')
+        date = date_time[0].split('-')
+        time = date_time[1].split('.')[0].split(":")
+        dtd = {
+            "year": int(date[0]),
+            "month": int(date[1]),
+            "day": int(date[2]),
+            "hours": int(time[0]),
+            "minute": int(time[1])
+        }
+
+        now_dt = str(datetime.now())
+        date_time = now_dt.split(' ')
+        date = date_time[0].split('-')
+        time = date_time[1].split('.')[0].split(":")
+        dtdn = {
+            "year": int(date[0]),
+            "month": int(date[1]),
+            "day": int(date[2]),
+            "hours": int(time[0]),
+            "minute": int(time[1])
+        }
+
+        # Проверка прошедшего времени.
+        minutes_old = dtd['minute'] + dtd['hours'] * 60 + dtd['day'] * 24 * 60 + dtd['month'] * 30 * 24 * 60 + dtd['year'] * 12 * 30 * 24 * 60
+        minutes_new = dtdn['minute'] + dtdn['hours'] * 60 + dtdn['day'] * 24 * 60 + dtdn['month'] * 30 * 24 * 60 + dtdn['year'] * 12 * 30 * 24 * 60
+        difference = minutes_new - minutes_old
+
+
+        if difference < 60:
+            session = requests.Session()
+            session.cookies.update(cookies)
+            return session
+        else:
+            print("[!] Cookies устарели. Требуется переавторизация.")
+
+    # 3. Получаем новые cookies через Selenium
+    cookies = login_and_get_cookies(email, password)
+
+    # 4. Сохраняем их
+    with open(cookies_file, 'w') as f:
+        # noinspection PyTypeChecker
+        cookies_ = {'shops': cookies, 'time': str(datetime.now())}
+        f.seek(0)  # Возвращение к началу файла для записи
+        json.dump(cookies_, f)
+        f.truncate()  # Удаление остатка старого файла
+
+    # 5. Обновляем Session
+    session = requests.Session()
+    session.cookies.update(cookies)
+
+    return session

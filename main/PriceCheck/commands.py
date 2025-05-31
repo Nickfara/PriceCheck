@@ -42,27 +42,6 @@ class Base:
     """
 
     @staticmethod
-    def func_dialog_save_enter(main_app, key):
-        """
-        Сохранение по нажатию клавиши enter.
-
-        :param main_app: Экземпляр интерфейса главного окна.
-        :param key: Объект нажатой кнопки.
-        """
-        if len(main_app.ids.text_find.text) > 0 and key == 13:
-            main_app.find(key)
-
-    @staticmethod
-    def activate_on_enter(main_app):
-        """
-        Поиск по нажатию клавиши enter.
-        todo заменить вызов инициализации класса, на вызов экземпляра класса.
-
-        :param main_app: Экземпляр интерфейса главного окна.
-        """
-        Window.bind(on_key_down=Base.func_dialog_save_enter)
-
-    @staticmethod
     def on_focus_change(main_app, instance, text):
         """
         Фокусирование на текстовом поле.
@@ -110,7 +89,10 @@ class Main:
     @staticmethod
     def find(main_app, item_obj_):
         """
-        Поиск товаров.
+        Поиск товаров и добавление их на главный экран.
+        todo Добавить в обычный поиск количество товара по умолчанию.
+        todo Добавить в карточку товара выбор количества товара.\
+        todo В метро добавить возможность минимального или кратного обязательного количества. Добавить это же и в корзину.
 
         :param main_app: Экземпляр интерфейса главного экрана.
         :param item_obj_: Класс интерфейса карточки товара.
@@ -123,19 +105,22 @@ class Main:
 
         result_metro = []  # Список с результатом поиска в metro cc
 
-        if main_app.checkbox_parser_metro.active:
-            result_metro = parse_metro.search(name)  # Поиск в metro cc
-
+        with open('data/config.json') as f:
+            data = json.load(f)
+            if data['metro_active']:  # Если метро включено в настройках, запускает авторизацию
+                result_metro = parse_metro.search(name)  # Поиск в metro cc
+        print(result_metro)
         if isinstance(result_metro, list):
+            print(finder_items)
             for item in result_metro:
                 finder_items.append(
-                    {'seller': 'METRO',
-                     'name': item['product_name'],
-                     'cost': str(item['price']),
+                    {'title': 'METRO',
+                     'product_name': item['name'],
+                     'price': str(item['price']),
                      'bundleId': item['bundleId'],
                      'minOrderQuantity': item['minOrderQuantity']
                      })  # Наполнение основного списка найденных товаров, товарами из metro cc
-
+        print(finder_items)
         for item in finder_items:  # Добавление карточек товаров в список на главный экран
 
             item_obj = item_obj_()  # Генерация карточки товара.
@@ -184,6 +169,9 @@ class Main:
 
 class Settings:
     """
+    todo Добавить настройки телеграм бота. Состояние включен или выключен. При сохранении включается или выключается.
+    todo Добавить настройки (фильтр) поиска по metro. Количество найденных товаров итд.
+    todo Добавить
     Функции в диалоговом окне настроек.
     """
 
@@ -288,6 +276,12 @@ class Cart:
 
     @staticmethod
     def open():
+        """
+        Открытие диалогового окна с корзиной.
+        todo внедрить количество добавленного товара.
+        todo реализовать изменение количества товара в корзине, с сохранением изменений в кэш сразу при редактировании.
+        :return:
+        """
         app = ToolsAJob()
         main = app.MainApp
         cart_main_layout = app.CartMainApp
@@ -352,6 +346,7 @@ class Cart:
     def add_to_cart(name, instance):
         """
         Добавить товар в корзину.
+        todo внедрить добавление количества товара в корзину (В кэш)
         :param main: Класс интерфейса главного окна.
         :param instance: Товар, который необходимо добавить.
         """
