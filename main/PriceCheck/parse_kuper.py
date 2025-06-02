@@ -1,106 +1,168 @@
-"""
-    todo Парсинг приложения купер
-"""
 import json
+import os
 import time
+from datetime import datetime
+
 import requests
 
-from selenium.webdriver import Chrome as Firefox
+from fake_useragent import UserAgent
+from requests import Response, Session
+
+from selenium import webdriver
+from selenium.common import TimeoutException
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+import time
 
 from log import log
+
+ua = UserAgent()
+random_ua = ua.random
 
 # !/usr/bin/env python # -* - coding: utf-8-* -
 
 cookies = {}
-# noinspection PyBroadException
-try:
-    # noinspection SpellCheckingInspection
-    with open('../data/cookies_kuper.json') as f:
-        cookies = json.load(f)
-except:
-    cookies = {}
 
-# noinspection SpellCheckingInspection
-token = {
-    "csrf_param": "authenticity_token",
-    "csrf_token": "8iIvoh9zROZxGzmM94tBbEa6SyRMrQLD23YCvyrm8KEQYNJEYsB4APKVRavB/d5+WQOrHUpWJjYES+ck6hyk1g=="
-}
+LOGIN = "(992) 022-88-48"
+COOKIES_FILE = "../data/cookies_kuper.json"
 
 
-def auth():
+def login_and_get_cookies(phone_number: str) -> dict:
+    """
+    Авторизуется на kuper и возвращает cookies для дальнейших запросов.
+    :param phone_number: Номер телефона.
+    :return: Куки файлы.
     """
 
-    :return:
-    """
-    browser = Firefox()  # Загрузка браузера
+    options = Options()
+    options.binary_location = r"A:\Program Files\Google\Chrome\Application\chrome.exe"
 
-    url = "https://kuper.ru/"
+    #options.add_argument("--headless")  # Убери, если хочешь видеть браузер, верни, если не хочешь его видеть.
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=1920,1080")
 
-    browser.get(url)
-    # browser.execute_script("document.body.style.zoom='15%'")
-
-    time.sleep(60)
-
-    cookies_ = browser.get_cookies()
-
-    # noinspection SpellCheckingInspection
-    with open('../data/cookies_kuper.json', 'w') as f_:
-        # noinspection PyTypeChecker
-        json.dump(cookies_, f_)
-        return True
-
-
-# noinspection PyBroadException
-def auth_check():
-    """
-
-    :return:
-    """
-    for i in range(1, 2):
-        s = requests.Session()  # Создание сессии
-
-        try:
-            # noinspection SpellCheckingInspection
-            with open('../data/cookies_mshop.json') as f_:
-                cookies_ = json.load(f_)
-        except:
-            cookies_ = {}
-
-        for cookie in cookies_:
-            s.cookies.set(cookie['name'], cookie['value'])
-
-        response = s.get(url='https://kuper.ru/api/next/page_part/browser_head')
-
-        if response:
-            log('Проверка авторизации успешно завершена!')
-            return s
-        else:
-            if response.status_code in (400, 401, 403, 200):
-                log('Ошибка доступа.\n Повторная авторизация!', 3)
-                if i < 2:
-                    auth()  # Авторизация через selenium
-                else:
-                    log('Ошибка авторизации!!!', 3)
-                    return False
-            else:
-                log(f'Ошибка запроса. Статус: {response.status_code}. Подробнее: {response.reason}', 3)
-                return False
-
-
-# noinspection PyBroadException
-def find(s):
-    """
-
-    :param s:
-    """
-
-    response = s.post('https://kuper.ru/api/web/v1/products')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver.set_page_load_timeout(6)
     try:
-        response.json()
-    except:
-        log(f'JSON - не конвертируется! Ошибка поиска!:\n{response.text}', 3)
+        print('Ожидание начато.')
+        driver.get("https://kuper.ru/")
+    except TimeoutException:
+        driver.execute_script("window.stop();")
 
 
-session = auth_check()
+    try:
+        # Нажатие кнопки 'Войти'
+        login_btn = driver.find_element(By.XPATH, '//*[@id="__next"]/div[1]/div/header/div/div[2]/div/div[5]/div/button')
+        login_btn.click()
+        time.sleep(1.5)
+        # Нажатие кнопки 'Войти по Сбер ID'
+        sber_id_btn = driver.find_element(By.XPATH, '//*[@id="__next"]/div[2]/div[2]/div/div/div[2]/div/form/div[2]/button')
+        sber_id_btn.click()
+        time.sleep(2)
+        # Отключение получения рекламы.
+        ad_disable = driver.find_element(By.XPATH, '//*[@id="desktopContainer"]/div[1]/div/div[2]/div[2]/div/label/span')
+        ad_disable.click()
+        time.sleep(1)
+        # Ввод номера телефона
+        login_input = driver.find_element(By.XPATH, '//*[@id="desktopContainer"]/div[1]/div/form/div/input')
+        login_input.click()
+        login_input.send_keys(phone_number)
+        try:
+            send_code = driver.find_element(By.XPATH, '//*[@id="desktopContainer"]/div[1]/div/form/button')
+            send_code.click()
+            time.sleep(25)
+        except TimeoutException:
+            driver.execute_script("window.stop();")
 
-find(session)
+        cookies = driver.get_cookies()
+        session_cookies = {cookie['name']: cookie['value'] for cookie in cookies}
+
+        return session_cookies
+
+    except Exception as e:
+        print("Ошибка авторизации:", e)
+        return {}
+
+    finally:
+        driver.quit()
+
+def get_valid_session(phone_number=LOGIN, cookies_file=COOKIES_FILE) -> Session:
+    """Проверка куки файлы на актуальность и получение актуального объекта сессии.
+
+        :param phone_number: Логин.
+        :type phone_number: str
+        :param cookies_file: Путь к файлу с куки.
+        :type cookies_file: str
+        :return: Объект сессии.
+        """
+    # 1. Попытка загрузить сохранённые cookies
+    if os.path.exists(cookies_file):
+        with open(cookies_file) as f:
+            data = json.load(f)
+            cookies = data['shops']
+            date_time_ = data['time']
+
+        session = requests.Session()
+        session.cookies.update(cookies)
+
+        # Конвертация даты и времени в словарь. 2025-05-31 21:40:54.997495 > {'year': 2025, 'month': 05, 'day': 31, 'hours': 21, 'minute': 40}
+        # date_time = date_time_.split(' ')
+        # date = date_time[0].split('-')
+        # time = date_time[1].split('.')[0].split(":")
+        # dtd = {
+        #     "year": int(date[0]),
+        #     "month": int(date[1]),
+        #     "day": int(date[2]),
+        #     "hours": int(time[0]),
+        #     "minute": int(time[1])
+        # }
+        #
+        # now_dt = str(datetime.now())
+        # date_time = now_dt.split(' ')
+        # date = date_time[0].split('-')
+        # time = date_time[1].split('.')[0].split(":")
+        # dtdn = {
+        #     "year": int(date[0]),
+        #     "month": int(date[1]),
+        #     "day": int(date[2]),
+        #     "hours": int(time[0]),
+        #     "minute": int(time[1])
+        # }
+        #
+        # # Проверка прошедшего времени.
+        # minutes_old = dtd['minute'] + dtd['hours'] * 60 + dtd['day'] * 24 * 60 + dtd['month'] * 30 * 24 * 60 + dtd['year'] * 12 * 30 * 24 * 60
+        # minutes_new = dtdn['minute'] + dtdn['hours'] * 60 + dtdn['day'] * 24 * 60 + dtdn['month'] * 30 * 24 * 60 + dtdn['year'] * 12 * 30 * 24 * 60
+        # difference = minutes_new - minutes_old
+        #
+        #
+        # if difference < 60:
+        #     return session
+        # else:
+        #     print("[!] Cookies устарели. Требуется переавторизация.")
+
+        check_response = session.get("https://kuper.ru/api/v3/external_partners/services")
+        print(check_response)
+        if check_response.ok:
+            return session
+    # 3. Получаем новые cookies через Selenium
+    cookies = login_and_get_cookies(phone_number)
+
+    # 4. Сохраняем их
+    with open(cookies_file, 'w') as f:
+        # noinspection PyTypeChecker
+        cookies_ = {'shops': cookies, 'time': str(datetime.now())}
+        f.seek(0)  # Возвращение к началу файла для записи
+        json.dump(cookies_, f)
+        f.truncate()  # Удаление остатка старого файла
+
+    # 5. Обновляем Session
+    session = requests.Session()
+    session.cookies.update(cookies)
+
+    return session
+
+
+get_valid_session()
