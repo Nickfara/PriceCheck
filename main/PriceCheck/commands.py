@@ -181,10 +181,11 @@ class Settings:
         Вызов генерирования и открытия диалогового окна с настройками.
         """
         main_app = ToolsAJob().MainApp  # Ссылка на экземпляр главного меню.
-
         if main_app.dialog:  # Закрытие диалогового окна, если открыто.
-            main_app.dialog.clear_widgets()
-            main_app.dialog.dismiss()
+            print(f'is open: {main_app.dialog._is_open}')
+            if main_app.dialog._is_open:
+                main_app.dialog.clear_widgets()
+                main_app.dialog.dismiss()
 
         settings_main_app = ToolsAJob().SettingsMainApp  # Ссылка на экземпляр окна настроек
 
@@ -226,9 +227,8 @@ class Settings:
         with open('data/config.json', 'r+', encoding='utf-8') as f:
             data = json.load(f)
             data["shops_params"] = []
-            data['metro_active'] = main_app.checkbox_parser_metro.active
+            data['metro_active'] = settings_main_app.ids.checkbox_parser_metro.active
 
-            print(f'Итерация по списку: {settings_main_app.ids.main.children}')
             for shop in reversed(settings_main_app.ids.main.children):
                 data["shops_params"].append({
                     "filename": shop.ids.get("filename_field").text,
@@ -251,7 +251,7 @@ class Settings:
             result = json.load(f)
             result_filtered = filter_shops(result["cache"])
             main_app.base_price = result_filtered
-            log('Кэш прайса обновлён!')
+            log('Прайс в оперативке обновлён!')
 
         if main_app.dialog:
             main_app.dialog.dismiss()

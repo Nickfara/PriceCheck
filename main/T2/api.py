@@ -85,7 +85,7 @@ class T2Api:
                 headers=headers,
                 timeout=timeout
             )
-
+            log(f"       url={url}")
             if not response.ok:
                 log(f"[{method.upper()}] HTTP {response.status_code}: {response.text}", 2)
 

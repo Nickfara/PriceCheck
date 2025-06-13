@@ -9,6 +9,7 @@ import asyncio
 import json
 
 import threading
+
 _t2b_lock = threading.Lock()
 
 # !/usr/bin/env python # -* - coding: utf-8-* -
@@ -52,7 +53,6 @@ async def background_load(main_app):
                 main_app.base_price = result_filtered
 
                 log('Прайс из кэша загружен в оперативку!')
-
 
     def activate_tg_bot():
         """
@@ -102,16 +102,13 @@ async def background_load(main_app):
             if data['metro_active']:  # Если метро включено в настройках, запускает авторизацию
                 from PriceCheck import parse_metro
                 result = parse_metro.get_valid_session()
-                if result:
-                    log('MShop авторизован!')
-
+                if result: log('MShop авторизован!')
 
     await async_start(load_cache)
     await async_start(activate_taxi_pars)
     await async_start(send_first)
     await async_start(check_metro)
     await async_start(activate_tg_bot)
-
 
 
 async def refresh(self):
@@ -140,8 +137,9 @@ async def refresh(self):
             data = json.load(f)
             if data['metro_active']:  # Если метро включено в настройках, запускает авторизацию
                 from PriceCheck import parse_metro
-                parse_metro.get_valid_session()
-                log('MShop авторизован!')
+                result = parse_metro.get_valid_session()
+                if result: log('MShop авторизован!')
+
 
     await async_start(start)
 
@@ -415,7 +413,7 @@ def finder(text: str, items: list):
             else:
                 finding_items_temp = []
                 for item in finding_items:
-                    if word.lower() in item['name'].lower():
+                    if word.lower() in item['product_name'].lower():
                         finding_items_temp.append(item)
                 finding_items = finding_items_temp
 

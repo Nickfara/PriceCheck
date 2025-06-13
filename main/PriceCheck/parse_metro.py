@@ -6,6 +6,7 @@ import json
 import os
 import time
 from datetime import datetime
+from json import JSONDecodeError
 
 import requests
 
@@ -17,7 +18,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+# from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver import Firefox
 import time
 
 from log import log
@@ -47,7 +49,7 @@ COOKIES_FILE = "data/cookies_mshop.json"
 
 
 # noinspection SpellCheckingInspection
-def cirkle(numb:float, lengue:int=0) -> float | None:
+def cirkle(numb: float, lengue: int = 0) -> float | None:
     """
     Округление дробного числа до нужно количество цифр после запятой.
     :param numb: Дробное число.
@@ -100,8 +102,9 @@ def create_link(data):
 
     return fulllink
 
+
 # noinspection SpellCheckingInspection
-def search(text:str) -> list | None:
+def search(text: str) -> list | None:
     """
     Поиск на сайте mshop.
 
@@ -137,7 +140,7 @@ def search(text:str) -> list | None:
 
         url_findID = create_link(data_url_findID)  # Генерация ссылки для поиска айди
         s.headers.update({'Content-Type': 'application/json', 'Priority': 'u=4'})
-        requests = s.get(url=url_findID) # Получение айди найденных товаров
+        requests = s.get(url=url_findID)  # Получение айди найденных товаров
         ids = requests.json()['resultIds']
 
         ids_text = '&ids='.join(ids)
@@ -145,8 +148,26 @@ def search(text:str) -> list | None:
             url=f'https://mshop.metro-cc.ru/evaluate.article.v1/betty-variants?storeIds={profile["storeId"]}&ids={ids_text}&country=RU&locale=ru-RU&customerId={profile["customerId"]}&__t={profile["t_time"]}')  # Получение товаров
         try:
             objects = items.json()['result']
-            result = []
-            for object_ in objects:
+        except JSONDecodeError:
+            if items.status_code == 403:
+                log('Доступ запрещён. Производится повторная авторизация.', 3)
+                get_valid_session(forced=True)
+                items = s.get(
+                    url=f'https://mshop.metro-cc.ru/evaluate.article.v1/betty-variants?storeIds={profile["storeId"]}&ids={ids_text}&country=RU&locale=ru-RU&customerId={profile["customerId"]}&__t={profile["t_time"]}')  # Получение товаров
+                if items.status_code != 200:
+                    log(f'Повторная авторизация не помогла. Ошибка: {items}')
+                    return []
+            else:
+                log(f'Непонятная ошибка: {items}', 3)
+                return []
+            log(f"""
+    Ошибка декодирования JSON.
+    items.status_code = {items.status_code}""", 3)
+            return []
+
+        result = []
+        for object_ in objects:
+            try:
                 name = objects[object_]['variantSelector']['0032']
                 data = objects[object_]['variants']['0032']['bundles']['0021']
                 price = \
@@ -162,15 +183,14 @@ def search(text:str) -> list | None:
 
                 result.append({'name': ''.join(name.split(',')), 'price': price, 'bundleId': bundleId,
                                'minOrderQuantity': minOrderQuantity})
-        except Exception as e:
-            log(e, 2)
-            result = None
+            except Exception as e:
+                log(f'Проблема получение объекта: {e}', 2)
 
         return result
 
 
 # noinspection SpellCheckingInspection
-def add_cart(obj:dict) -> Response | str | None:
+def add_cart(obj: dict) -> Response | str | None:
     """
     Добавить товар в корзину на сервере.
     :param obj: Добавляемый товар {'name': 'наименование товара', 'price': 'цена', 'bundleId': 'id товара': 'Минимальное количество для заказа'}
@@ -251,32 +271,48 @@ def login_and_get_cookies(email: str, password: str) -> dict:
     """
 
     options = Options()
-    options.binary_location = r"A:\Program Files\Google\Chrome\Application\chrome.exe"
 
     options.add_argument("--headless")  # Убери, если хочешь видеть браузер, верни, если не хочешь его видеть.
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver.get("https://mshop.metro-cc.ru/")
-
-    # Ожидание полной загрузки
-    time.sleep(5)
+    driver = Firefox()
+    log(driver)
+    # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    res = driver.get("https://mshop.metro-cc.ru/")
+    log(res)
 
     try:
         # Ввод логина
-        login_input = driver.find_element(By.NAME, "user_id")
+        while True:
+            try:
+                login_input = driver.find_element(By.NAME, "user_id")
+                break
+            except:
+                time.sleep(1)
+        log(login_input)
         login_input.send_keys(email)
 
         # Ввод пароля
-        password_input = driver.find_element(By.NAME, "password")
+        while True:
+            try:
+                password_input = driver.find_element(By.NAME, "password")
+                break
+            except:
+                time.sleep(1)
+        log(password_input)
         password_input.send_keys(password)
 
         # Подтверждение входа
-        submit_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Войти') and @type='submit']")
+        while True:
+            try:
+                submit_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Войти') and @type='submit']")
+                break
+            except:
+                time.sleep(1)
         submit_btn.click()
 
-        time.sleep(6)  # Ожидание редиректа
+        time.sleep(12)  # Ожидание редиректа
 
         cookies = driver.get_cookies()
         session_cookies = {cookie['name']: cookie['value'] for cookie in cookies}
@@ -291,7 +327,7 @@ def login_and_get_cookies(email: str, password: str) -> dict:
         driver.quit()
 
 
-def get_valid_session(email=LOGIN, password=PASSWORD, cookies_file=COOKIES_FILE) -> Session:
+def get_valid_session(email=LOGIN, password=PASSWORD, cookies_file=COOKIES_FILE, forced=False) -> Session:
     """Проверка куки файлы на актуальность и получение актуального объекта сессии.
 
         :param email: Логин.
@@ -304,62 +340,67 @@ def get_valid_session(email=LOGIN, password=PASSWORD, cookies_file=COOKIES_FILE)
         """
     # 1. Попытка загрузить сохранённые cookies
     if os.path.exists(cookies_file):
-        with open(cookies_file) as f:
-            data = json.load(f)
-            cookies = data['shops']
-            date_time_ = data['time']
+        if not forced:
+            with open(cookies_file) as f:
+                data = json.load(f)
+                cookies = data['shops']
+                date_time_ = data['time']
 
+            # Конвертация даты и времени в словарь. 2025-05-31 21:40:54.997495 > {'year': 2025, 'month': 05, 'day': 31, 'hours': 21, 'minute': 40}
+            date_time = date_time_.split(' ')
+            date = date_time[0].split('-')
+            time = date_time[1].split('.')[0].split(":")
+            dtd = {
+                "year": int(date[0]),
+                "month": int(date[1]),
+                "day": int(date[2]),
+                "hours": int(time[0]),
+                "minute": int(time[1])
+            }
 
-        # Конвертация даты и времени в словарь. 2025-05-31 21:40:54.997495 > {'year': 2025, 'month': 05, 'day': 31, 'hours': 21, 'minute': 40}
-        date_time = date_time_.split(' ')
-        date = date_time[0].split('-')
-        time = date_time[1].split('.')[0].split(":")
-        dtd = {
-            "year": int(date[0]),
-            "month": int(date[1]),
-            "day": int(date[2]),
-            "hours": int(time[0]),
-            "minute": int(time[1])
-        }
+            now_dt = str(datetime.now())
+            date_time = now_dt.split(' ')
+            date = date_time[0].split('-')
+            time = date_time[1].split('.')[0].split(":")
+            dtdn = {
+                "year": int(date[0]),
+                "month": int(date[1]),
+                "day": int(date[2]),
+                "hours": int(time[0]),
+                "minute": int(time[1])
+            }
 
-        now_dt = str(datetime.now())
-        date_time = now_dt.split(' ')
-        date = date_time[0].split('-')
-        time = date_time[1].split('.')[0].split(":")
-        dtdn = {
-            "year": int(date[0]),
-            "month": int(date[1]),
-            "day": int(date[2]),
-            "hours": int(time[0]),
-            "minute": int(time[1])
-        }
+            # Проверка прошедшего времени.
+            minutes_old = dtd['minute'] + dtd['hours'] * 60 + dtd['day'] * 24 * 60 + dtd['month'] * 30 * 24 * 60 + dtd[
+                'year'] * 12 * 30 * 24 * 60
+            minutes_new = dtdn['minute'] + dtdn['hours'] * 60 + dtdn['day'] * 24 * 60 + dtdn['month'] * 30 * 24 * 60 + \
+                          dtdn['year'] * 12 * 30 * 24 * 60
+            difference = minutes_new - minutes_old
 
-        # Проверка прошедшего времени.
-        minutes_old = dtd['minute'] + dtd['hours'] * 60 + dtd['day'] * 24 * 60 + dtd['month'] * 30 * 24 * 60 + dtd['year'] * 12 * 30 * 24 * 60
-        minutes_new = dtdn['minute'] + dtdn['hours'] * 60 + dtdn['day'] * 24 * 60 + dtdn['month'] * 30 * 24 * 60 + dtdn['year'] * 12 * 30 * 24 * 60
-        difference = minutes_new - minutes_old
-
-
-        if difference < 60:
-            session = requests.Session()
-            session.cookies.update(cookies)
-            return session
+            if difference < 60:
+                session = requests.Session()
+                session.cookies.update(cookies)
+                return session
+            else:
+                log("[!] Cookies устарели. Требуется переавторизация.", 3)
         else:
-            print("[!] Cookies устарели. Требуется переавторизация.")
-
+            log('Запущена принудительная авторизация!')
     # 3. Получаем новые cookies через Selenium
     cookies = login_and_get_cookies(email, password)
 
-    # 4. Сохраняем их
-    with open(cookies_file, 'w') as f:
-        # noinspection PyTypeChecker
-        cookies_ = {'shops': cookies, 'time': str(datetime.now())}
-        f.seek(0)  # Возвращение к началу файла для записи
-        json.dump(cookies_, f)
-        f.truncate()  # Удаление остатка старого файла
+    if cookies:
+        # 4. Сохраняем их
+        with open(cookies_file, 'w') as f:
+            # noinspection PyTypeChecker
+            cookies_ = {'shops': cookies, 'time': str(datetime.now())}
+            f.seek(0)  # Возвращение к началу файла для записи
+            json.dump(cookies_, f)
+            f.truncate()  # Удаление остатка старого файла
 
-    # 5. Обновляем Session
-    session = requests.Session()
-    session.cookies.update(cookies)
-
-    return session
+        # 5. Обновляем Session
+        session = requests.Session()
+        session.cookies.update(cookies)
+        return session
+    else:
+        print(f"Ошибка авторизации: {cookies}")
+        return None

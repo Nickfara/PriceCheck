@@ -14,7 +14,11 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver import Firefox
+
+
 import time
 
 from log import log
@@ -165,4 +169,67 @@ def get_valid_session(phone_number=LOGIN, cookies_file=COOKIES_FILE) -> Session:
     return session
 
 
-get_valid_session()
+
+def code_input_callback():
+    return input()
+
+
+def coop_sberid_login(phone_number: str=LOGIN, code_input_callback=code_input_callback) -> dict:
+    """
+    Авторизация на Купер.маркет через СБЕР ID.
+    :param phone_number: номер телефона в формате +7ХХХХХХХХХХ
+    :param code_input_callback: функция, возвращающая смс-код
+    :return: cookies (dict)
+    """
+    options = webdriver.ChromeOptions()
+    options.add_argument("--start-maximized")
+    driver = Firefox()
+
+    try:
+        driver.get("https://kuper.ru/")  # 1. Заход на Купер
+
+        # 2. Нажимаем "Войти"
+        WebDriverWait(driver, 15).until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Войти')]"))).click()
+
+        # 3. Нажимаем "Сбер ID"
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Сбер ID')]"))).click()
+
+        # 4. Переключаемся на вкладку СБЕР ID
+        time.sleep(2)
+        driver.switch_to.window(driver.window_handles[-1])
+        WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "login")))
+
+        # 5. Ввод номера телефона
+        driver.find_element(By.ID, "login").send_keys(phone_number)
+        driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+
+        # 6. Ввод кода из SMS
+        time.sleep(2)
+        code = code_input_callback()
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "otp")))
+        driver.find_element(By.ID, "otp").send_keys(code)
+
+        # 7. Завершение авторизации
+        WebDriverWait(driver, 15).until(lambda d: len(driver.window_handles) == 1)
+        driver.switch_to.window(driver.window_handles[0])
+
+        # Убедимся, что пользователь залогинен
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Мой профиль')]"))
+        )
+
+        # Получение cookies
+        cookies = {c['name']: c['value'] for c in driver.get_cookies()}
+
+        print("✅ Авторизация прошла успешно.")
+        return cookies
+
+    except Exception as e:
+        print("❌ Ошибка авторизации:", e)
+        return {}
+
+    finally:
+        driver.quit()
+
+
+coop_sberid_login()
