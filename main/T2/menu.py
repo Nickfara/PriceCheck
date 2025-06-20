@@ -14,7 +14,6 @@ from log import log
 from constants import ADMIN_IDS
 
 ids_messages = {}  # Список ID сообщений
-new_message = 0  # Блокирует изменение сообщений
 i = 0  # Несколько попыток выдать ошибку, функция error()
 cancel_btn = ('❌ Отмена', 'Отмена')
 
@@ -27,22 +26,35 @@ def escape_markdown_v2(text: str) -> str:
     :param text: Обычный текст
     :return: Экранизированный текст
     """
+
     escape_chars = r'_*[]()~`>#+-=|{}.!'
-    return re.sub(r'(?<!\\)([%s])' % re.escape(escape_chars), r'\\\1', str(text))
+    result = re.sub(r'(?<!\\)([%s])' % re.escape(escape_chars), r'\\\1', str(text))
+
+    log(f"""
+
+Где-то допущена ошибка markdown в следующем сообщении:
+        {text}
+        
+        Исправь ошибку сравнив с обработанным текстом:
+        {result}
+        """, 3)
+
+    return result
 
 
 # noinspection PyBroadException
-def send(call, answer: str, btns: tuple, row_width: int = 3, new_message=new_message):
+def send(call, answer: str, btns: tuple, row_width: int = 3, edit_message: int = 1):
     """
-        Отправка или редактирование сообщения
+    Отправка или редактирование сообщения
 
-        :param new_message:
-        :param row_width: Количество кнопок в строке.
-        :param call: Данные о команде или сообщении.
-        :param answer: Текст для сообщения.
-        :param btns: Кортеж с кнопками(('Текст', 'Команда'), ('Текст', 'Команда')).
-        """
-
+    :param edit_message: Статус возможности редактировать сообщение. По умолчанию 1.
+    :param row_width: Количество кнопок в строке.
+    :param call: Данные о команде или сообщении.
+    :param answer: Текст для сообщения.
+    :param btns: Кортеж с кнопками(('Текст', 'Команда'), ('Текст', 'Команда')).
+    """
+    status_edit = True
+    status_mark = True
     uid = call.from_user.id
     mid = call.message.message_id
 
@@ -54,35 +66,36 @@ def send(call, answer: str, btns: tuple, row_width: int = 3, new_message=new_mes
     markup = types.InlineKeyboardMarkup(row_width=row_width)  # Создание функции кнопок
     markup.add(*btns_markup)  # Наполнение функции кнопками
 
-    for r in range(-4, 4):  # Чистит сообщения вокруг текущего
+    for r in range(-8):  # Чистит сообщения вокруг текущего
         try:
-            bot.delete_message(chat_id=uid, message_id=(mid + r))
+            print(r)
+            if r != 0: bot.delete_message(chat_id=uid, message_id=(mid + r))
         except:
             pass
 
-    if new_message == 0:  # Обновление сообщения.
+    send = lambda: bot.send_message(chat_id=uid, text=answer, reply_markup=markup, parse_mode='MarkdownV2')
+    edit = lambda: bot.edit_message_text(chat_id=uid, text=answer, message_id=mid, reply_markup=markup, parse_mode='MarkdownV2')
+    send_mark = lambda: bot.send_message(chat_id=uid, text=escape_markdown_v2(answer), reply_markup=markup, parse_mode='MarkdownV2')
+    edit_mark = lambda: bot.edit_message_text(chat_id=uid, text=escape_markdown_v2(answer), message_id=mid, reply_markup=markup, parse_mode='MarkdownV2')
+
+    if edit_message:
         try:
-            if new_message:
-                return bot.send_message(chat_id=uid, text=answer, reply_markup=markup,
-                                        parse_mode='MarkdownV2')
-            return bot.edit_message_text(chat_id=uid, text=answer, message_id=mid, reply_markup=markup, parse_mode='MarkdownV2')
-        except ApiTelegramException as e:
-            if "can't parse entities" in str(e):
-                if new_message:
-                    return bot.send_message(chat_id=uid, text=escape_markdown_v2(answer), reply_markup=markup,
-                                            parse_mode='MarkdownV2')
-                return bot.edit_message_text(chat_id=uid, text=escape_markdown_v2(answer), message_id=mid,
-                                             reply_markup=markup, parse_mode='MarkdownV2')
-            elif "message to edit not found" in str(e):
-                return bot.send_message(chat_id=uid, text=escape_markdown_v2(answer), reply_markup=markup,
-                                        parse_mode='MarkdownV2')
-            raise  # пробрасываем другие исключения
+            edit()  # Попытка отредактировать сообщение
+        except:
+            try:
+                edit_mark()  # Попытка отредактировать сообщение с фильтром markdown
+            except:
+                try:
+                    send()  # Попытка отправить новое сообщение
+                except:
+                    try:
+                        send_mark()  # Попытка отправить новое сообщение с фильтром markdown
+                    except Exception as e:
+                        log(f"Не удалось отправить сообщение. Ошибка: {e}", 2)
 
+    else:
+        send()
 
-    if new_message == 1:  # Отправка нового сообщения.
-        return True
-
-    return None
 
 
 # noinspection PyBroadException
@@ -205,7 +218,7 @@ def admin_login(call):
     return response
 
 
-def admin_menu(call, new_message_=new_message):
+def admin_menu(call, new_message_=0):
     """
 
     :param call:
@@ -215,7 +228,7 @@ def admin_menu(call, new_message_=new_message):
     row_width = 2
     answer = 'Выберите раздел:'
     btns = (('Маркет Т2', 'МТ2'), ('Ожидание снижения', 'ОСТ'), ('Парсинг такси', 'ПТ'), ('Прайсер', 'ПРС'))
-    response = send(call, answer, btns, row_width, new_message=new_message_)
+    response = send(call, answer, btns, row_width, edit_message=new_message_)
 
     return response
 

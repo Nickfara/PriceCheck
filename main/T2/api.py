@@ -211,6 +211,7 @@ class T2Api:
         if data:
             if 'access_token' in data and 'refresh_token' in data:
                 self.phone_number = phone_number
+                print(self.phone_number)
                 return data['access_token'], data['refresh_token']
         return None
 
@@ -220,6 +221,7 @@ class T2Api:
         :param refresh_token: 
         :return: 
         """
+        print(self.phone_number)
         url = self.auth_post_url
         payload = {
             'client_id': 'digital-suite-web-app',
@@ -239,11 +241,12 @@ class T2Api:
         :return: 
         """
         url = self.market_api
+        print(self.phone_number)
         update_data = {
-            'trafficType': lot['lot_type'],
-            'cost': {'amount': lot['price'], 'currency': 'rub'},
-            'volume': {'value': lot['amount'],
-                       'uom': 'min' if lot['lot_type'] == 'voice' else 'gb'}
+            'trafficType': lot['config_type'],
+            'cost': {'amount': lot['config_price'], 'currency': 'rub'},
+            'volume': {'value': lot['config_count'],
+                       'uom': 'min' if lot['config_uom'] == 'voice' else 'gb'}
         }
 
         result = self.safe_request(method="PUT", url=url, json_=update_data)
@@ -251,7 +254,8 @@ class T2Api:
         if result:
             return result
 
-        log(f'Ошибка поднятия лота. API вернул: {result.status_code}', 3)
+        if result is not None:
+            log(f'Ошибка поднятия лота. API вернул: {result.status_code}', 3)
         return None
 
     def top(self, lot_id):
@@ -260,6 +264,7 @@ class T2Api:
         :param lot_id: 
         :return: 
         """
+        print(self.phone_number)
         url = self.top_api
         update_data = {"lotId": lot_id}
         repeat = 0
@@ -269,14 +274,14 @@ class T2Api:
             if result:
                 return result
             else:
-                log(f'Ошибка поднятия в топ. API вернул: {result.status_code}Повторение попытки.', 3)
-                time.sleep(1)
+                if result is not None:
+                    log(f'Ошибка поднятия в топ. API вернул: {result.status_code}. Повторение попытки.', 3)
+                    time.sleep(1)
             repeat += 1
 
         return None
 
-    @staticmethod
-    def patch_name(uid, lot_id, data_imp):
+    def patch_name(self, uid, lot_id, data_imp):
         """
 
         :param uid: ID пользователя в telegram, который является ID пользователя в базе данных.
@@ -302,7 +307,8 @@ class T2Api:
         if result:
             return result
 
-        log(f'Ошибка модификации имени. API вернул: {result.status_code}', 3)
+        if result is not None:
+            log(f'Ошибка модификации имени. API вернул: {result.status_code}', 3)
         return None
 
     def return_lot(self, lot_id):

@@ -33,16 +33,16 @@ def add_traffic():
     """
     default = {
         "volume": {
-            "value": config[1][1],
-            "uom": config[1][0]
+            "value": '6',
+            "uom": 'gb'
         },
         "cost": {
-            "amount": config[1][2],
+            "amount": '90',
             "currency": "rub"
         },
         "trafficType": "data",
         'emojis': ['bomb', 'bomb', 'bomb'],
         'name': True
     }
-    auto_check = [config[2][0], config[2][1], (config[2][2] == 'True')]
+    auto_check = ["35", "20", "True"]
     return default, auto_check

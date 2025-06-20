@@ -245,6 +245,7 @@ def text(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
+    
     uid = call.from_user.id
     cmd = call.data
     cmds, cmdsd = (cmd.split('/') + [None])[:2]

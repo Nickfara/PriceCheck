@@ -1,6 +1,9 @@
-#:set btn "#002538"
-#:set mainBgClr "#f0faff"
-#:set topBgClr "#c9e5ff"
+#:set btn "#8c93a3"
+#:set mainBgClr "#232633"
+#:set topBgClr "#1e2129"
+#:set parentClr "#8c93a3"
+#:set accentClr "#77ed8c"
+#:set accentTextClr "#062926"
 
 
 <Main>:
@@ -19,31 +22,36 @@
                     orientation: 'vertical'
                     padding: (50, 0, 50, 0)
                     MDTextField:
+
                         id: text_find
-                        hint_text: "Найти товары"
                         pos_hint: {'center_x': .5, 'center_y': .5}
-                        text_color_focus: "black"
                         text: ""
                         focus: True
-                        MDTextFieldLeadingIcon:
+                        theme_text_color: "Custom"
+                        text_color_focus: "white"
+                        theme_line_color: "Custom"
+                        line_color_normal: parentClr
+                        line_color_focus: accentClr
+
+                        MDTextFieldTrailingIcon:
                             icon: "magnify"
+                            theme_icon_color: "Custom"
+                            icon_color_normal: parentClr
+                            icon_color_focus: parentClr
                 MDBoxLayout:
                     orientation: 'horizontal'
                     MDIconButton:
                         on_release: root.settings_open()
                         icon: "cog"
-                        icon_color: btn
-                        line_color: btn
+                        color: btn
                     MDIconButton:
                         on_release: root.cart_open()
                         icon: "cart"
-                        icon_color: btn
-                        line_color: btn
+                        color: btn
                     MDIconButton:
                         on_release: root.find()
                         icon: "store-search"
-                        icon_color: btn
-                        line_color: btn
+                        color: btn
             MDBoxLayout:
                 orientation: 'vertical'
                 padding: (50, 0, 50, 0)
@@ -374,7 +382,7 @@
     radius:[12, 12, 12, 12]
     orientation: "vertical"
     ripple_behavior: True
-    md_bg_color: [1, 1, 1, 1]
+    md_bg_color: parentClr
 
     MDBoxLayout:
         id: item_object
@@ -391,15 +399,8 @@
                 id: item_name
                 font_style: "Title"
                 role: "medium"
-                theme_text_color: "Primary"
-                allow_selection: True
-                allow_copy: True
-
-            MDLabel:
-                id: item_seller
-                font_style: "Body"
-                role: "small"
-                theme_text_color: "Hint"
+                theme_text_color: "Custom"
+                text_color: accentTextClr
                 allow_selection: True
                 allow_copy: True
 
@@ -408,7 +409,7 @@
             font_style: "Body"
             role: "large"
             theme_text_color: "Custom"
-            text_color: "green"
+            text_color: accentTextClr
             halign: "right"
             valign: "center"
             size_hint_x: 0.3
@@ -424,11 +425,22 @@
         size_hint_y: None
         height: dp(idItem.height)
 
+        MDLabel:
+            id: item_seller
+            font_style: "Body"
+            role: "medium"
+            bold: True
+            theme_text_color: "Hint"
+            allow_selection: True
+            allow_copy: True
+            halign: "left"
+
         MDIconButton:
             id: idItem
             icon: "chevron-right"
-            icon_color: btn
+            color: btn
             pos_hint: {"center_y": 0.5}
+            halign: "right"
 
 <Plain>
     MDTooltipPlain:

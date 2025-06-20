@@ -1,1 +1,89 @@
-{"metro_active": false, "shops_params": [{"filename": "\u041c\u0430\u0442\u0443\u0448\u043a\u0430.xlsx", "title": "\u041c\u0430\u0442\u0443\u0448\u043a\u0430", "dist_h": 0, "dist_w": 0, "dist_text": "\u041f\u0440\u0430\u0439\u0441-\u043b\u0438\u0441\u0442 \u043d\u0430 ", "price_w": 12, "product_name_w": 0, "packaging_w": -1, "status": false}, {"filename": "\u0410\u043b\u043c\u0430.xls", "title": "\u0410\u043b\u043c\u0430", "dist_h": 3, "dist_w": 0, "dist_text": "\u0410\u043b\u043c\u0430", "price_w": 2, "product_name_w": 0, "packaging_w": 1, "status": true}, {"filename": "\u0418\u043d\u0442\u0435\u0440\u0444\u0438\u0448.xls", "title": "\u0418\u043d\u0442\u0435\u0440\u0444\u0438\u0448", "dist_h": 0, "dist_w": 0, "dist_text": "\u0418\u043d\u0442\u0435\u0440\u0444\u0438\u0448", "price_w": 2, "product_name_w": 0, "packaging_w": 1, "status": false}, {"filename": "\u0421\u0434\u043e\u0431\u043d\u044b\u0439\u0414\u043e\u043c.xlsx", "title": "\u0421\u0434\u043e\u0431\u043d\u044b\u0439 \u0414\u043e\u043c", "dist_h": 1, "dist_w": 0, "dist_text": "\u0434\u043e\u0431\u043d\u044b\u0439 \u0434\u043e\u043c", "price_w": 3, "product_name_w": 0, "packaging_w": 2, "status": false}, {"filename": "\u042e\u043d\u0438\u0442.xlsx", "title": "\u042e\u043d\u0438\u0442", "dist_h": 1, "dist_w": 0, "dist_text": "\u041e\u041e\u041e \"\u042e\u043d\u0438\u0442\"", "price_w": 5, "product_name_w": 0, "packaging_w": 6, "status": false}, {"filename": "\u041c\u0435\u0433\u0430\u0442\u0440\u0435\u0439\u0434.xls", "title": "\u041c\u0435\u0433\u0430\u0442\u0440\u0435\u0439\u0434", "dist_h": 1, "dist_w": 0, "dist_text": "megatrade", "price_w": 2, "product_name_w": 0, "packaging_w": 3, "status": false}, {"filename": "\u0413\u043b\u043e\u0431\u0430\u043b\u0424\u0443\u0434.xls", "title": "\u0413\u043b\u043e\u0431\u0430\u043b \u0424\u0443\u0434\u0413", "dist_h": 1, "dist_w": 2, "dist_text": "\u0413\u043b\u043e\u0431\u0430\u043b \u0424\u0443\u0434\u0441", "price_w": 5, "product_name_w": 2, "packaging_w": 4, "status": false}], "taxi": {"clid": "ak241111", "apikey": "YwgMXudjrASZaLAXpMqoNjTJjlDjrVKaMlrgBPN", "point1": "60.65829040252862,56.86060471272871", "point2": "60.6116408898243,56.839601819813524", "token": "bd1f236eb2a72a8e3cd4e2c748d5c00b"}}
+{
+  "metro_active": false,
+  "shops_params": [
+    {
+      "filename": "\u041c\u0430\u0442\u0443\u0448\u043a\u0430.xlsx",
+      "title": "\u041c\u0430\u0442\u0443\u0448\u043a\u0430",
+      "dist_h": 0,
+      "dist_w": 0,
+      "dist_text": "\u041f\u0440\u0430\u0439\u0441-\u043b\u0438\u0441\u0442 \u043d\u0430 ",
+      "price_w": 12,
+      "product_name_w": 0,
+      "packaging_w": -1,
+      "status": false
+    },
+    {
+      "filename": "\u0410\u043b\u043c\u0430.xls",
+      "title": "\u0410\u043b\u043c\u0430",
+      "dist_h": 3,
+      "dist_w": 0,
+      "dist_text": "\u0410\u043b\u043c\u0430",
+      "price_w": 2,
+      "product_name_w": 0,
+      "packaging_w": 1,
+      "status": true
+    },
+    {
+      "filename": "\u0418\u043d\u0442\u0435\u0440\u0444\u0438\u0448.xls",
+      "title": "\u0418\u043d\u0442\u0435\u0440\u0444\u0438\u0448",
+      "dist_h": 0,
+      "dist_w": 0,
+      "dist_text": "\u0418\u043d\u0442\u0435\u0440\u0444\u0438\u0448",
+      "price_w": 2,
+      "product_name_w": 0,
+      "packaging_w": 1,
+      "status": false
+    },
+    {
+      "filename": "\u0421\u0434\u043e\u0431\u043d\u044b\u0439\u0414\u043e\u043c.xlsx",
+      "title": "\u0421\u0434\u043e\u0431\u043d\u044b\u0439 \u0414\u043e\u043c",
+      "dist_h": 1,
+      "dist_w": 0,
+      "dist_text": "\u0434\u043e\u0431\u043d\u044b\u0439 \u0434\u043e\u043c",
+      "price_w": 3,
+      "product_name_w": 0,
+      "packaging_w": 2,
+      "status": false
+    },
+    {
+      "filename": "\u042e\u043d\u0438\u0442.xlsx",
+      "title": "\u042e\u043d\u0438\u0442",
+      "dist_h": 1,
+      "dist_w": 0,
+      "dist_text": "\u041e\u041e\u041e \"\u042e\u043d\u0438\u0442\"",
+      "price_w": 5,
+      "product_name_w": 0,
+      "packaging_w": 6,
+      "status": false
+    },
+    {
+      "filename": "\u041c\u0435\u0433\u0430\u0442\u0440\u0435\u0439\u0434.xls",
+      "title": "\u041c\u0435\u0433\u0430\u0442\u0440\u0435\u0439\u0434",
+      "dist_h": 1,
+      "dist_w": 0,
+      "dist_text": "megatrade",
+      "price_w": 2,
+      "product_name_w": 0,
+      "packaging_w": 3,
+      "status": false
+    },
+    {
+      "filename": "\u0413\u043b\u043e\u0431\u0430\u043b\u0424\u0443\u0434.xls",
+      "title": "\u0413\u043b\u043e\u0431\u0430\u043b \u0424\u0443\u0434\u0413",
+      "dist_h": 1,
+      "dist_w": 2,
+      "dist_text": "\u0413\u043b\u043e\u0431\u0430\u043b \u0424\u0443\u0434\u0441",
+      "price_w": 5,
+      "product_name_w": 2,
+      "packaging_w": 4,
+      "status": false
+    }
+  ],
+  "taxi": {
+    "clid": "ak241111",
+    "apikey": "YwgMXudjrASZaLAXpMqoNjTJjlDjrVKaMlrgBPN",
+    "point1": "60.65829040252862,56.86060471272871",
+    "point2": "60.6116408898243,56.839601819813524",
+    "token": "bd1f236eb2a72a8e3cd4e2c748d5c00b"
+  }
+}

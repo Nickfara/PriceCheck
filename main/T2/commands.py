@@ -292,7 +292,7 @@ def profile(call):
 
     answer = (
         f"👤 *Профиль*\n\n"
-        f"Здравствуйте, {name['data']}!\n\n"
+        f"Здравствуйте, {name['data']}\!\n\n"
         f"💰 *Баланс:* _{fmt(balance)}₽_\n"
         f"✅ *Доступно:* {rests['data']} ГБ и {rests['voice']} МИН\n"
         f"🛒 *Продано:* {fmt(stats['soldData']['value'])} ГБ и {fmt(stats['soldVoice']['value'])} МИН\n"
@@ -366,7 +366,7 @@ def run_auto(call, type_='sell'):
 
     if cache.get(uid, {}).get('status_run_auto') == 1:
         log("Автоматическая работа уже запущена", 3)
-        menu.bot_active(call, "Цикл уже запущен!")
+        menu.bot_active(call, "Цикл уже запущен\!")
         return
 
     cache[uid] = {'status_run_auto': 1, 'status_lagg': 0}
@@ -385,11 +385,11 @@ def run_auto(call, type_='sell'):
             break
 
         if type_ == 'sell':
-            result = api.sell_lot(def_traffic[0])
+            result = api.sell_lot(DB)
             if result:
                 menu.bot_active(call, "Лот успешно выставлен!")
                 time.sleep(2)
-                timer("Авто-продажа работает", DB['config_autotime'], count, uid, call, DB)
+                timer("Авто\-продажа работает\!", DB['config_autotime'], count, uid, call, DB)
             else:
                 menu.bot_active(call, "Ошибка при выставлении лота.")
                 stop(call)
@@ -402,7 +402,7 @@ def run_auto(call, type_='sell'):
                 if result:
                     menu.bot_active(call, f"Лот #{lot_id} успешно поднят!")
                     time.sleep(2)
-                    timer("Авто-поднятие работает", DB['config_autotime'], count, uid, call, DB)
+                    timer("Авто\-поднятие работает", DB['config_autotime'], count, uid, call, DB)
                 else:
                     menu.bot_active(call, "Ошибка при поднятии в топ.")
                     stop(call)
