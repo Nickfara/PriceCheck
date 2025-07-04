@@ -287,4 +287,7 @@ def run():
     """
         Запуск телеграм бота
     """
-    bot.polling()
+    try:
+        bot.polling()
+    except ConnectionError:
+        return 7

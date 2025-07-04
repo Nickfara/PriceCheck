@@ -181,18 +181,18 @@ class Settings:
         Вызов генерирования и открытия диалогового окна с настройками.
         """
         main_app = ToolsAJob().MainApp  # Ссылка на экземпляр главного меню.
-        if main_app.dialog:  # Закрытие диалогового окна, если открыто.
-            print(f'is open: {main_app.dialog._is_open}')
-            if main_app.dialog._is_open:
-                main_app.dialog.clear_widgets()
-                main_app.dialog.dismiss()
-
         settings_main_app = ToolsAJob().SettingsMainApp  # Ссылка на экземпляр окна настроек
-
         settings_main_app.data['shops'] = []
+
+        settings_main_app.ids.main.clear_widgets()
+
+        if main_app.dialog:  # Закрытие диалогового окна, если открыто.
+            if main_app.dialog._is_open:
+                main_app.dialog.dismiss()
 
         with open('data/config.json', encoding='utf-8') as f:
             data = json.load(f)
+
 
         for shop in data["shops_params"]:
             settings_shop = ToolsAJob().SettingShopApp()  # Создание экземпляра строки магазина

@@ -404,3 +404,9 @@ def get_valid_session(email=LOGIN, password=PASSWORD, cookies_file=COOKIES_FILE,
     else:
         print(f"Ошибка авторизации: {cookies}")
         return None
+
+def check_complete_order():
+    """
+    todo Реализовать проверку: В полном ли объеме метро доставит заказ
+    """
+    pass

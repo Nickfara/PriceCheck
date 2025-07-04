@@ -59,7 +59,9 @@ async def background_load(main_app):
         Телеграм бот.
         """
         from handlers_tgBot import run, start
-        run()
+        result = run()
+        if result == 7:
+            return 7
         log('TG бот включен!')
 
     def send_first():
