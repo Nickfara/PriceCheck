@@ -1,5 +1,5 @@
 from T2.api import T2Api
-from functions import t2b
+from general_func import t2b
 import threading
 from log import log
 

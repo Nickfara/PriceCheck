@@ -1,18 +1,20 @@
 """
-    Инициализация классов интерфейса приложения из toolsajob.kv.
+    Инициализация классов интерфейса приложения из tools.kv.
 """
+import json
+import os
+
+from kivymd.uix.button import MDIconButton
+
+os.environ["KCFG_KIVY_LOG_LEVEL"] = "warning"  # уровни: 'trace', 'debug', 'info', 'warning', 'error', 'critical'
+
 import asyncio
 
 from kivy.app import App
 
-import PriceCheck.commands
-
-import kivymd
-
-print(kivymd.__version__)
 MainApp = App.get_running_app()
 
-from kivy.properties import StringProperty, NumericProperty, ObjectProperty, BooleanProperty
+from kivy.properties import StringProperty, BooleanProperty
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.dialog import MDDialog
@@ -21,12 +23,12 @@ from kivymd.uix.tooltip import MDTooltip
 from kivymd.uix.card import MDCard
 from kivy.core.window import Window
 
-from check_files import check_and_create as cac
+from files_check import check_and_create as cac
 
 cac()  # Проверка на наличие необходимых json файлов
 
 from PriceCheck import commands
-from functions import (background_load, refresh, find)
+from general_func import (background_load, refresh, find)
 
 cart = []
 
@@ -94,18 +96,38 @@ class SettingShop(MDCard):
             self.parent.remove_widget(self)
 
 
-class ItemObj(MDBoxLayout):
+class ItemObj(MDCard):
     """
     Класс инициализации kv класса с одним товаром.
     Вызывается многократно, исходя из количества найденных товаров.
     todo реализовать выбор количества товара, по умолчанию должно стоять значение минимального количество для заказа
     """
 
-    def one(self):
+    def add_to_cart(self, instance):
         """
-            Пустая функция.
+        Добавление товара в корзину.
         """
-        pass
+        commands.Cart.add_to_cart(self)
+
+    def remove_from_cart(self, instance):
+        """
+        Удаление товара из корзины.
+        """
+        commands.Cart.remove_from_cart(self)
+
+    def add_to_cart_metro(self, instance):
+        """
+        Добавление товара в корзину.
+        todo Реализовать при добавлении товара в корзину приложения, добавление так же, на сервере сайта.
+        """
+        commands.Cart.add_to_cart_metro(self)
+
+    def remove_from_cart_metro(self, instance):
+        """
+        Удаление товара из корзины.
+        todo Реализовать при удалении товара из корзины приложения, удаление так же, на сервере сайта.
+        """
+        commands.Cart.remove_from_cart_metro(self)
 
 
 class CartMain(MDDialog):
@@ -118,6 +140,12 @@ class CartMain(MDDialog):
             Пустая функция.
         """
         pass
+
+    def send_orders(self, instance):
+        commands.Cart.send(self.parent)
+
+    def cart_main_app(self, instance):
+        commands.Cart.remove_from_cart(instance)
 
 
 class CartShop(MDBoxLayout):
@@ -162,15 +190,30 @@ class CartItem(MDBoxLayout):
         self.item_data = item_data
         self.on_update = on_update
         self.on_remove = on_remove
+        self.tempname = None
 
-    def update_name(self, new_name):
+    def update_name(self, name):
         """
-        Обновить название товара.
+        Активировать возможность редактирования названия товара.
         """
-        self.item_name = new_name
-        self.item_data['name'] = new_name
-        if self.on_update:
-            self.on_update(self.item_data)
+        name.readonly = False
+        name.mode = "outlined"
+        self.tempname = name.text
+
+    def accept_name(self, name):
+        """
+        Принять изменённое название товара.
+        """
+
+        if not name.focus:
+            if name.mode == "outlined":
+                name.readonly = True
+                name.mode = "filled"
+                with open('data/cache_cart.json') as f:
+                    cache_cart = json.load(f)
+                    for item in cache_cart['cart']:
+                        if item['product_name'] == self.tempname:
+                            item['product_name_visible'] = name.text
 
     def update_quantity(self, new_qty):
         """
@@ -232,11 +275,16 @@ class Main(MDBoxLayout):
         self.data = {}
         Window.bind(on_key_down=self.on_enter_find)
 
+        child = self.ids.asdasd.width
+        print(self.ids.asdasd.children)
+        print(child)
+
+
     @staticmethod
     def build():
         """
         Реализация инициализации класса.
-        todo реализовать добавление товара в избранное из карточки товара наглавном экране.
+        todo реализовать добавление товара в избранное из карточки товара на главном экране.
         :return:
         """
         return Main()
@@ -246,36 +294,6 @@ class Main(MDBoxLayout):
              Поиск среди продуктов
         """
         commands.Main.find(self, ItemObj)
-
-    def add_to_cart(self, instance):
-        """
-        Добавление товара в корзину.
-        :param instance:
-        """
-        commands.Cart.add_to_cart(self, instance)
-
-    def add_to_cart_metro(self, instance):
-        """
-        Добавление товара в корзину.
-        todo Реализовать при добавлении товара в корзину приложения, добавление так же, на сервере сайта.
-        :param instance:
-        """
-        commands.Cart.add_to_cart_metro(self, instance)
-
-    def remove_from_cart(self, instance):
-        """
-        Удаление товара из корзины.
-        :param instance:
-        """
-        commands.Cart.remove_from_cart(self, instance)
-
-    def remove_from_cart_metro(self, instance):
-        """
-        Удаление товара из корзины.
-        todo Реализовать при удалении товара из корзины приложения, удаление так же, на сервере сайта.
-        :param instance:
-        """
-        commands.Cart.remove_from_cart_metro(self, instance)
 
     @staticmethod
     def cart_open():
@@ -308,7 +326,6 @@ class Main(MDBoxLayout):
         if len(self.ids.text_find.text) > 0 and key == 13:
             self.find()
 
-
     def on_focus_change(self, instance, text):
         """
         При фокусировании на текстовом поле.
@@ -326,8 +343,13 @@ class Main(MDBoxLayout):
         """
         commands.Base.notify(text)
 
+    @staticmethod
+    def graph():
+        from ParserTaxi.graph import render
+        render()
 
-class ToolsAJob(MDApp):
+
+class Tools(MDApp):
     """
     Класс запуска самого приложения и подрузка всех классов интерфейса.
     todo Оптимизировать логику работы.
@@ -344,11 +366,17 @@ class ToolsAJob(MDApp):
         self.MainApp = None
 
     def build(self):
-        # todo self.theme_cls.themeStyle = "gray"
-        # todo self.theme_cls.primaryPalette = "blue"
-        # todo self.theme_cls.error_color = "red"
-
-        print(self.theme_cls.backgroundColor)
+        self.theme_cls.theme_style = "Dark"
+        self.theme_cls.rippleColor = "green"  # Цвет анимации нажатия кнопки
+        # self.theme_cls.transparentColor = "pink" # цвет фона виджетов
+        self.theme_cls.backgroundColor = "#232633"
+        self.theme_cls.topBgColor = "#1e2129"
+        self.theme_cls.secondaryColor = "#8c93a3"
+        self.theme_cls.accentColor = "#77ed8c"
+        self.theme_cls.accentTextColor = "#062926"
+        self.theme_cls.buttonColor = "#8c93a3"
+        self.theme_cls.textColor = "white"
+        self.theme_cls.primaryColor
 
         self.MainApp = Main()
 
@@ -376,7 +404,7 @@ def run_async():
     asyncio.set_event_loop(loop)
 
     # Запускаем цикл событий Kivy
-    async_run = asyncio.ensure_future(asyncio.gather(ToolsAJob().async_run(async_lib='asyncio')))
+    async_run = asyncio.ensure_future(asyncio.gather(Tools().async_run(async_lib='asyncio')))
     # Планируем остановку цикла, когда Kivy App закроется
     async_run.add_done_callback(lambda *args: loop.stop())
 

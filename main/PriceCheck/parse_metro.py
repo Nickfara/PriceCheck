@@ -276,8 +276,8 @@ def login_and_get_cookies(email: str, password: str) -> dict:
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
+
     driver = Firefox()
-    log(driver)
     # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     res = driver.get("https://mshop.metro-cc.ru/")
     log(res)
@@ -320,7 +320,7 @@ def login_and_get_cookies(email: str, password: str) -> dict:
         return session_cookies
 
     except Exception as e:
-        print("Ошибка авторизации:", e)
+        log(f"Ошибка авторизации: {e}", 3)
         return {}
 
     finally:
@@ -402,7 +402,7 @@ def get_valid_session(email=LOGIN, password=PASSWORD, cookies_file=COOKIES_FILE,
         session.cookies.update(cookies)
         return session
     else:
-        print(f"Ошибка авторизации: {cookies}")
+        log(f"Ошибка авторизации: {cookies}", 3)
         return None
 
 def check_complete_order():

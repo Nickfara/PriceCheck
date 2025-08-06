@@ -1,6 +1,7 @@
 """
 :config: Авторизационные данные для выполнения запроса о поездке.
 """
+import json
 from datetime import datetime
 from json import loads
 from time import sleep
@@ -8,11 +9,17 @@ from time import sleep
 import requests
 from log import log
 
-from .config import clid, apikey, point1, point2
-from .database import add
-from handlers_tgBot import just_send as send
+with open("data/config.json") as f:
+    f = json.load(f)
+    clid = f['taxi']['clid']
+    apikey = f['taxi']['apikey']
+    point1 = f['taxi']['point1']
+    point2 = f['taxi']['point2']
 
-active_bot_taxi = [False]
+from .database import add
+from bot import just_send as send
+
+active_bot_taxi = [True]
 
 
 def get_price(latlon1, latlon2, type_=1):
@@ -91,6 +98,12 @@ def run():
         try:
             price = create()
             add(price)
+            with open("data/db_taxi.json") as r:
+                new = json.load(r)
+                new['price'].append(price)
+                with open("data/db_taxi.json", "w") as w:
+                    json.dump(new, w)
+
             sleep(60)
         except Exception as e:
             log(e, 2)

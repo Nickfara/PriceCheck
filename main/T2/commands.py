@@ -7,11 +7,11 @@ import math
 import random
 import time
 
-from handlers_tgBot import bot
+from bot import bot
 from T2 import config, menu
 from T2.session_manager import get_api
 
-from functions import (text_lot, t2b)
+from general_func import (text_lot, t2b)
 from log import log
 from constants import (NUMBER_T2, PASSWORD_T2, SECRET_FORMAT_NUMBER_T2)
 
@@ -81,9 +81,10 @@ class Auth:
         api = get_api(uid)
         try:
             if DB['status_sms'] == 0:
-                token = api.auth_with_password(DB['auth_login'], DB['security_code'], DB['security_code_token'], DB['auth_password'])
+                token = api.auth_with_password(DB['auth_login'], DB['security_code'], DB['security_code_token'],
+                                               DB['auth_password'])
             else:
-                token = api.auth_with_code(DB['auth_login'], data)
+                token = api.auth_with_code(data)
 
             if token:
                 access_token, refresh_token = token
@@ -128,10 +129,10 @@ class Settings():
     def open_menu(uid, DB, data, config_uom, call):
         name_ = ("🌐 *Вид:* Гигабайты" if DB['config_uom'] == "gb" else "☎️ *Вид:* Минуты")
         name2 = ("ГБ" if DB['config_uom'] == "gb" else "МИН")
-        answer = f'🛠️ *Настройки\.* \n\nТекущие: \n{name_}\. ' \
-                 f'\n📏 *Количество:* {DB["config_count"]}{name2} за {DB["config_price"]}₽' \
-                 f'\n🕓 *Интервал:* {DB["config_autotime"]} секунд\.' \
-                 f'\n🔂 *Повторы:* {DB["config_repeat"]} раз\(а\)\.'
+        answer = r'🛠️ *Настройки\.*' + f' \n\nТекущие: \n{name_}' + r'\. ' \
+                                                                    f'\n📏 *Количество:* {DB["config_count"]}{name2} за {DB["config_price"]}₽' \
+                                                                    f'\n🕓 *Интервал:* {DB["config_autotime"]} ' + r'секунд\.' \
+                                                                                                                  f'\n🔂 *Повторы:* {DB["config_repeat"]} ' + r'раз\(а\)\.'
         res = menu.settings(call, answer)
         return res
 
@@ -143,8 +144,12 @@ class Settings():
             t2b(uid, data_upd, 'u')
             return True
         except TypeError:
-            answer = '🛠️ *Настройки\.* \n\nНапишите количество секунд, \nчерез которое будут повторяться \nподнятие и выставление\. ' \
-                     '\nИсключительно цифрами, например: 5'
+            answer = r"""🛠️ *Настройки\.* 
+            
+            Напишите количество секунд, 
+            через которое будут повторяться 
+            поднятие и выставление\. 
+            Исключительно цифрами, например: 5"""
             menu.settings(call, answer)
             return False
 
@@ -159,7 +164,9 @@ class Settings():
         try:
             config_price = int(data)
         except TypeError:
-            answer = '🛠️ *Настройки\.* \n\nПринимаются исключительно цифры.'
+            answer = r"""🛠️ *Настройки\.* 
+            
+            Принимаются исключительно цифры."""
             menu.settings(call, answer)
             return False
 
@@ -182,9 +189,12 @@ class Settings():
             t2b(uid, data_upd, 'u')
             return True
         except TypeError:
-            answer = '🛠️ *Настройки\.* \n\nНапишите количество повторов, \nчерез которое бот закончит \nподнятие или ' \
-                     'выставление\. Указав 0, повторения будут бесконечны\. ' \
-                     '\nИсключительно цифрами, например: 10'
+            answer = r"""🛠️ *Настройки\.* 
+            
+            Напишите количество повторов, 
+            через которое бот закончит 
+            поднятие или выставление\. Указав 0, повторения будут бесконечны\. 
+            Исключительно цифрами, например: 10"""
             menu.settings(call, answer)
             return False
 
@@ -205,7 +215,7 @@ class Settings():
             t2b(uid, data_upd, 'u')
             return True
         else:
-            answer = '🛠️ *Настройки\.* \n\nВыберите нужный для вас тип трафика:'
+            answer = r'🛠️ *Настройки\.*' + ' \n\nВыберите нужный для вас тип трафика:'
             menu.settings(call, answer)
             return True
 
@@ -276,7 +286,7 @@ def profile(call):
         balance = api.get_balance()
         name = api.get_name()
     except Exception as e:
-        log(f'Ошибка при запросе профиля: {e}', 3)
+        log(f'Ошибка при запросе профиля: {e}')
         menu.error(call)
         return False
 
@@ -291,12 +301,12 @@ def profile(call):
         return s
 
     answer = (
-        f"👤 *Профиль*\n\n"
-        f"Здравствуйте, {name['data']}\!\n\n"
-        f"💰 *Баланс:* _{fmt(balance)}₽_\n"
-        f"✅ *Доступно:* {rests['data']} ГБ и {rests['voice']} МИН\n"
-        f"🛒 *Продано:* {fmt(stats['soldData']['value'])} ГБ и {fmt(stats['soldVoice']['value'])} МИН\n"
-        f"📈 *Доход:* {fmt(stats['totalIncome']['amount'])}₽\n"
+            f"👤 *Профиль*\n\n"
+            f"Здравствуйте, {name['data']}" + r"\!" + "\n\n"
+                                                      f"💰 *Баланс:* _{fmt(balance)}₽_\n"
+                                                      f"✅ *Доступно:* {rests['data']} ГБ и {rests['voice']} МИН\n"
+                                                      f"🛒 *Продано:* {fmt(stats['data']['soldData']['value'])} ГБ и {fmt(stats['data']['soldVoice']['value'])} МИН\n"
+                                                      f"📈 *Доход:* {fmt(stats['data']['totalIncome']['amount'])}₽\n"
     )
 
     return answer
@@ -319,7 +329,7 @@ def timer(answer, at, count, uid, call, DB):
 
     if DB['config_repeat'] > 0:
         answer += '\n*Осталось:* ' + str(
-            DB['config_repeat'] - count) + ' раз\(а\)'
+            DB['config_repeat'] - count) + r' раз\(а\)'
     second_text = ' секунд' if (str(at)[len(str(at)) - 1] in ('5', '6', '7', '8', '9', '0')
                                 or (str(at)[0] == '1' if len(str(at)) > 1 else False)) \
         else (' секунды' if str(at)[len(str(at)) - 1] in ('2', '3', '4') else ' секунда')
@@ -366,7 +376,7 @@ def run_auto(call, type_='sell'):
 
     if cache.get(uid, {}).get('status_run_auto') == 1:
         log("Автоматическая работа уже запущена", 3)
-        menu.bot_active(call, "Цикл уже запущен\!")
+        menu.bot_active(call, r"Цикл уже запущен\!")
         return
 
     cache[uid] = {'status_run_auto': 1, 'status_lagg': 0}
@@ -386,12 +396,17 @@ def run_auto(call, type_='sell'):
 
         if type_ == 'sell':
             result = api.sell_lot(DB)
-            if result:
-                menu.bot_active(call, "Лот успешно выставлен!")
+
+            if result and not isinstance(result, str):
+                menu.bot_active(call, r"Лот успешно выставлен\!")
                 time.sleep(2)
-                timer("Авто\-продажа работает\!", DB['config_autotime'], count, uid, call, DB)
+                timer(r"Авто\-продажа работает\!", DB['config_autotime'], count, uid, call, DB)
             else:
-                menu.bot_active(call, "Ошибка при выставлении лота.")
+                if result == 'bp_err_noTraffic':
+                    menu.bot_active(call, r"Недостаточно трафика\.")
+                    time.sleep(3)
+                else:
+                    menu.bot_active(call, r"Ошибка при выставлении лота\.")
                 stop(call)
                 break
         elif type_ == 'top':
@@ -400,15 +415,19 @@ def run_auto(call, type_='sell'):
                 lot_id = lots[rand_id]['id']
                 result = api.top(lot_id)
                 if result:
-                    menu.bot_active(call, f"Лот #{lot_id} успешно поднят!")
+                    menu.bot_active(call, fr"Лот #{lot_id} успешно поднят\!")
                     time.sleep(2)
-                    timer("Авто\-поднятие работает", DB['config_autotime'], count, uid, call, DB)
+                    timer(r"Авто\-поднятие работает", DB['config_autotime'], count, uid, call, DB)
                 else:
-                    menu.bot_active(call, "Ошибка при поднятии в топ.")
+                    if result == 'bp_err_general' or 'has already premium state.' in result:
+                        menu.bot_active(call, r"Попался лот, находящийся в топе\.")
+                        time.sleep(3)
+                    else:
+                        menu.bot_active(call, r"Ошибка при поднятии в топ\.", 3)
                     stop(call)
                     break
             else:
-                menu.bot_active(call, "Нет доступных лотов.")
+                menu.bot_active(call, r"Нет доступных лотов\.")
                 stop(call)
                 break
 
@@ -457,9 +476,9 @@ def remove_minutes_lots(call):
             api.delete(uid, lid)
 
     if len(filtered_minutes) > 0:
-        answer = 'Все лоты с минутами успешно отозваны\!'
+        answer = r'Все лоты с минутами успешно отозваны\!'
     else:
-        answer = 'Активных лотов с минутами нет\!'
+        answer = r'Активных лотов с минутами нет\!'
 
     menu.remove_minutes_lots(call, answer)
     time.sleep(3)
@@ -482,7 +501,7 @@ def update_def_traffic(call):
     return True
 
 
-def get_lots_refresh(call, delete_minutes=False):
+def get_lots_refresh(call, delete_minutes: bool = False, filter_status: bool = True):
     """
     Получение активных лотов с возможностью фильтрации по типу
 
@@ -500,7 +519,10 @@ def get_lots_refresh(call, delete_minutes=False):
 
     # Фильтрация
     type_filter = 'min' if delete_minutes else ('gb' if DB['config_type'] == 'data' else 'min')
-    filtered = {str(i): lot for i, lot in enumerate(response) if lot['volume']['uom'] == type_filter}
+    if filter_status:
+        filtered = {str(i): lot for i, lot in enumerate(response) if lot['volume']['uom'] == type_filter}
+    else:
+        filtered = response
 
     # Сохраняем в БД (на всякий случай)
     t2b(uid, {'list_lots': json.dumps(filtered)}, 'u')
@@ -518,9 +540,9 @@ def check_sell(call, uid, lots):
     """
 
     if uid in cache_lot and len(lots) < len(cache_lot[uid]):
-        log("Лот продан", 2)
+        log("Лот продан!")
         menu.bot_active(call, "Лот продан!", sell_check=True)
-        time.sleep(2.5)
+        time.sleep(3)
         return True
 
     cache_lot[uid] = lots
@@ -558,7 +580,7 @@ def delete_confirm(call, lid):
         if lots[lot]['id'] == lid:
             break
 
-    answer = f'Вы действительно хотите снять лот: {lot_text} с продажи\?'
+    answer = f'Вы действительно хотите снять лот: {lot_text} с продажи' + r'\?'
 
     res = menu.delete_confirm(call, lid, answer)
     return res
@@ -579,9 +601,9 @@ def delete_yes(call, lid):
     response = api.delete(uid, lid)
 
     if response:
-        answer = 'Лот успешно удалён\!'
+        answer = r'Лот успешно удалён\!'
     else:
-        answer = 'Возникла ошибка при удалении\!'
+        answer = r'Возникла ошибка при удалении\!'
 
     row_width = 2
 
@@ -602,11 +624,9 @@ def edit_lots(call):
     DB = t2b(uid)
 
     api = get_api(uid)
-    get_lots = api.get_lots(uid)
-    response = get_lots['response']
-
-    if response:
-        data_upd = {'list_lots': json.dumps(['active_traffic'])}
+    get_lots = api.get_active_lots()
+    if get_lots != None:
+        data_upd = {'list_lots': json.dumps(get_lots)}
         t2b(uid, data_upd, 'u')
 
     DB = t2b(uid)
@@ -663,7 +683,7 @@ def top(call, lid):
                 if lots[i]['id'] == lid:
                     answer_lot = text_lot(lots, lot[0])
 
-                    answer = f'Лот "{answer_lot}" \n\- успешно поднят в топ\!'
+                    answer = f'Лот "{answer_lot}" \n' + r'\- успешно поднят в топ\!'
                     log(answer)
                     bot.send_message(call.message.chat.id, answer, parse_mode='MarkdownV2')
                     break
@@ -767,7 +787,7 @@ def up(call):
         rand_id = random.randint(0, len(lots) - 1)
         lot_id = lots[f'{rand_id}']['id']
 
-        response = api.top(uid, lot_id)
+        response = api.top(lot_id)
         if response:
             return True
         else:

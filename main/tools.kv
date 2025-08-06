@@ -1,0 +1,420 @@
+#:set btn "#8c93a3"
+#:set mainBgClr "#232633"
+#:set topBgClr "#1e2129"
+#:set parentClr "#8c93a3"
+#:set accentClr "#77ed8c"
+#:set accentTextClr "#062926"
+
+
+
+<Main>:
+    MDScreen:
+        md_bg_color: app.theme_cls.backgroundColor
+        MDBoxLayout:
+            orientation: 'vertical'
+            MDBoxLayout:
+                id: topLay
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: text_find.height+20
+                md_bg_color: app.theme_cls.topBgColor
+                Widget:
+                    size_hint_x: None
+                    width: dp(10)
+                MDTextField:
+                    id: text_find
+                    pos_hint: {'center_x': .5, 'center_y': .5}
+                    text: ""
+                    focus: False
+                    theme_text_color: "Custom"
+                    text_color_focus: "white"
+                    theme_line_color: "Custom"
+                    line_color_normal: app.theme_cls.secondaryColor
+                    line_color_focus: app.theme_cls.accentColor
+                    small_type: True
+                    MDTextFieldHintText:
+                        text: "Введите название:"
+                        text_color_normal: self.theme_cls.buttonColor
+                        text_color_focus: app.theme_cls.accentColor
+
+                MDBoxLayout:
+                    id: asdasd
+                    orientation: 'horizontal'
+                    size_hint_x: None
+                    width: dp(140)
+                    Widget:
+                        size_hint_x: None
+                        width: dp(10)
+                    MDIconButton:
+                        on_release: root.find()
+                        icon: "magnify"
+                        color: self.theme_cls.buttonColor
+                        pos_hint: {'center_x': .5, 'center_y': .5}
+                        size_hint: (None, None)
+                        size: 30, 30
+                    MDIconButton:
+                        on_release: root.cart_open()
+                        icon: "cart"
+                        color: self.theme_cls.buttonColor
+                        pos_hint: {'center_x': .5, 'center_y': .5}
+                        size_hint: (None, None)
+                        size: 30, 30
+                    MDIconButton:
+                        on_release: root.graph()
+                        icon: "chart-line"
+                        color: self.theme_cls.buttonColor
+                        pos_hint: {'center_x': .5, 'center_y': .5}
+                        size_hint: (None, None)
+                        size: 30, 30
+                    MDIconButton:
+                        on_release: root.settings_open()
+                        icon: "cog"
+                        color: self.theme_cls.buttonColor
+                        pos_hint: {'center_x': .5, 'center_y': .5}
+                        size_hint: (None, None)
+                        size: 30, 30
+                    Widget:
+                        size_hint_x: None
+                        width: dp(10)
+
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                MDScrollView:
+                    do_scroll_x: False
+                    MDBoxLayout:
+                        id: list_items_obj
+                        orientation: 'vertical'
+                        spacing: 15
+                        padding: (15, 15, 15, 0)
+                        md_bg_color: app.theme_cls.backgroundColor
+                        adaptive_height: True
+                        size_hint_y: None
+
+<SettingsMain@MDDialog>:
+    id: dialog
+    width_fix: False
+    height_fix: False
+    type: "custom"
+    radius: [0, dp(22), dp(22), 0]
+    orientation: "vertical"
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(20)
+        MDLabel:
+            font: "H6"
+            halign: "center"
+            text: "Настройки"
+    MDBoxLayout:
+        orientation: "vertical"
+        MDBoxLayout:
+            orientation: "vertical"
+            size_hint_y: None
+            height: dp(80)
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(40)
+                orientation: "horizontal"
+                MDLabel:
+                    text: "Обновить прайсы"
+                    halign: "right"
+                MDIconButton:
+                    icon: "refresh"
+                    icon_size: dp(40)
+                    on_release: root.refresh()
+
+            MDBoxLayout:
+                size_hint_y: None
+                height: dp(40)
+                orientation: "horizontal"
+                MDLabel:
+                    text: "METRO парсинг"
+                    halign: "right"
+                MDSwitch:
+                    pos_hint: {'center_x': .5, 'center_y': .5}
+                    size: dp(48), dp(24)
+                    id: checkbox_parser_metro
+                    thumb_size_active: 18
+                    thumb_size_inactive: 12
+
+        MDBoxLayout:
+            orientation: "horizontal"
+            size_hint_y: None
+            height: dp(30)
+            MDLabel:
+                text: "Имя файла"
+            MDLabel:
+                text: "Поставщик"
+            MDLabel:
+                text: "id прайс"
+            MDLabel:
+                text: "id товар"
+            MDLabel:
+                text: "id тип"
+            MDLabel:
+                text: "поиск h"
+            MDLabel:
+                text: "поиск w"
+            MDLabel:
+                text: "Текст поиска"
+            MDLabel:
+                text: "Статус"
+
+        MDScrollView:
+            do_scroll_x: False
+            MDBoxLayout:
+                adaptive_height: True
+                orientation: "vertical"
+                MDDivider:
+                    height: dp(1)
+                MDBoxLayout:
+                    id: main
+                    orientation: "vertical"
+                    adaptive_height: True
+                    spacing: dp(2)
+
+    MDBoxLayout:
+        # Кнопки снизу
+        spacing: dp(10)
+        padding: dp(10), 0
+        size_hint_y: None
+        height: dp(48)
+        MDIconButton:
+            icon: "plus"
+            on_release: root.add_shop(app.SettingShopApp)
+        MDBoxLayout:
+            size_hint_x: 0.6
+        MDIconButton:
+            icon: "close"
+            icon_color: "red"
+            on_release: root.exit_settings(app.MainApp)
+        MDIconButton:
+            icon: "check"
+            icon_color: "green"
+            on_release: root.save_settings(app.MainApp)
+
+<CartMain@MDDialog>:
+    id: cart_main
+    width_fix: False
+    height_fix: False
+    type: "custom"
+    radius: [0, dp(22), dp(22), 0]
+    orientation: "vertical"
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(20)
+        MDLabel:
+            font: "H6"
+            halign: "center"
+            text: "Корзина"
+
+    MDScrollView:
+        do_scroll_x: False
+        MDBoxLayout:
+            adaptive_height: True
+            orientation: "vertical"
+            MDDivider:
+                height: dp(1)
+            MDBoxLayout:
+                id: cart_items_box
+                orientation: "vertical"
+                adaptive_height: True
+                spacing: dp(40)
+                padding: [80, 0, 80, 0]
+
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(48)
+        orientation: "horizontal"
+        MDButton:
+            style: "text"
+            on_release: root.send_orders(self)
+            MDButtonText:
+                text: "Оформить заказ"
+
+<SelectSetting@MDTextField>
+    pos_hint: {'center_x': .5, 'center_y': .5}
+    size_hint_y: None
+    max_height: dp(20)
+    clean: True
+
+<SelectSettingBox@SelectSetting>
+    size_hint_x: None
+    width: dp(20)
+
+<SettingShop@MDBoxLayout>:
+    orientation: "vertical"
+    padding: dp(1)
+    size_hint_y: None
+    height: dp(30)
+    MDBoxLayout:
+        orientation: "horizontal"
+        spacing: dp(6)
+        SelectSetting:
+            id: filename_field
+            text: root.filename
+        SelectSetting:
+            id: title_field
+            text: root.title
+        SelectSettingBox:
+            id: price_w_field
+            text: root.price_w
+        SelectSettingBox:
+            id: product_name_w_field
+            text: root.product_name_w
+        SelectSettingBox:
+            id: packaging_w_field
+            text: root.packaging_w
+        SelectSettingBox:
+            id: dist_h_field
+            text: root.dist_h
+        SelectSettingBox:
+            id: dist_w_field
+            text: root.dist_w
+        SelectSetting:
+            id: dist_text_field
+            text: root.dist_text
+        MDSwitch:
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            id: status_field
+            active: root.status
+            size: dp(48), dp(24)
+            thumb_size_active: 18
+            thumb_size_inactive: 12
+        MDIconButton:
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            icon: "trash-can"
+            icon_color: app.theme_cls.errorColor
+            on_release: root.remove_self()
+
+<CartShop@MDBoxLayout>:
+    orientation: "vertical"
+    padding: dp(12)
+    elevation: 3
+    radius: [12, 12, 12, 12]
+    shadow_offset: [0, 2]
+    spacing: dp(8)
+    md_bg_color: app.theme_cls.backgroundColor
+    MDLabel:
+        id: CartName
+        text: "Магазин"
+        font_style: "Title"
+        role: "medium"
+        size_hint_y: None
+        height: self.texture_size[1]
+    MDScrollView:
+        do_scroll_x: False
+        MDBoxLayout:
+            id: listItems
+            orientation: 'vertical'
+            adaptive_height: True
+
+<CartItem@MDBoxLayout>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: dp(30)
+    spacing: dp(10)
+    padding: dp(10)
+    MDTextField:
+        id: name_field
+        text: "" #root.item_name
+        mode: 'filled'
+        clean: True
+        max_height: dp(20)
+        pos_hint: {'center_x': .5, 'center_y': .5}
+        readonly: True
+        on_double_tap: root.update_name(self)
+        on_focus: root.accept_name(self)
+        #on_text_validate: root.update_name(self.text)
+    MDTextField:
+        id: qty_field
+        text: "" #str(root.item_quantity)
+        clean: True
+        max_height: dp(20)
+        pos_hint: {'center_x': .5, 'center_y': .5}
+        size_hint_x: None
+        width: dp(20)
+        input_filter: 'int'
+        #on_text_validate: root.update_quantity(self.text)
+    MDIconButton:
+        id: buttonItem
+        icon: "delete"
+        icon_color: app.theme_cls.errorColor
+        pos_hint: {'center_x': .5, 'center_y': .5}
+        on_release: root.remove_self()
+
+<ItemObj@MDCard>
+    id: idItem
+    style: "elevated"
+    size_hint_y: None
+    height: dp(100)
+    orientation: "vertical"
+    pos_hint: {"center_x": .5, "center_y": .5}
+    padding: "4dp"
+    theme_bg_color: "Custom"
+    md_bg_color: app.theme_cls.secondaryColor
+    md_bg_color_disabled: "grey"
+
+    # Sets custom properties.
+    theme_shadow_color: "Custom"
+    shadow_color: "grey"
+    theme_shadow_offset: "Custom"
+    shadow_offset: (1, -2)
+    theme_shadow_softness: "Custom"
+    shadow_softness: 1
+    theme_elevation_level: "Custom"
+    elevation_level: 3
+
+    #on_release: root.add_to_cart()
+    MDBoxLayout:
+        id: item_object
+        orientation: 'horizontal'
+        spacing: dp(4)
+        size_hint_y: None
+        height: dp(48)
+        MDBoxLayout:
+            orientation: "vertical"
+            spacing: dp(1)
+            MDLabel:
+                id: item_name
+                font_style: "Title"
+                role: "medium"
+                theme_text_color: "Custom"
+                text_color: app.theme_cls.accentTextColor
+                allow_selection: True
+                allow_copy: True
+
+        MDLabel:
+            id: item_cost
+            font_style: "Body"
+            role: "large"
+            theme_text_color: "Custom"
+            text_color: app.theme_cls.accentTextColor
+            halign: "right"
+            valign: "center"
+            size_hint_x: 0.3
+            allow_selection: True
+            allow_copy: True
+
+    MDDivider:
+        height: dp(1)
+        color: "gray"
+    MDBoxLayout:
+        orientation: "horizontal"
+        size_hint_y: None
+        height: dp(idItem.height)
+        MDLabel:
+            id: item_seller
+            font_style: "Body"
+            role: "medium"
+            bold: True
+            theme_text_color: "Hint"
+            allow_selection: True
+            allow_copy: True
+            halign: "left"
+            text_color: app.theme_cls.accentTextColor
+
+<Plain>
+    MDTooltipPlain:
+        id: plain
+        text: ''

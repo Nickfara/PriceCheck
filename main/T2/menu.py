@@ -1,15 +1,16 @@
 """
     Создание меню для ТГ бота
 """
-
+import json
 import time
 import re
+from json import JSONDecodeError
 
 from telebot import types
 from telebot.apihelper import ApiTelegramException
 
-from handlers_tgBot import bot
-from functions import t2b
+from bot import bot
+from general_func import t2b
 from log import log
 from constants import ADMIN_IDS
 
@@ -30,16 +31,45 @@ def escape_markdown_v2(text: str) -> str:
     escape_chars = r'_*[]()~`>#+-=|{}.!'
     result = re.sub(r'(?<!\\)([%s])' % re.escape(escape_chars), r'\\\1', str(text))
 
-    log(f"""
-
-Где-то допущена ошибка markdown в следующем сообщении:
-        {text}
-        
-        Исправь ошибку сравнив с обработанным текстом:
-        {result}
-        """, 3)
-
     return result
+
+
+def clear_messages(uid, mid):
+    """
+    Очистка от захламляющих сообщений.
+    :param mid: Id текущего сообщения
+    :return:
+    """
+    with open('data/ids_messages.json') as file:
+        try:
+            file = json.load(file)
+            if 'ids' in file:
+                ids = file['ids']
+            else:
+                file['ids'] = []
+                ids = file['ids']
+        except JSONDecodeError:
+            file = {'ids': []}
+        print(f'MID: {mid}')
+        print(f'Начальный ids: {ids}')
+        if len(ids) > 1:
+            for i in ids:
+                print(f'Делается: {i}')
+                try:
+                    if i != mid:
+                        bot.delete_message(chat_id=uid, message_id=(i))
+                except:
+                    pass
+                ids.remove(i)
+        if 0 in ids:
+            ids.remove(0)
+        print(f'Итоговый ids: {ids}')
+
+        if mid not in ids:
+            with open('data/ids_messages.json', 'w') as file_w:
+                file['ids'] = ids
+                file['ids'].append(mid)
+                json.dump(file, file_w)
 
 
 # noinspection PyBroadException
@@ -66,36 +96,40 @@ def send(call, answer: str, btns: tuple, row_width: int = 3, edit_message: int =
     markup = types.InlineKeyboardMarkup(row_width=row_width)  # Создание функции кнопок
     markup.add(*btns_markup)  # Наполнение функции кнопками
 
-    for r in range(-8):  # Чистит сообщения вокруг текущего
-        try:
-            print(r)
-            if r != 0: bot.delete_message(chat_id=uid, message_id=(mid + r))
-        except:
-            pass
+    clear_messages(uid, mid)
 
     send = lambda: bot.send_message(chat_id=uid, text=answer, reply_markup=markup, parse_mode='MarkdownV2')
-    edit = lambda: bot.edit_message_text(chat_id=uid, text=answer, message_id=mid, reply_markup=markup, parse_mode='MarkdownV2')
-    send_mark = lambda: bot.send_message(chat_id=uid, text=escape_markdown_v2(answer), reply_markup=markup, parse_mode='MarkdownV2')
-    edit_mark = lambda: bot.edit_message_text(chat_id=uid, text=escape_markdown_v2(answer), message_id=mid, reply_markup=markup, parse_mode='MarkdownV2')
+    edit = lambda: bot.edit_message_text(chat_id=uid, text=answer, message_id=mid, reply_markup=markup,
+                                         parse_mode='MarkdownV2')
+    send_mark = lambda: bot.send_message(chat_id=uid, text=escape_markdown_v2(answer), reply_markup=markup,
+                                         parse_mode='MarkdownV2')
+    edit_mark = lambda: bot.edit_message_text(chat_id=uid, text=escape_markdown_v2(answer), message_id=mid,
+                                              reply_markup=markup, parse_mode='MarkdownV2')
+    log_mark = lambda: log(f"""Где-то допущена ошибка markdown в следующем сообщении: \n{answer}\n
+    Исправь ошибку сравнив с обработанным текстом: \n{escape_markdown_v2(answer),}\n""", 3)
 
     if edit_message:
         try:
-            edit()  # Попытка отредактировать сообщение
-        except:
-            try:
-                edit_mark()  # Попытка отредактировать сообщение с фильтром markdown
-            except:
+            edit()
+        except ApiTelegramException as E:
+            if 'is reserved and must be escaped with the preceding' in str(E):
                 try:
-                    send()  # Попытка отправить новое сообщение
-                except:
-                    try:
-                        send_mark()  # Попытка отправить новое сообщение с фильтром markdown
-                    except Exception as e:
-                        log(f"Не удалось отправить сообщение. Ошибка: {e}", 2)
-
+                    edit_mark()
+                except ApiTelegramException as E2:
+                    if 'message to edit not found' in str(E2):
+                        send_mark()
+                    else:
+                        log('Неизвестная ошибка при попытке отправить сообщение.')
+            elif 'message to edit not found' in str(E):
+                send()
     else:
-        send()
-
+        try:
+            send()
+        except ApiTelegramException as E:
+            if 'is reserved and must be escaped with the preceding' in str(E):
+                send_mark()
+            else:
+                log('Неизвестная ошибка при попытке отправить сообщение.')
 
 
 # noinspection PyBroadException
@@ -116,7 +150,7 @@ def wait(call):
     return response
 
 
-def error(call, answer: str = 'Необработанная ошибка\!\nПопробуйте ещё раз\.'):
+def error(call, answer: str = r'Необработанная ошибка\!' + '\n' + r'Попробуйте ещё раз\.'):
     """
 
     :param call: Данные о команде или сообщении
@@ -143,7 +177,9 @@ def start(call):
         admin_menu(call)
         return
     else:
-        answer = 'Приветствую тебя в магазине \nтрафика Теле2\! В первую очередь \nтебе необходимо авторизоваться\!'
+        answer = r"""Приветствую тебя в магазине 
+        трафика Теле2\! В первую очередь 
+        тебе необходимо авторизоваться\!"""
 
         btns = (('🔑 Войти', 'Войти'),)
 
@@ -163,10 +199,13 @@ def home(call):
     btns = (
         ('🟢 Запуск', 'Запуск'), ('👤 Мой профиль', 'Профиль'), ('🟢 Поднять', 'Поднять'), ('🛠️ Настройки', 'Настройки'))
 
-    answer = '🏠 *Главное меню\!* \n\nТут можно: \n*1\.* Запустить бота' \
-             '\n*2\.* Посмотреть профиль\n*3\.* Изменить настройки\!'
+    answer = r"""🏠 *Главное меню\!* 
+    
+    Тут можно: 
+    *1\.* Запустить бота
+    *2\.* Посмотреть профиль
+    *3\.* Изменить настройки\!"""
     response = send(call, answer, btns, row_width)
-    print(response)
 
     return response
 
@@ -190,7 +229,7 @@ def help_create(call):
 
 def admin_login(call):
     row_width = 2
-    uid = call.from_user.id
+    uid = call.from_user.id  # type: ignore
     from T2.session_manager import get_api
     api = get_api(uid)
 
@@ -201,7 +240,7 @@ def admin_login(call):
         if lots:
             response = home(call)
         else:
-            response = api.refresh_tokens(call)
+            response = api.refresh_tokens()
             if response:
                 home(call)
             else:
@@ -211,7 +250,10 @@ def admin_login(call):
                 time.sleep(3)
                 admin_menu(call)
     else:
-        answer = 'Привет Дима\!\n\nУ тебя есть 1 аккаунт\. \nВыбери один из них:'
+        answer = r"""Привет Дима\!
+        
+        У тебя есть 1 аккаунт\.
+        Выбери один из них:"""
         btns = (('📲 +7(992)022-88-48', 'Войти админ'), ('🔑 Другой аккаунт', 'Войти'))
         response = send(call, answer, btns, row_width)
 
@@ -293,7 +335,22 @@ def bot_select(call):
     btns = (
         ('🏷️ Авто-продажа', 'Авто-продажа'), ('🔝 Авто-поднятие', 'Авто-поднятие'), ('🏠 Главное меню', 'Главное меню'))
 
-    answer = '🟢 *Запуск\.* \n\n*1\. "Авто\-продажа":*  \nАвтоматическая продажа \nтрафика\. По умолчанию: \nЛот \- 6 гигабайт\. \nВыставление \-  1 раз в 35 секунд\.\n\n*2\. "Авто\-поднятие":*\nАвтоматическое поднятие \nактивных лотов в топ\. \nАктивные лоты, это те, \nкоторые уже выставлены \nна продажу\. По умолчанию: \nПоднимается 1 рандомный \nлот, каждые 35 секунд\.'
+    answer = r"""🟢 *Запуск\.* 
+    
+    *1\. "Авто\-продажа":*  
+    Автоматическая продажа 
+    трафика\. По умолчанию: 
+    Лот \- 6 гигабайт\. 
+    Выставление \-  1 раз в 35 секунд\.
+    
+    *2\. "Авто\-поднятие":*
+    Автоматическое поднятие 
+    активных лотов в топ\. 
+    Активные лоты, это те, 
+    которые уже выставлены 
+    на продажу\. По умолчанию: 
+    Поднимается 1 рандомный 
+    лот, каждые 35 секунд\."""
 
     response = send(call, str(answer), btns, row_width)
 
@@ -333,7 +390,7 @@ def up(call):
     :param call: Данные о команде или сообщении
     """
 
-    answer = 'Лот был успешно поднят!'
+    answer = r'Лот был успешно поднят\!'
     btns = ()
 
     send(call, answer, btns)
@@ -355,15 +412,16 @@ def get_lots(call, lots):
     btns = (('🗑 Отозвать все минуты', 'Отозвать минуты'), ('❌ Отмена', 'Профиль'))
     items = []
 
-    if len(lots):
+    if len(lots) > 0:
         answer = '*Список ваших, активных лотов:*'
         for lot in lots:
-            text = str(lots[lot]['value'])
-            text += (' ГБ ' if lots[lot]['type'] == 'gb' else ' МИН ')
-            text += f'за {str(int(lots[lot]["price"]))}₽'
-            items.append(types.InlineKeyboardButton(text=f'{text}', callback_data=f'red/{lots[lot]["id"]}'))
+            print(lot)
+            text = str(lot['volume']['value'])
+            text += (' ГБ ' if lot['volume']['uom'] == 'gb' else ' МИН ')
+            text += f'за {str(int(lot["cost"]['amount']))}₽'
+            items.append(types.InlineKeyboardButton(text=f'{text}', callback_data=f'red/{lot["id"]}'))
     else:
-        answer = "\n\nЛотов, находящихся на продаже нет\!"
+        answer = "\n\n" + r"Лотов, находящихся на продаже нет\!"
 
     response = send(call, answer, btns, row_width)
 
@@ -404,7 +462,7 @@ def sms(call):
 
     :param call: Данные о команде или сообщении
     """
-    answer = 'Смс было отправлено на ваш телефон\. Пожалуйста, отправьте полученный код сюда\:'
+    answer = r'Смс было отправлено на ваш телефон\. Пожалуйста, отправьте полученный код сюда\:'
 
     btns = (cancel_btn,)
     response = send(call, answer, btns)
@@ -419,7 +477,7 @@ def security_code(call):
     :param call: Данные о команде или сообщении
     """
 
-    answer = 'На почту был отправлен проверочный код\! Пришлите его сюда:'
+    answer = r'На почту был отправлен проверочный код\! Пришлите его сюда:'
     on_sms = ('Войти по смс', 'СМС')
     btns = (cancel_btn, on_sms)
     response = send(call, answer, btns)
@@ -457,7 +515,7 @@ def redactor_lot(call, lid, lots):
     lot_text = ''
     ind = {}
 
-    from functions import text_lot
+    from general_func import text_lot
 
     for lot in lots:
         lot_text = text_lot(lots, lot)
@@ -507,7 +565,7 @@ def name(call):
     row_width = 2
 
     btns = (('Да', 'Имя Да'), ('Нет', 'Имя Нет'), ('❌ Отмена', 'Редактировать лоты'))
-    answer = 'Выберите, отображать имя, при продаже трафика или нет\?:'
+    answer = r'Выберите, отображать имя, при продаже трафика или нет\?:'
 
     response = send(call, answer, btns, row_width)
 
@@ -544,7 +602,7 @@ def remove_minutes_lots_confirm(call):
 
     :param call: Данные о команде или сообщении
     """
-    answer = 'Вы уверены, что хотите отозвать все активные лоты с минутами\?\nОтменить это действие не получится\!'
+    answer = r'Вы уверены, что хотите отозвать все активные лоты с минутами\?' + '\n' + r'Отменить это действие не получится\!'
 
     row_width = 2
     btns = (('🗑 Подтвердить отзыв', 'Подтверждение отзыва минут'), ('❌ Отмена', 'Редактировать лоты'))

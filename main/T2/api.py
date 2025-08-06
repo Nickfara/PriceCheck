@@ -10,12 +10,18 @@ import requests
 from requests.exceptions import JSONDecodeError, RequestException
 
 from log import log
-from functions import t2b
+from general_func import t2b
 
 
 
 from T2.constants import SECURITY_BYPASS_HEADERS, MAIN_API, SMS_VALIDATION_API, TOKEN_API, SECURE_VALIDATION_API
 
+
+def valid_number(number, uid):
+    DB = t2b(uid)
+    if number != DB['auth_login']:
+        return DB['auth_login']
+    return number
 
 
 class T2Api:
@@ -43,6 +49,7 @@ class T2Api:
         self.auth_post_url = TOKEN_API
         self.access_token = access_token
         self.refresh_token = refresh_token
+        print(self.phone_number)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -75,6 +82,7 @@ class T2Api:
         :param timeout:
         :return:
         """
+
         try:
             response = self.s.request(
                 method=method.upper(),
@@ -85,13 +93,11 @@ class T2Api:
                 headers=headers,
                 timeout=timeout
             )
-            log(f"       url={url}")
-            if not response.ok:
-                log(f"[{method.upper()}] HTTP {response.status_code}: {response.text}", 2)
 
+            if not response.ok:
                 if response.status_code == 401 and self.refresh_token:
-                    log("Токен истёк. Обновляю...", 2)
-                    new_tokens = self.refresh_tokens(self.refresh_token)
+                    log("Токен истёк. Обновляю...", 3)
+                    new_tokens = self.refresh_tokens()
                     if new_tokens:
                         self.access_token, self.refresh_token = new_tokens
                         self.s.headers.update({'Authorization': f'Bearer {self.access_token}'})
@@ -106,7 +112,16 @@ class T2Api:
                             headers=headers,
                             timeout=timeout
                         )
+                elif response.status_code == 400:
+                    status = response.json()['meta']['status']
+                    if status == 'bp_err_noTraffic':
+                        log('Недостаточно трафика.', 3)
+                        return status
+                    else:
+                        log(f"[{method.upper()}] HTTP {response.status_code}: {response.text}", 3)
+                        return status
                 else:
+                    log(f"[{method.upper()}] HTTP {response.status_code}: {response.text}", 3)
                     return None
 
             try:
@@ -148,6 +163,7 @@ class T2Api:
         """
         url = self.security_post_url
         DB = t2b(uid)
+        self.phone_number = valid_number(self.phone_number, uid)
         payload = {
             "client_id": "digital-suite-web-app",
             "grant_type": "password",
@@ -162,10 +178,9 @@ class T2Api:
 
     def auth_with_code(self, sms_code: str):
         """
-
-        :param phone_number: 
-        :param sms_code: 
-        :return: 
+        :param sms_code: Код подтверждения из смс.
+        :return: Кортеж с токенами. [1] = активный токен, [2] = обновляющий токен.
+        :rtype: tuple | None
         """
         url = self.auth_post_url
         payload = {
@@ -180,16 +195,19 @@ class T2Api:
 
         if data:
             if 'access_token' in data and 'refresh_token' in data:
-                return data['access_token'], data['refresh_token']
+                self.access_token = data['access_token'] # Добавление активного токена в объект класса
+                self.refresh_token = data['refresh_token'] # Добавление обновляющего токена в объект класса
+                return (data['access_token'], data['refresh_token'])
         return None
 
     def auth_with_password(self, phone_number: str, security_code: str, security_code_token: str, password: str):
         """
 
-        :param phone_number: 
-        :param security_code_token: 
-        :param password: 
-        :return: 
+        :param phone_number: Номер телефона.
+        :param security_code_token: Код подтверждения.
+        :param password: Пароль от ЛК.
+        :return: Кортеж с токенами. [1] = активный токен, [2] = обновляющий токен.
+        :rtype: tuple | None
         """
         url = self.auth_post_url
         payload = {
@@ -211,27 +229,28 @@ class T2Api:
         if data:
             if 'access_token' in data and 'refresh_token' in data:
                 self.phone_number = phone_number
-                print(self.phone_number)
+                self.access_token = data['access_token']
+                self.refresh_token = data['refresh_token']
                 return data['access_token'], data['refresh_token']
-        return None
 
-    def refresh_tokens(self, refresh_token: str):
+    def refresh_tokens(self):
         """
-
-        :param refresh_token: 
-        :return: 
+        :return:  Кортеж с токенами. [1] = активный токен, [2] = обновляющий токен.
+        :rtype: tuple | None
         """
         print(self.phone_number)
         url = self.auth_post_url
         payload = {
             'client_id': 'digital-suite-web-app',
             'grant_type': 'refresh_token',
-            'refresh_token': refresh_token,
+            'refresh_token': self.refresh_token,
         }
 
         data = self.safe_request(method="POST", url=url, data=payload)
 
         if data:
+            self.access_token = data['access_token']
+            self.refresh_token = data['refresh_token']
             return data['access_token'], data['refresh_token']
 
     def sell_lot(self, lot):
@@ -255,8 +274,8 @@ class T2Api:
             return result
 
         if result is not None:
-            log(f'Ошибка поднятия лота. API вернул: {result.status_code}', 3)
-        return None
+            log(f'Ошибка выставления лота. API вернул: {result.status_code}', 3)
+            return result
 
     def top(self, lot_id):
         """

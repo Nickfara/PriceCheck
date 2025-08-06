@@ -249,7 +249,7 @@ def scanner():
     """
 
     items = []
-    result = {'cache': []}
+    result = {'cache': {}}
     for file in data['shops_params']:  # Итерация по поставщикам
         log(f'Начато сканирование: {file}')
         if file['filename'] in os.listdir('data/prices'):  # Проверка наличия документа с прайс-листом.
@@ -260,29 +260,33 @@ def scanner():
                 for i in table:  # Итерация по строкам в документе
                     items.append(i)  # Пополнение списка с товарами.
 
+    id = 1
+
     for item in items:  # Итерация по списку товаров.
         item["product_name"] = filter_names(item["product_name"])  # Фильтр названий
 
         if item['product_name']:  # Проверка успешности фильтрации
-            result['cache'].append(item)  # Пополнение итогового списка.
+            result['cache'][id] = item  # Пополнение итогового списка.
 
-    def key(price):
-        """
-        Конвертирование прайса в тип float.
+        id += 1
 
-        :param price: Либо конвертированная цена в тип float, либо 0
-        :return:
-        """
-        try:
-            return float(price['price'])
-        except TypeError:
-            return 0
-        except KeyError:
-            return 0
-        except ValueError:
-            return 0
-
-    result['cache'].sort(key=key)
+    # def key(price):
+    #     """
+    #     Конвертирование прайса в тип float.
+    #
+    #     :param price: Либо конвертированная цена в тип float, либо 0
+    #     :return:
+    #     """
+    #     try:
+    #         return float(price['price'])
+    #     except TypeError:
+    #         return 0
+    #     except KeyError:
+    #         return 0
+    #     except ValueError:
+    #         return 0
+    #
+    # result['cache'].sort(key=key)
 
     with open('data/cache_prices.json', 'w', encoding='utf-8') as file:
         # noinspection PyTypeChecker

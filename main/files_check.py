@@ -88,8 +88,8 @@ def check_and_create():
 
     # noinspection SpellCheckingInspection
     files = {'config': preset_config,
-             'cache_cart': {"cart": []},
-             'cache_prices': {"cache": []},
+             'cache_cart': {"cart": {}},
+             'cache_prices': {"cache": {}},
              'db_taxi': {"price": []},
              'cookies_kuper': {"shops": {}},
              'cookies_mshop': {"shops": {}, 'time': ""},
@@ -97,7 +97,7 @@ def check_and_create():
              }
 
     # noinspection SpellCheckingInspection
-    temp = {'cache_prices': ('cache', list),
+    temp = {'cache_prices': ('cache', dict),
             'db_taxi': ('price', list),
             'cookies_kuper': ('shops', dict),
             'cookies_mshop': ('shops', dict),
@@ -112,32 +112,32 @@ def check_and_create():
 
                 apply[0] = 1
         else:
-            with open(f'data/{name}.json', 'r+') as f:
-
-                # noinspection SpellCheckingInspection
+            with open(f'data/{name}.json') as f:
                 try:
                     obje = json.load(f)
                     if name in temp:
-
                         if temp[name][0] in obje:
-
                             if type(obje[temp[name][0]]) != temp[name][1]:
                                 # noinspection PyTypeChecker
-                                json.dump(files[name], f)
-                                apply[0] = 1
+                                with open(f'data/{name}.json', 'w') as fw:
+                                    json.dump(files[name], fw)
+                                    apply[0] = 1
                         else:
-
-                            # noinspection PyTypeChecker
-                            json.dump(files[name], f)
-                            apply[0] = 1
-
+                            with open(f'data/{name}.json', 'w') as fw:
+                                json.dump(files[name], fw)
+                                apply[0] = 1
                     if name == 't2b':
                         if type(obje) != dict:
                             # noinspection PyTypeChecker
-                            json.dump({'3714856134875': {}}, f)
+                            with open(f'data/{name}.json', 'w') as fw:
+                                json.dump({'3714856134875': {}}, fw)
                 except ValueError:
-                    json.dump(files[name], f)
-                    apply[0] = 1
+                    with open(f'data/{name}.json', 'w') as fw:
+                        json.dump(files[name], fw)
+                        apply[0] = 1
+
+
+
 
     if apply[0] == 0:
         log("Все необходимые файлы присутствуют!")

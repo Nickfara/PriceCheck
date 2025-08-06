@@ -1,9 +1,9 @@
 """
-    Интерфейс отображения графика цен на такси todo: Реализовать
+    Интерфейс отображения графика цен на такси
 """
-#import matplotlib.pyplot as plt
+import json
 
-from database import get
+import matplotlib.pyplot as plt
 
 
 # noinspection SpellCheckingInspection
@@ -21,7 +21,10 @@ def render(group='all', filter_='all', week='all'):
         if group != 'hours':
             group = 'all'
 
-    base = get()
+    base = []
+
+    with open("data/db_taxi.json") as f:
+        base = json.load(f)['price']
 
     x = []
     to_y = []
@@ -119,9 +122,14 @@ def render(group='all', filter_='all', week='all'):
             to_y.append(cost_to)
             from_y.append(cost_from)
 
-    #plt.plot(x, to_y, color='red', marker='o', markersize=7)
-    #plt.plot(x, from_y, color='green', marker='o', markersize=7)
-    #plt.xlabel('Время')  # Подпись для оси х
-    #plt.ylabel('Цена')  # Подпись для оси y
-    #plt.title('Цены на такси')  # Название
-    #plt.show()
+    plt.set_loglevel('WARNING')
+    plt.plot(x, to_y, color='red', marker='o', markersize=7)
+    plt.plot(x, from_y, color='green', marker='o', markersize=7)
+    plt.xlabel('Время')  # Подпись для оси х
+    plt.ylabel('Цена')  # Подпись для оси y
+    plt.title('Цены на такси')  # Название
+    plt.set_loglevel("WARNING")
+    plt.show()
+
+
+render()

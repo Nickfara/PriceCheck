@@ -69,6 +69,8 @@ def add(cost):
         conn.commit()
         conn.close()
         result = True
+
+
     return result
 
 

@@ -1,16 +1,17 @@
 """
 Здесь определяются команды телеграм бота и происходит непосредственный запуск бота.
 """
+
 import telebot
 
 from log import log
 
-from functions import t2b
+from general_func import t2b
 from constants import TOKEN_TG_BOT, ADMIN_IDS
 
-from handlers_registry import get_admin_commands, get_user_commands, get_param_commands
-
+from bot_keys import get_admin_commands, get_user_commands, get_param_commands
 bot = telebot.TeleBot(TOKEN_TG_BOT)
+
 cache = {'check_file': ''}
 
 from T2 import commands, menu
@@ -65,7 +66,7 @@ def auth(call):
     if response == 2:
         menu.home(call)
     elif response == 0:
-        start()
+        start(call.message)
 
 
 def stop(call):
